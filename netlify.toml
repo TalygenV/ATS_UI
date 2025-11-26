@@ -1,0 +1,11 @@
+# Redirect all routes to index.html (for React single-page app)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Block Google and all crawlers from indexing/crawling
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
