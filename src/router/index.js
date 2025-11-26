@@ -7,6 +7,7 @@ import ResumeDetailPage from '../views/ResumeDetailPage.vue';
 import CandidatesPage from '../views/CandidatesPage.vue';
 import LoginPage from '../views/LoginPage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
+import TalygenFilesPage from '../views/TalygenFilesPage.vue';
 import { useAuth } from '../composables/useAuth';
 
 const routes = [
@@ -62,6 +63,12 @@ const routes = [
     path: '/candidates/:jobId',
     name: 'Candidates',
     component: CandidatesPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/talygen-files',
+    name: 'TalygenFiles',
+    component: TalygenFilesPage,
     meta: { requiresAuth: true }
   }
 ];
