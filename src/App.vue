@@ -6,7 +6,7 @@
         <div class="nav-links">
           <router-link to="/job-descriptions" class="nav-link">Job Descriptions</router-link>
           <router-link to="/resumes" class="nav-link">All Resumes</router-link>
-          <router-link to="/talygen-files" class="nav-link">Talygen Files</router-link>
+          
           <router-link v-if="isAdmin" to="/register" class="nav-link">Create User</router-link>
           <div class="user-info">
             <span class="user-name">{{ user?.full_name || user?.email }}</span>
