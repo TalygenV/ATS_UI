@@ -103,8 +103,7 @@
 <script>
 import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
-
-const API_BASE_URL = '/api';
+import { API_BASE_URL } from '../config/api';
 
 export default {
   name: 'JobDescriptionsPage',
