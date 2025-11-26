@@ -11,7 +11,7 @@ const getApiBaseUrl = () => {
   
   // In production, use the full API URL
   // You can override this with VITE_API_URL environment variable
-  return import.meta.env.VITE_API_URL || 'https://resumeparserats.netlify.app/api';
+  return  'https://resumeparserats.netlify.app/api';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
