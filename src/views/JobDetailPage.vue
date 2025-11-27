@@ -180,7 +180,7 @@
             <div class="card-footer-section">
               <span class="date">{{ formatDate(candidate.created_at) }}</span>
               <div class="footer-actions">
-                <button @click="downloadResume(candidate.resume_id)" class="btn btn-icon" title="Download Resume">
+                <button @click="downloadResume(candidate.resume_id, candidate)" class="btn btn-icon" title="Download Resume">
                   ⬇️
                 </button>
                 <button @click="viewResumeDetail(candidate)" class="btn btn-primary-small">View Details</button>
@@ -642,54 +642,90 @@ export default {
         this.uploading = false;
       }
     },
-    async downloadResume(resumeId) {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
-          responseType: 'blob'
+    async downloadResume(resumeId, candidate = null) {
+      console.log('\n==========================================');
+      console.log('📥 FRONTEND: Download Resume Request');
+      console.log('==========================================');
+      console.log('Resume ID (from parameter):', resumeId);
+      console.log('Resume ID Type:', typeof resumeId);
+      console.log('Candidate Object:', candidate);
+      if (candidate) {
+        console.log('Candidate Keys:', Object.keys(candidate));
+        console.log('Candidate.resume_id:', candidate.resume_id);
+        console.log('Candidate.resume:', candidate.resume);
+        console.log('Candidate.resume?.id:', candidate.resume?.id);
+      }
+      console.log('API Base URL:', API_BASE_URL);
+      
+      // If resumeId is not provided, try to get it from candidate object
+      if (!resumeId && candidate) {
+        resumeId = candidate.resume_id || candidate.resume?.id;
+        console.log('Resume ID (after fallback):', resumeId);
+      }
+      
+      if (!resumeId) {
+        console.error('❌ Resume ID is missing or undefined');
+        console.error('Cannot determine resume ID from:', {
+          parameter: resumeId,
+          candidate_resume_id: candidate?.resume_id,
+          candidate_resume_id_nested: candidate?.resume?.id
         });
-        
-        // Get filename and content type from headers
-        const contentDisposition = response.headers['content-disposition'];
-        const contentType = response.headers['content-type'] || 'application/octet-stream';
-        let filename = `resume-${resumeId}`;
-        
-        if (contentDisposition) {
-          // Try to extract filename from Content-Disposition header
-          // Handle both filename="..." and filename*=UTF-8''encoded format
-          let filenameMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
-          if (filenameMatch) {
-            // Decode URI-encoded filename
-            try {
-              filename = decodeURIComponent(filenameMatch[1]);
-            } catch (e) {
-              // If decoding fails, try regular filename
-              filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
-              if (filenameMatch) {
-                filename = filenameMatch[1];
-              }
-            }
-          } else {
-            // Try regular filename format
-            filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
-            if (filenameMatch) {
-              filename = filenameMatch[1].replace(/['"]/g, '');
-            }
+        alert('Resume ID is missing. Cannot download resume.');
+        return;
+      }
+      
+      console.log('Full URL:', `${API_BASE_URL}/resumes/${resumeId}/download`);
+      
+      try {
+        console.log('Making axios GET request...');
+        const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
+          responseType: 'json',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           }
-        }
-        
-        // Create blob with the correct MIME type
-        const blob = new Blob([response.data], { type: contentType });
-        const url = window.URL.createObjectURL(blob);
+        });
+        debugger;
+        const fileUrl = response.data.file_path;
+        const fileName = response.data.file_name || 'download.pdf';
+
         const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
+        link.href = fileUrl;
+        link.download = fileUrl; // browser will try to download if allowed
+        link.target = '_blank';   // avoid replacing current tab
         document.body.appendChild(link);
         link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+
+
+
       } catch (error) {
-        console.error('Error downloading resume:', error);
-        alert('Failed to download resume. Please try again.');
+        console.error('\n❌ ERROR downloading resume:');
+        console.error('   - Error Message:', error.message);
+        console.error('   - Error Response:', error.response);
+        console.error('   - Error Status:', error.response?.status);
+        console.error('   - Error Status Text:', error.response?.statusText);
+        console.error('   - Error Data:', error.response?.data);
+        console.error('   - Error Config:', error.config);
+        console.error('==========================================\n');
+        
+        let errorMessage = 'Failed to download resume. ';
+        if (error.response) {
+          if (error.response.status === 404) {
+            errorMessage += 'Resume not found.';
+          } else if (error.response.status === 401) {
+            errorMessage += 'Authentication failed. Please login again.';
+          } else if (error.response.status === 403) {
+            errorMessage += 'You do not have permission to download this resume.';
+          } else {
+            errorMessage += `Server error (${error.response.status}).`;
+          }
+        } else if (error.request) {
+          errorMessage += 'No response from server. Please check your connection.';
+        } else {
+          errorMessage += error.message || 'Unknown error occurred.';
+        }
+        
+        alert(errorMessage);
       }
     },
     async viewResumeDetail(candidate) {
