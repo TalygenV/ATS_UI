@@ -180,7 +180,7 @@
             <div class="card-footer-section">
               <span class="date">{{ formatDate(candidate.created_at) }}</span>
               <div class="footer-actions">
-                <button @click="downloadResume(candidate.resume_id, candidate)" class="btn btn-icon" title="Download Resume">
+                <button @click="downloadResume(candidate.resume_id)" class="btn btn-icon" title="Download Resume">
                   ⬇️
                 </button>
                 <button @click="viewResumeDetail(candidate)" class="btn btn-primary-small">View Details</button>
@@ -642,64 +642,16 @@ export default {
         this.uploading = false;
       }
     },
-    async downloadResume(resumeId, candidate = null) {
-      debugger;
-      console.log('\n==========================================');
-      console.log('📥 FRONTEND: Download Resume Request');
-      console.log('==========================================');
-      console.log('Resume ID (from parameter):', resumeId);
-      console.log('Resume ID Type:', typeof resumeId);
-      console.log('Candidate Object:', candidate);
-      if (candidate) {
-        console.log('Candidate Keys:', Object.keys(candidate));
-        console.log('Candidate.resume_id:', candidate.resume_id);
-        console.log('Candidate.resume:', candidate.resume);
-        console.log('Candidate.resume?.id:', candidate.resume?.id);
-      }
-      console.log('API Base URL:', API_BASE_URL);
-      
-      // If resumeId is not provided, try to get it from candidate object
-      if (!resumeId && candidate) {
-        resumeId = candidate.resume_id || candidate.resume?.id;
-        console.log('Resume ID (after fallback):', resumeId);
-      }
-      
-      if (!resumeId) {
-        console.error('❌ Resume ID is missing or undefined');
-        console.error('Cannot determine resume ID from:', {
-          parameter: resumeId,
-          candidate_resume_id: candidate?.resume_id,
-          candidate_resume_id_nested: candidate?.resume?.id
-        });
-        alert('Resume ID is missing. Cannot download resume.');
-        return;
-      }
-      
-      console.log('Full URL:', `${API_BASE_URL}/resumes/${resumeId}/download`);
-      
+    async downloadResume(resumeId) {
       try {
-        console.log('Making axios GET request...');
         const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
-          responseType: 'blob',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-          }
+          responseType: 'blob'
         });
-        
-        console.log('✅ Response received:');
-        console.log('   - Status:', response.status);
-        console.log('   - Status Text:', response.statusText);
-        console.log('   - Headers:', response.headers);
-        console.log('   - Data Type:', typeof response.data);
-        console.log('   - Data Size:', response.data?.size || 'N/A');
         
         // Get filename and content type from headers
         const contentDisposition = response.headers['content-disposition'];
         const contentType = response.headers['content-type'] || 'application/octet-stream';
         let filename = `resume-${resumeId}`;
-        
-        console.log('   - Content-Type:', contentType);
-        console.log('   - Content-Disposition:', contentDisposition);
         
         if (contentDisposition) {
           // Try to extract filename from Content-Disposition header
@@ -709,13 +661,11 @@ export default {
             // Decode URI-encoded filename
             try {
               filename = decodeURIComponent(filenameMatch[1]);
-              console.log('   - Extracted filename (UTF-8):', filename);
             } catch (e) {
               // If decoding fails, try regular filename
               filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
               if (filenameMatch) {
                 filename = filenameMatch[1];
-                console.log('   - Extracted filename (fallback):', filename);
               }
             }
           } else {
@@ -723,58 +673,23 @@ export default {
             filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
             if (filenameMatch) {
               filename = filenameMatch[1].replace(/['"]/g, '');
-              console.log('   - Extracted filename (regular):', filename);
             }
           }
         }
         
-        console.log('Creating blob and download link...');
         // Create blob with the correct MIME type
         const blob = new Blob([response.data], { type: contentType });
-        console.log('   - Blob created:', {
-          size: blob.size,
-          type: blob.type
-        });
-        
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', filename);
         document.body.appendChild(link);
-        console.log('Triggering download...');
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
-        console.log('✅ Download initiated successfully');
-        console.log('==========================================\n');
       } catch (error) {
-        console.error('\n❌ ERROR downloading resume:');
-        console.error('   - Error Message:', error.message);
-        console.error('   - Error Response:', error.response);
-        console.error('   - Error Status:', error.response?.status);
-        console.error('   - Error Status Text:', error.response?.statusText);
-        console.error('   - Error Data:', error.response?.data);
-        console.error('   - Error Config:', error.config);
-        console.error('==========================================\n');
-        
-        let errorMessage = 'Failed to download resume. ';
-        if (error.response) {
-          if (error.response.status === 404) {
-            errorMessage += 'Resume not found.';
-          } else if (error.response.status === 401) {
-            errorMessage += 'Authentication failed. Please login again.';
-          } else if (error.response.status === 403) {
-            errorMessage += 'You do not have permission to download this resume.';
-          } else {
-            errorMessage += `Server error (${error.response.status}).`;
-          }
-        } else if (error.request) {
-          errorMessage += 'No response from server. Please check your connection.';
-        } else {
-          errorMessage += error.message || 'Unknown error occurred.';
-        }
-        
-        alert(errorMessage);
+        console.error('Error downloading resume:', error);
+        alert('Failed to download resume. Please try again.');
       }
     },
     async viewResumeDetail(candidate) {

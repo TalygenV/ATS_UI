@@ -10,6 +10,12 @@ export default defineConfig({
         target: 'https://resumeparserats.netlify.app/',
         //target: 'http://localhost:3000',
         changeOrigin: true
+      },
+      '/talygen': {
+        target: 'https://stagefilemedia.talygen.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/talygen/, '')
       }
     }
   }
