@@ -1,14 +1,14 @@
+[[redirects]]
+  from = "/talygen/*"
+  to = "https://www.google.com/search?q=https://stagefilemedia.talygen.com/:splat"
+  status = 200
+  force = true
+
 # Redirect all routes to index.html (for React single-page app)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[[redirects]]
-from = "/talygen/*"
-to = "https://www.google.com/search?q=https://stagefilemedia.talygen.com/:splat"
-status = 200
-force 
 
 # Block Google and all crawlers from indexing/crawling
 [[headers]]
