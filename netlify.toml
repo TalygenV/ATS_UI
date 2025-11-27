@@ -1,6 +1,6 @@
 [[redirects]]
   from = "/talygen/*"
-  to = "https://www.google.com/search?q=https://stagefilemedia.talygen.com/:splat"
+  to = "https://stagefilemedia.talygen.com/:splat"
   status = 200
   force = true
 
