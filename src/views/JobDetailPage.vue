@@ -677,24 +677,72 @@ export default {
       console.log('Full URL:', `${API_BASE_URL}/resumes/${resumeId}/download`);
       
       try {
-        console.log('Making axios GET request...');
-        const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
-          responseType: 'json',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-          }
-        });
+        // console.log('Making axios GET request...');
+        // const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
+        //   responseType: 'json',
+        //   headers: {
+        //     'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        //   }
+        // });
         debugger;
-        const fileUrl = response.data.file_path;
-        const fileName = response.data.file_name || 'download.pdf';
+        // const fileUrl = response.data.file_path;
+        // const fileName = response.data.file_name || 'download.pdf';
 
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = fileUrl; // browser will try to download if allowed
-        link.target = '_blank';   // avoid replacing current tab
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // const link = document.createElement('a');
+        // link.href = fileUrl;
+        // link.download = fileUrl; // browser will try to download if allowed
+        // link.target = '_blank';   // avoid replacing current tab
+        // document.body.appendChild(link);
+        // link.click();
+        // document.body.removeChild(link);
+        const BEARER_TOKEN = localStorage.getItem('auth_token');
+
+    // --- STEP 1: Get the external file path from your local API ---
+    const apiResponse = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
+        // We still expect JSON from your local API
+        responseType: 'json', 
+        headers: {
+            'Authorization': `Bearer ${BEARER_TOKEN}`
+        }
+    });
+
+    const externalFileUrl = apiResponse.data.file_path;
+    const fileName = apiResponse.data.file_name || 'download.pdf';
+
+    // Extract the path *after* the domain (e.g., /files/DocStorage//...)
+    const urlParts = externalFileUrl.split('https://stagefilemedia.talygen.com');
+    if (urlParts.length !== 2) {
+        console.error("Invalid external file path format:", externalFileUrl);
+        return;
+    }
+    // The path the proxy needs to see is '/files/DocStorage//...'
+    const proxyPath = `/talygen${urlParts[1]}`; 
+
+    // --- STEP 2: Use the proxy to download the file as a BLOB ---
+    const fileResponse = await axios.get(proxyPath, {
+        // 🚨 CRITICAL: Must be 'blob' to handle binary file content
+        responseType: 'blob', 
+        headers: {
+            // Include your auth token only if the API requires it for this proxy request
+            // In most cases, external file hosts don't need this, but we'll include it defensively.
+            'Authorization': `Bearer ${BEARER_TOKEN}` 
+        }
+    });
+
+    // --- STEP 3: Trigger the download using the BLOB ---
+    const url = window.URL.createObjectURL(new Blob([fileResponse.data]));
+    const link = document.createElement('a');
+    
+    // Set up the download
+    link.href = url;
+    link.download = fileName; // Use the file name retrieved from the API
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the object URL to free up memory
+    window.URL.revokeObjectURL(url);
 
 
 
