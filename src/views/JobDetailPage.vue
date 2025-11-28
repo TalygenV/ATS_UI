@@ -62,10 +62,11 @@
             <strong>Click to upload</strong> or drag and drop
           </p>
           <p class="upload-hint">Supports PDF, DOC, DOCX, and TXT files</p>
+          <p class="upload-limit">Maximum 5 files allowed for bulk upload</p>
         </div>
 
         <div v-if="selectedFiles.length > 0" class="selected-files">
-          <h4>Selected Files ({{ selectedFiles.length }})</h4>
+          <h4>Selected Files ({{ selectedFiles.length }}/5)</h4>
           <div class="file-list">
             <div v-for="(file, index) in selectedFiles" :key="index" class="file-item">
               <span class="file-name">{{ file.name }}</span>
@@ -78,7 +79,7 @@
         <div class="upload-actions">
           <button 
             @click="uploadFiles" 
-            :disabled="selectedFiles.length === 0 || uploading"
+            :disabled="selectedFiles.length === 0 || uploading || selectedFiles.length > 5"
             class="btn btn-primary">
             Upload & Parse Resumes
           </button>
@@ -531,6 +532,7 @@ export default {
       this.addFiles(files);
     },
     addFiles(files) {
+      const MAX_FILES = 5;
       const validFiles = files.filter(file => {
         const validTypes = [
           'application/pdf',
@@ -544,7 +546,23 @@ export default {
                file.name.endsWith('.docx') || 
                file.name.endsWith('.txt');
       });
-      this.selectedFiles = [...this.selectedFiles, ...validFiles];
+      
+      // Check if adding these files would exceed the limit
+      const currentCount = this.selectedFiles.length;
+      const remainingSlots = MAX_FILES - currentCount;
+      
+      if (remainingSlots <= 0) {
+        alert(`Maximum ${MAX_FILES} files allowed for bulk upload. Please remove some files first.`);
+        return;
+      }
+      
+      if (validFiles.length > remainingSlots) {
+        alert(`You can only add ${remainingSlots} more file(s). Maximum ${MAX_FILES} files allowed for bulk upload.`);
+        const filesToAdd = validFiles.slice(0, remainingSlots);
+        this.selectedFiles = [...this.selectedFiles, ...filesToAdd];
+      } else {
+        this.selectedFiles = [...this.selectedFiles, ...validFiles];
+      }
     },
     removeFile(index) {
       this.selectedFiles.splice(index, 1);
@@ -569,6 +587,12 @@ export default {
     },
     async uploadFiles() {
       if (this.selectedFiles.length === 0) return;
+      
+      // Enforce 5 file limit for bulk uploads
+      if (this.selectedFiles.length > 5) {
+        alert('Maximum 5 files allowed for bulk upload. Please select 5 or fewer files.');
+        return;
+      }
 
       this.uploading = true;
       this.uploadResults = [];
@@ -1182,6 +1206,13 @@ export default {
 .upload-hint {
   color: #999;
   font-size: 0.9rem;
+}
+
+.upload-limit {
+  color: #ff9800;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
 }
 
 .selected-files {
