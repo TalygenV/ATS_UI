@@ -141,6 +141,7 @@
                 </div>
               </div>
               <div class="status-badge-top">
+                <span v-if="candidate.isDuplicate" class="duplicate-badge">Duplicate ({{ candidate.duplicateCount }})</span>
                 <span :class="['status-badge', candidate.status]">{{ candidate.status }}</span>
               </div>
             </div>
@@ -1437,6 +1438,17 @@ export default {
 .status-badge.rejected {
   background: #ffebee;
   color: #c62828;
+}
+
+.duplicate-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: #fff3e0;
+  color: #e65100;
+  margin-right: 0.5rem;
 }
 
 .card-footer-section {
