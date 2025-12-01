@@ -37,6 +37,10 @@
             <strong>Requirements:</strong>
             <p>{{ truncateText(job.requirements, 150) }}</p>
           </div>
+          <div v-if="job.interviewers && job.interviewers.length > 0" class="interviewers-preview">
+            <strong>Assigned Interviewers:</strong>
+            <span class="interviewer-count">{{ job.interviewers.length }} interviewer(s)</span>
+          </div>
         </div>
         <div class="card-footer">
           <span class="date">{{ formatDate(job.created_at) }}</span>
@@ -86,6 +90,21 @@
                 class="form-textarea"
               ></textarea>
             </div>
+            <div class="form-group">
+              <label for="interviewers">Assign Interviewers (Optional)</label>
+              <select
+                id="interviewers"
+                v-model="currentJob.interviewers"
+                multiple
+                class="form-select"
+                style="min-height: 120px;"
+              >
+                <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
+                  {{ interviewer.full_name || interviewer.email }}
+                </option>
+              </select>
+              <small class="form-hint">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
+            </div>
             <div class="form-actions">
               <button type="button" @click="closeModal" class="btn btn-secondary">Cancel</button>
               <button type="submit" :disabled="saving" class="btn btn-primary">
@@ -125,12 +144,18 @@ export default {
         id: null,
         title: '',
         description: '',
-        requirements: ''
-      }
+        requirements: '',
+        interviewers: []
+      },
+      interviewers: [],
+      loadingInterviewers: false
     };
   },
   mounted() {
     this.fetchJobDescriptions();
+    if (this.hasWriteAccess) {
+      this.fetchInterviewers();
+    }
   },
   methods: {
     async fetchJobDescriptions() {
@@ -180,12 +205,26 @@ export default {
         this.saving = false;
       }
     },
+    async fetchInterviewers() {
+      this.loadingInterviewers = true;
+      try {
+        const response = await axios.get(`${API_BASE_URL}/auth/users?role=Interviewer`);
+        if (response.data.success) {
+          this.interviewers = response.data.data;
+        }
+      } catch (error) {
+        console.error('Error fetching interviewers:', error);
+      } finally {
+        this.loadingInterviewers = false;
+      }
+    },
     editJob(job) {
       this.currentJob = {
         id: job.id,
         title: job.title,
         description: job.description,
-        requirements: job.requirements || ''
+        requirements: job.requirements || '',
+        interviewers: job.interviewers || []
       };
       this.showEditModal = true;
     },
@@ -222,7 +261,8 @@ export default {
         id: null,
         title: '',
         description: '',
-        requirements: ''
+        requirements: '',
+        interviewers: []
       };
     },
     truncateText(text, length) {
@@ -363,6 +403,29 @@ h2 {
   margin-bottom: 0.5rem;
 }
 
+.interviewers-preview {
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.interviewers-preview strong {
+  color: #333;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.interviewer-count {
+  display: inline-block;
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
 .card-footer {
   display: flex;
   justify-content: space-between;
@@ -495,6 +558,28 @@ h2 {
 .form-textarea {
   resize: vertical;
   min-height: 120px;
+}
+
+.form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: white;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: #666;
+  font-size: 0.85rem;
 }
 
 .form-actions {

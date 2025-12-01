@@ -31,8 +31,8 @@ export default defineConfig({
     proxy: {
       '/api': {
         // Your existing API proxy configuration
-         target: 'https://resumeparserats.netlify.app/',
-        //target: 'http://localhost:3000',
+         //target: 'https://resumeparserats.netlify.app/',
+        target: 'http://localhost:3000',
         changeOrigin: true
       },
       // Proxy configuration for the Talygen file download

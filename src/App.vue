@@ -5,7 +5,8 @@
         <h1 class="logo">ATS System</h1>
         <div class="nav-links">
           <router-link to="/job-descriptions" class="nav-link">Job Descriptions</router-link>
-          <router-link to="/resumes" class="nav-link">All Resumes</router-link>
+          <router-link v-if="user?.role !== 'Interviewer'" to="/resumes" class="nav-link">All Resumes</router-link>
+          <router-link v-if="user?.role === 'Interviewer'" to="/interviewer-dashboard" class="nav-link">My Interviews</router-link>
           
           <router-link v-if="isAdmin" to="/register" class="nav-link">Create User</router-link>
           <div class="user-info">
@@ -31,7 +32,7 @@ export default {
   name: 'App',
   setup() {
     const router = useRouter();
-    const { user, isAuthenticated, isAdmin, logout, init } = useAuth();
+    const { user, isAuthenticated, isAdmin, hasRole, logout, init } = useAuth();
     
     onMounted(async () => {
       await init();
@@ -46,6 +47,7 @@ export default {
       user,
       isAuthenticated,
       isAdmin,
+      hasRole,
       handleLogout
     };
   }

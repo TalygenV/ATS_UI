@@ -74,7 +74,13 @@
         </div>
         <div class="card-footer">
           <div class="footer-left">
-            <span class="file-name">{{ resume.file_name }}</span>
+            <button
+              @click="downloadResume(resume.id, resume)"
+              class="btn btn-icon"
+              title="Download Resume"
+            >
+              ⬇️
+            </button>
             <span v-if="resume.parent_id" class="parent-link">Original ID: {{ resume.parent_id }}</span>
           </div>
           <span class="date">{{ formatDate(resume.created_at) }}</span>
@@ -229,6 +235,63 @@ export default {
     },
     closeModal() {
       this.selectedResume = null;
+    },
+    async downloadResume(resumeId, resume = null) {
+      try {
+        // Fallback: try to infer resumeId from resume object if not provided
+        if (!resumeId && resume) {
+          resumeId = resume.id;
+        }
+
+        if (!resumeId) {
+          alert('Resume ID is missing. Cannot download resume.');
+          return;
+        }
+
+        const BEARER_TOKEN = localStorage.getItem('auth_token');
+
+        // Step 1: Get the external file path from the API
+        const apiResponse = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
+          responseType: 'json',
+          headers: {
+            'Authorization': `Bearer ${BEARER_TOKEN}`
+          }
+        });
+
+        const externalFileUrl = apiResponse.data.file_path;
+        const fileName = apiResponse.data.file_name || resume?.file_name || 'download.pdf';
+
+        // Extract the path after the Talygen domain
+        const urlParts = externalFileUrl.split('https://stagefilemedia.talygen.com');
+        if (urlParts.length !== 2) {
+          console.error('Invalid external file path format:', externalFileUrl);
+          alert('Unable to download resume file.');
+          return;
+        }
+
+        const proxyPath = `/talygen${urlParts[1]}`;
+
+        // Step 2: Use proxy to download the file as BLOB
+        const fileResponse = await axios.get(proxyPath, {
+          responseType: 'blob',
+          headers: {
+            'Authorization': `Bearer ${BEARER_TOKEN}`
+          }
+        });
+
+        // Step 3: Trigger browser download
+        const url = window.URL.createObjectURL(new Blob([fileResponse.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error downloading resume from ResumesPage:', error);
+        alert('Failed to download resume. Please try again.');
+      }
     },
     formatDate(dateString) {
       if (!dateString) return 'N/A';

@@ -70,6 +70,12 @@ const routes = [
     name: 'TalygenFiles',
     component: TalygenFilesPage,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/interviewer-dashboard',
+    name: 'InterviewerDashboard',
+    component: () => import('../views/InterviewerDashboard.vue'),
+    meta: { requiresAuth: true }
   }
 ];
 

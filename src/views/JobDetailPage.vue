@@ -113,9 +113,10 @@
           <div class="header-actions">
             <select v-model="statusFilter" @change="fetchCandidates" class="filter-select">
               <option value="">All Status</option>
-              <option value="accepted">Accepted</option>
-              <option value="pending">Pending</option>
+              <option value="selected">Selected</option>
               <option value="rejected">Rejected</option>
+              <option value="on_hold">On Hold</option>
+              <option value="pending">Pending</option>
             </select>
             <select v-model="sortBy" @change="fetchCandidates" class="filter-select">
               <option value="match">Sort by Match Score</option>
@@ -129,13 +130,33 @@
           <p>No candidates found. Upload resumes to get started!</p>
         </div>
         <div v-else class="candidates-grid">
-          <div v-for="candidate in candidates" :key="candidate.id" class="candidate-card" :class="getStatusClass(candidate.status)">
+          <div 
+            v-for="candidate in candidates" 
+            :key="candidate.id" 
+            class="candidate-card" 
+            :class="getStatusClass(candidate.status)"
+            v-show="hasRole('Interviewer') ? candidate.interviewer_id === user?.id : true"
+          >
             <div class="card-header-section">
               <div class="candidate-header">
-                <div class="candidate-info">
-                  <h4>{{ candidate.candidate_name || 'Unknown' }}</h4>
-                  <span class="candidate-email">{{ candidate.email || 'N/A' }}</span>
+              <div class="candidate-info">
+                <h4>{{ candidate.candidate_name || 'Unknown' }}</h4>
+                <span class="candidate-email">{{ candidate.email || 'N/A' }}</span>
+                <div v-if="candidate.interviewer" class="interviewer-info">
+                  <span class="interviewer-label">Interviewer:</span>
+                  <span class="interviewer-name">{{ candidate.interviewer.full_name || candidate.interviewer.email || 'N/A' }}</span>
                 </div>
+                <div v-if="candidate.interview_date" class="interview-date">
+                  <span class="date-label">Interview:</span>
+                  <span class="date-value">{{ formatDateTime(candidate.interview_date) }}</span>
+                </div>
+                <div v-if="candidate.interviewer_status && candidate.interviewer_status !== 'pending'" class="interviewer-status">
+                  <span class="status-label">Interviewer Decision:</span>
+                  <span :class="['status-badge-small', 'interviewer-' + candidate.interviewer_status]">
+                    {{ candidate.interviewer_status }}
+                  </span>
+                </div>
+              </div>
                 <div class="match-score-circle">
                   <div class="score-value-small">{{ formatScore(candidate.overall_match) }}%</div>
                   <div class="score-label-small">Match</div>
@@ -182,6 +203,44 @@
             <div class="card-footer-section">
               <span class="date">{{ formatDate(candidate.created_at) }}</span>
               <div class="footer-actions">
+                <!-- HR/Admin: Assignment buttons -->
+                <button v-if="hasWriteAccess && !candidate.interviewer_id" @click="openAssignModal(candidate)" class="btn btn-assign">
+                  Assign Interviewer
+                </button>
+                <button v-if="hasWriteAccess && candidate.interviewer_id" @click="openAssignModal(candidate)" class="btn btn-assign">
+                  Reassign
+                </button>
+                <!-- Interviewer: Feedback button (only for assigned candidates) -->
+                <button 
+                  v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status === 'pending'" 
+                  @click="openFeedbackModal(candidate)" 
+                  class="btn btn-feedback"
+                >
+                  Submit Feedback
+                </button>
+                <button 
+                  v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status !== 'pending'" 
+                  @click="openFeedbackModal(candidate)" 
+                  class="btn btn-feedback"
+                >
+                  View/Edit Feedback
+                </button>
+                <!-- HR/Admin: Final Decision button (after interviewer feedback) -->
+                <button 
+                  v-if="hasWriteAccess && candidate.interviewer_status && candidate.interviewer_status !== 'pending' && (!candidate.hr_final_status || candidate.hr_final_status === 'pending')" 
+                  @click="openHRDecisionModal(candidate)" 
+                  class="btn btn-hr-decision"
+                >
+                  HR Decision
+                </button>
+                <!-- On Hold Details button -->
+                <button 
+                  v-if="candidate.hr_final_status === 'on_hold' || candidate.interviewer_status === 'on_hold'" 
+                  @click="viewHoldDetails(candidate)" 
+                  class="btn btn-hold"
+                >
+                  View Hold Details
+                </button>
                 <button @click="downloadResume(candidate.resume_id, candidate)" class="btn btn-icon" title="Download Resume">
                   ⬇️
                 </button>
@@ -423,6 +482,376 @@
                 <pre class="job-description-text">{{ resumeDetailEvaluation.job_description.description || 'No job description available' }}</pre>
               </div>
             </div>
+
+            <!-- Process Timeline Section -->
+            <div class="timeline-card">
+              <h2>Process Timeline</h2>
+              <div v-if="loadingTimeline" class="loading">Loading timeline...</div>
+              <div v-else-if="timeline.length === 0" class="empty-timeline">
+                <p>No timeline events available.</p>
+              </div>
+              <div v-else class="timeline-container">
+                <div v-for="(event, index) in timeline" :key="index" class="timeline-item">
+                  <div class="timeline-marker" :class="getTimelineMarkerClass(event.type)"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <h3 class="timeline-title">{{ event.title }}</h3>
+                      <span class="timeline-date">{{ formatDateTime(event.timestamp) }}</span>
+                    </div>
+                    <p class="timeline-description">{{ event.description }}</p>
+                    
+                    <!-- Event-specific details -->
+                    <div v-if="event.details" class="timeline-details">
+                      <!-- Resume uploaded details -->
+                      <div v-if="event.type === 'resume_uploaded' && event.details.overall_match" class="detail-box">
+                        <div class="detail-row">
+                          <span class="detail-label">Overall Match:</span>
+                          <span class="detail-value">{{ formatScore(event.details.overall_match) }}%</span>
+                        </div>
+                        <div class="detail-row">
+                          <span class="detail-label">Skills:</span>
+                          <span class="detail-value">{{ formatScore(event.details.skills_match) }}%</span>
+                        </div>
+                        <div class="detail-row">
+                          <span class="detail-label">Experience:</span>
+                          <span class="detail-value">{{ formatScore(event.details.experience_match) }}%</span>
+                        </div>
+                        <div class="detail-row">
+                          <span class="detail-label">Education:</span>
+                          <span class="detail-value">{{ formatScore(event.details.education_match) }}%</span>
+                        </div>
+                      </div>
+
+                      <!-- Interview assignment details -->
+                      <div v-if="(event.type === 'interviewer_assigned' || event.type === 'interviewer_reassigned') && event.details.interviewer" class="detail-box">
+                        <div class="detail-row">
+                          <span class="detail-label">Interviewer:</span>
+                          <span class="detail-value">{{ event.details.interviewer.full_name || event.details.interviewer.email }}</span>
+                        </div>
+                        <div v-if="event.user" class="detail-row">
+                          <span class="detail-label">Assigned by:</span>
+                          <span class="detail-value">{{ event.user.full_name || event.user.email }}</span>
+                        </div>
+                        <div v-if="event.details.notes" class="detail-row">
+                          <span class="detail-label">Note:</span>
+                          <span class="detail-value">{{ event.details.notes }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Interview scheduled details -->
+                      <div v-if="event.type === 'interview_scheduled' && event.details.interviewer" class="detail-box">
+                        <div class="detail-row">
+                          <span class="detail-label">Interviewer:</span>
+                          <span class="detail-value">{{ event.details.interviewer.full_name || event.details.interviewer.email }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Feedback details -->
+                      <div v-if="event.type === 'feedback_submitted' && event.details.ratings" class="detail-box">
+                        <div class="detail-row">
+                          <span class="detail-label">Decision:</span>
+                          <span :class="['status-badge', 'timeline-status', 'interviewer-' + event.details.status]">
+                            {{ event.details.status }}
+                          </span>
+                        </div>
+                        <div v-if="event.details.ratings" class="ratings-detail">
+                          <strong>Ratings:</strong>
+                          <div class="ratings-list">
+                            <div v-for="(rating, key) in event.details.ratings" :key="key" class="rating-detail-item">
+                              <span class="rating-key">{{ key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
+                              <span class="rating-value">{{ rating }}/10</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div v-if="event.details.hold_reason" class="hold-reason-detail">
+                          <strong>Hold Reason:</strong>
+                          <p>{{ event.details.hold_reason }}</p>
+                        </div>
+                      </div>
+
+                      <!-- HR decision details -->
+                      <div v-if="event.type === 'hr_decision'" class="detail-box">
+                        <div class="detail-row">
+                          <span class="detail-label">Final Decision:</span>
+                          <span :class="['status-badge', 'timeline-status', 'hr-' + event.details.status]">
+                            {{ event.details.status }}
+                          </span>
+                        </div>
+                        <div v-if="event.details.reason" class="decision-reason-detail">
+                          <strong>Reason:</strong>
+                          <p>{{ event.details.reason }}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- User who performed the action -->
+                    <div v-if="event.user" class="timeline-user">
+                      <span class="user-label">By:</span>
+                      <span class="user-name">{{ event.user.full_name || event.user.email }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assign Interviewer Modal -->
+    <div v-if="showAssignModal" class="modal-overlay" @click="showAssignModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h2>Assign Interviewer</h2>
+          <button @click="showAssignModal = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="assignInterviewer">
+            <div class="form-group">
+              <label>Interviewer *</label>
+              <select v-model="assignmentData.interviewer_id" required class="form-input">
+                <option value="">Select Interviewer</option>
+                <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
+                  {{ interviewer.full_name || interviewer.email }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Interview Date *</label>
+              <input v-model="assignmentData.interview_date" type="date" required class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>Interview Time *</label>
+              <input v-model="assignmentData.interview_time" type="time" required class="form-input" />
+            </div>
+            <div class="form-actions">
+              <button type="button" @click="showAssignModal = false" class="btn btn-secondary">Cancel</button>
+              <button type="submit" class="btn btn-primary">Assign</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interviewer Feedback Modal -->
+    <div v-if="showFeedbackModal && selectedCandidateForFeedback" class="modal-overlay" @click="showFeedbackModal = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h2>Interview Feedback</h2>
+          <button @click="showFeedbackModal = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="submitFeedback">
+            <div class="form-section">
+              <h3>Candidate Ratings (1-10 scale)</h3>
+              <div class="ratings-grid">
+                <div class="rating-group">
+                  <label>Technical Skills</label>
+                  <input 
+                    v-model.number="feedbackData.ratings.technical_skills" 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    class="rating-input"
+                    required
+                  />
+                </div>
+                <div class="rating-group">
+                  <label>Communication</label>
+                  <input 
+                    v-model.number="feedbackData.ratings.communication" 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    class="rating-input"
+                    required
+                  />
+                </div>
+                <div class="rating-group">
+                  <label>Problem Solving</label>
+                  <input 
+                    v-model.number="feedbackData.ratings.problem_solving" 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    class="rating-input"
+                    required
+                  />
+                </div>
+                <div class="rating-group">
+                  <label>Cultural Fit</label>
+                  <input 
+                    v-model.number="feedbackData.ratings.cultural_fit" 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    class="rating-input"
+                    required
+                  />
+                </div>
+                <div class="rating-group">
+                  <label>Experience Relevance</label>
+                  <input 
+                    v-model.number="feedbackData.ratings.experience_relevance" 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    class="rating-input"
+                    required
+                  />
+                </div>
+                <div class="rating-group">
+                  <label>Overall Assessment</label>
+                  <input 
+                    v-model.number="feedbackData.ratings.overall" 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    class="rating-input"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3>Final Decision</h3>
+              <div class="form-group">
+                <label>Status *</label>
+                <select v-model="feedbackData.status" required class="form-input" @change="onStatusChange">
+                  <option value="pending">Pending</option>
+                  <option value="selected">Selected</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="on_hold">On Hold</option>
+                </select>
+              </div>
+              <div v-if="feedbackData.status === 'on_hold'" class="form-group">
+                <label>Hold Reason *</label>
+                <textarea 
+                  v-model="feedbackData.hold_reason" 
+                  required 
+                  rows="4" 
+                  class="form-textarea"
+                  placeholder="Please provide a reason for putting this candidate on hold..."
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" @click="showFeedbackModal = false" class="btn btn-secondary">Cancel</button>
+              <button type="submit" :disabled="submittingFeedback" class="btn btn-primary">
+                <span v-if="submittingFeedback">Submitting...</span>
+                <span v-else>Submit Feedback</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- HR Decision Modal -->
+    <div v-if="showHRDecisionModal && selectedCandidateForFeedback" class="modal-overlay" @click="showHRDecisionModal = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h2>Final HR Decision</h2>
+          <button @click="showHRDecisionModal = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <!-- Show Interviewer Feedback -->
+          <div v-if="selectedCandidateForFeedback.interviewer_feedback" class="interviewer-feedback-section">
+            <h3>Interviewer Feedback</h3>
+            <div class="feedback-display">
+              <div class="feedback-ratings">
+                <h4>Ratings (1-10 scale):</h4>
+                <div class="ratings-display-grid">
+                  <div v-for="(rating, key) in selectedCandidateForFeedback.interviewer_feedback" :key="key" class="rating-display-item">
+                    <span class="rating-display-label">{{ key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
+                    <span class="rating-display-value">{{ rating }}/10</span>
+                  </div>
+                </div>
+              </div>
+              <div class="feedback-status">
+                <h4>Interviewer's Decision:</h4>
+                <span :class="['status-badge', 'interviewer-' + selectedCandidateForFeedback.interviewer_status]">
+                  {{ selectedCandidateForFeedback.interviewer_status }}
+                </span>
+              </div>
+              <div v-if="selectedCandidateForFeedback.interviewer_hold_reason" class="feedback-hold-reason">
+                <h4>Hold Reason:</h4>
+                <p>{{ selectedCandidateForFeedback.interviewer_hold_reason }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- HR Decision Form -->
+          <div class="form-section">
+            <h3>Your Final Decision</h3>
+            <div class="form-group">
+              <label>Final Status *</label>
+              <select v-model="hrDecisionData.status" required class="form-input" @change="onHRStatusChange">
+                <option value="pending">Pending</option>
+                <option value="selected">Selected</option>
+                <option value="rejected">Rejected</option>
+                <option value="on_hold">On Hold</option>
+              </select>
+            </div>
+            <!-- Show reason field if:
+                 1. Status is rejected or on_hold (always required)
+                 2. Status is selected AND interviewer didn't select (override case) -->
+            <div v-if="hrDecisionData.status === 'rejected' || hrDecisionData.status === 'on_hold' || (hrDecisionData.status === 'selected' && selectedCandidateForFeedback.interviewer_status && selectedCandidateForFeedback.interviewer_status !== 'selected')" class="form-group">
+              <label>Reason *</label>
+              <textarea 
+                v-model="hrDecisionData.reason" 
+                required 
+                rows="4" 
+                class="form-textarea" 
+                :placeholder="getReasonPlaceholder()"
+              ></textarea>
+              <small v-if="hrDecisionData.status === 'selected' && selectedCandidateForFeedback.interviewer_status && selectedCandidateForFeedback.interviewer_status !== 'selected'" class="reason-hint">
+                Reason is required when overriding interviewer's decision to select this candidate.
+              </small>
+            </div>
+            <div class="form-actions">
+              <button type="button" @click="showHRDecisionModal = false" class="btn btn-secondary">Cancel</button>
+              <button type="button" @click="submitHRDecision" class="btn btn-primary">Submit Decision</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- On Hold Details Modal -->
+    <div v-if="showHoldModal && holdCandidate" class="modal-overlay" @click="showHoldModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h2>On Hold - Candidate Details</h2>
+          <button @click="showHoldModal = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-section">
+            <h3>Candidate Information</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Name:</span>
+                <span class="detail-value">{{ holdCandidate.candidate_name || holdCandidate.resume?.name || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">{{ holdCandidate.email || holdCandidate.resume?.email || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Contact:</span>
+                <span class="detail-value">{{ holdCandidate.contact_number || holdCandidate.resume?.phone || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-if="holdCandidate.interviewer_hold_reason" class="detail-section">
+            <h3>Interviewer Hold Reason</h3>
+            <p class="detail-text hold">{{ holdCandidate.interviewer_hold_reason }}</p>
+          </div>
+          <div v-if="holdCandidate.hr_final_reason" class="detail-section">
+            <h3>HR Hold Reason</h3>
+            <p class="detail-text hold">{{ holdCandidate.hr_final_reason }}</p>
           </div>
         </div>
       </div>
@@ -438,8 +867,8 @@ import { API_BASE_URL } from '../config/api';
 export default {
   name: 'JobDetailPage',
   setup() {
-    const { hasWriteAccess } = useAuth();
-    return { hasWriteAccess };
+    const { hasWriteAccess, user, hasRole } = useAuth();
+    return { hasWriteAccess, user, hasRole };
   },
   data() {
     return {
@@ -465,7 +894,40 @@ export default {
       resumeDetailEvaluation: null,
       resumeDetail: null,
       loadingResumeDetail: false,
-      errorResumeDetail: null
+      errorResumeDetail: null,
+      timeline: [],
+      loadingTimeline: false,
+      showAssignModal: false,
+      showFeedbackModal: false,
+      interviewers: [],
+      assignmentData: {
+        evaluation_id: null,
+        interviewer_id: null,
+        interview_date: '',
+        interview_time: ''
+      },
+      selectedCandidateForFeedback: null,
+      feedbackData: {
+        ratings: {
+          technical_skills: null,
+          communication: null,
+          problem_solving: null,
+          cultural_fit: null,
+          experience_relevance: null,
+          overall: null
+        },
+        status: 'pending',
+        hold_reason: ''
+      },
+      submittingFeedback: false,
+      showHRDecisionModal: false,
+      showHoldModal: false,
+      holdCandidate: null,
+      hrDecisionData: {
+        evaluation_id: null,
+        status: '',
+        reason: ''
+      }
     };
   },
   computed: {
@@ -479,6 +941,9 @@ export default {
   mounted() {
     this.fetchJobDescription();
     this.fetchCandidates();
+    if (this.hasWriteAccess) {
+      this.fetchInterviewers();
+    }
   },
   methods: {
     async fetchJobDescription() {
@@ -510,7 +975,17 @@ export default {
           `${API_BASE_URL}/evaluations/job/${jobId}?${params.toString()}`
         );
         if (response.data.success) {
-          this.candidates = response.data.data;
+          // Parse interviewer_feedback if it's a string
+          this.candidates = response.data.data.map(candidate => {
+            if (candidate.interviewer_feedback && typeof candidate.interviewer_feedback === 'string') {
+              try {
+                candidate.interviewer_feedback = JSON.parse(candidate.interviewer_feedback);
+              } catch (e) {
+                console.error('Error parsing interviewer_feedback:', e);
+              }
+            }
+            return candidate;
+          });
         }
       } catch (error) {
         console.error('Error fetching candidates:', error);
@@ -838,6 +1313,9 @@ export default {
               certifications: []
             };
           }
+
+          // Fetch timeline
+          await this.fetchTimeline(evaluationId);
         } else {
           this.errorResumeDetail = response.data?.error || 'Failed to fetch resume details. Please try again.';
         }
@@ -852,6 +1330,26 @@ export default {
         }
       } finally {
         this.loadingResumeDetail = false;
+      }
+    },
+    async fetchTimeline(evaluationId) {
+      this.loadingTimeline = true;
+      try {
+        const token = localStorage.getItem('auth_token');
+        const response = await axios.get(`${API_BASE_URL}/evaluations/${evaluationId}/timeline`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.data && response.data.success) {
+          this.timeline = response.data.data;
+        }
+      } catch (error) {
+        console.error('Error fetching timeline:', error);
+        // Don't show error for timeline, just log it
+      } finally {
+        this.loadingTimeline = false;
       }
     },
     async updateResumeStatus() {
@@ -923,6 +1421,7 @@ export default {
       this.resumeDetailEvaluation = null;
       this.resumeDetail = null;
       this.errorResumeDetail = null;
+      this.timeline = [];
     },
     formatExperience(years) {
       if (!years && years !== 0) return 'N/A';
@@ -991,9 +1490,10 @@ export default {
     },
     getStatusClass(status) {
       return {
-        'status-accepted': status === 'accepted',
+        'status-selected': status === 'selected' || status === 'accepted',
         'status-pending': status === 'pending',
-        'status-rejected': status === 'rejected'
+        'status-rejected': status === 'rejected',
+        'status-on-hold': status === 'on_hold'
       };
     },
     formatDate(dateString) {
@@ -1004,6 +1504,243 @@ export default {
         month: 'short',
         day: 'numeric'
       });
+    },
+    formatDateTime(dateString) {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    },
+    async fetchInterviewers() {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/auth/users?role=Interviewer`);
+        if (response.data.success) {
+          this.interviewers = response.data.data;
+        }
+      } catch (error) {
+        console.error('Error fetching interviewers:', error);
+      }
+    },
+    openAssignModal(candidate) {
+      this.assignmentData = {
+        evaluation_id: candidate.id,
+        interviewer_id: candidate.interviewer_id || null,
+        interview_date: candidate.interview_date ? candidate.interview_date.split('T')[0] : '',
+        interview_time: candidate.interview_date ? candidate.interview_date.split('T')[1]?.substring(0, 5) : ''
+      };
+      this.showAssignModal = true;
+    },
+    async assignInterviewer() {
+      if (!this.assignmentData.interviewer_id || !this.assignmentData.interview_date || !this.assignmentData.interview_time) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      const interviewDateTime = `${this.assignmentData.interview_date}T${this.assignmentData.interview_time}:00`;
+
+      try {
+        let response;
+        if (this.assignmentData.evaluation_id && this.candidates.find(c => c.id === this.assignmentData.evaluation_id)?.interviewer_id) {
+          // Reassign
+          response = await axios.put(
+            `${API_BASE_URL}/interviews/assign/${this.assignmentData.evaluation_id}`,
+            {
+              interviewer_id: this.assignmentData.interviewer_id,
+              interview_date: interviewDateTime
+            }
+          );
+        } else {
+          // New assignment
+          response = await axios.post(
+            `${API_BASE_URL}/interviews/assign`,
+            {
+              evaluation_id: this.assignmentData.evaluation_id,
+              interviewer_id: this.assignmentData.interviewer_id,
+              interview_date: interviewDateTime
+            }
+          );
+        }
+
+        if (response.data.success) {
+          await this.fetchCandidates();
+          // Refresh timeline if resume detail modal is open
+          if (this.showResumeModal && this.resumeDetailEvaluation) {
+            await this.fetchTimeline(this.resumeDetailEvaluation.id);
+          }
+          this.showAssignModal = false;
+          alert('Interview assigned successfully!');
+        }
+      } catch (error) {
+        console.error('Error assigning interviewer:', error);
+        alert('Failed to assign interviewer. Please try again.');
+      }
+    },
+    openFeedbackModal(candidate) {
+      this.selectedCandidateForFeedback = candidate;
+      if (candidate.interviewer_feedback) {
+        this.feedbackData = {
+          ratings: { ...candidate.interviewer_feedback },
+          status: candidate.interviewer_status || 'pending',
+          hold_reason: candidate.interviewer_hold_reason || ''
+        };
+      } else {
+        this.feedbackData = {
+          ratings: {
+            technical_skills: null,
+            communication: null,
+            problem_solving: null,
+            cultural_fit: null,
+            experience_relevance: null,
+            overall: null
+          },
+          status: 'pending',
+          hold_reason: ''
+        };
+      }
+      this.showFeedbackModal = true;
+    },
+    onStatusChange() {
+      if (this.feedbackData.status !== 'on_hold') {
+        this.feedbackData.hold_reason = '';
+      }
+    },
+    async submitFeedback() {
+      // Validate ratings
+      for (const [key, value] of Object.entries(this.feedbackData.ratings)) {
+        if (value === null || value < 1 || value > 10) {
+          alert(`Please provide a valid rating (1-10) for ${key.replace('_', ' ')}`);
+          return;
+        }
+      }
+
+      if (this.feedbackData.status === 'on_hold' && !this.feedbackData.hold_reason.trim()) {
+        alert('Please provide a reason for putting the candidate on hold');
+        return;
+      }
+
+      if (this.feedbackData.status === 'pending') {
+        alert('Please select a status (Selected, Rejected, or On Hold)');
+        return;
+      }
+
+      this.submittingFeedback = true;
+      try {
+        const response = await axios.post(
+          `${API_BASE_URL}/evaluations/${this.selectedCandidateForFeedback.id}/interviewer-feedback`,
+          {
+            ratings: this.feedbackData.ratings,
+            status: this.feedbackData.status,
+            hold_reason: this.feedbackData.status === 'on_hold' ? this.feedbackData.hold_reason : null
+          }
+        );
+
+        if (response.data.success) {
+          await this.fetchCandidates();
+          // Refresh timeline if resume detail modal is open
+          if (this.showResumeModal && this.resumeDetailEvaluation) {
+            await this.fetchTimeline(this.resumeDetailEvaluation.id);
+          }
+          this.showFeedbackModal = false;
+          alert('Feedback submitted successfully!');
+        }
+      } catch (error) {
+        console.error('Error submitting feedback:', error);
+        alert('Failed to submit feedback. Please try again.');
+      } finally {
+        this.submittingFeedback = false;
+      }
+    },
+    openHRDecisionModal(candidate) {
+      this.hrDecisionData = {
+        evaluation_id: candidate.id,
+        status: candidate.hr_final_status || 'pending',
+        reason: candidate.hr_final_reason || ''
+      };
+      this.selectedCandidateForFeedback = candidate; // Reuse this to show interviewer feedback
+      this.showHRDecisionModal = true;
+    },
+    async submitHRDecision() {
+      if (!this.hrDecisionData.status || this.hrDecisionData.status === 'pending') {
+        alert('Please select a status');
+        return;
+      }
+
+      // Check if reason is required
+      const requiresReason = 
+        this.hrDecisionData.status === 'rejected' || 
+        this.hrDecisionData.status === 'on_hold' ||
+        (this.hrDecisionData.status === 'selected' && 
+         this.selectedCandidateForFeedback.interviewer_status && 
+         this.selectedCandidateForFeedback.interviewer_status !== 'selected');
+
+      if (requiresReason && !this.hrDecisionData.reason.trim()) {
+        if (this.hrDecisionData.status === 'selected') {
+          alert('Please provide a reason for selecting this candidate (overriding interviewer\'s decision).');
+        } else {
+          alert('Please provide a reason for ' + this.hrDecisionData.status);
+        }
+        return;
+      }
+
+      try {
+        const response = await axios.post(
+          `${API_BASE_URL}/evaluations/${this.hrDecisionData.evaluation_id}/hr-decision`,
+          {
+            status: this.hrDecisionData.status,
+            reason: this.hrDecisionData.reason
+          }
+        );
+
+        if (response.data.success) {
+          await this.fetchCandidates();
+          // Refresh timeline if resume detail modal is open
+          if (this.showResumeModal && this.resumeDetailEvaluation) {
+            await this.fetchTimeline(this.resumeDetailEvaluation.id);
+          }
+          this.showHRDecisionModal = false;
+          alert('Final decision updated successfully!');
+        }
+      } catch (error) {
+        console.error('Error updating HR decision:', error);
+        alert('Failed to update decision. Please try again.');
+      }
+    },
+    viewHoldDetails(candidate) {
+      this.holdCandidate = candidate;
+      this.showHoldModal = true;
+    },
+    onHRStatusChange() {
+      // Clear reason if status changes to selected and interviewer also selected
+      if (this.hrDecisionData.status === 'selected' && 
+          this.selectedCandidateForFeedback.interviewer_status === 'selected') {
+        this.hrDecisionData.reason = '';
+      }
+    },
+    getReasonPlaceholder() {
+      if (this.hrDecisionData.status === 'selected' && 
+          this.selectedCandidateForFeedback.interviewer_status && 
+          this.selectedCandidateForFeedback.interviewer_status !== 'selected') {
+        return 'Please provide a reason for selecting this candidate (overriding interviewer\'s decision)...';
+      } else if (this.hrDecisionData.status === 'rejected') {
+        return 'Enter rejection reason...';
+      } else if (this.hrDecisionData.status === 'on_hold') {
+        return 'Enter hold reason...';
+      }
+      return 'Enter reason...';
+    },
+    getTimelineMarkerClass(eventType) {
+      return {
+        'marker-upload': eventType === 'resume_uploaded',
+        'marker-assign': eventType === 'interviewer_assigned' || eventType === 'interviewer_reassigned',
+        'marker-schedule': eventType === 'interview_scheduled',
+        'marker-feedback': eventType === 'feedback_submitted',
+        'marker-decision': eventType === 'hr_decision'
+      };
     }
   }
 };
@@ -1338,6 +2075,551 @@ export default {
   border-top-color: #f44336;
 }
 
+.candidate-card.status-selected {
+  border-top-color: #4caf50;
+}
+
+.candidate-card.status-on-hold {
+  border-top-color: #ff9800;
+}
+
+.interviewer-info,
+.interview-date {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.interviewer-label,
+.date-label {
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.interviewer-name,
+.date-value {
+  color: #1976d2;
+}
+
+.btn-assign {
+  background: #2196f3;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-assign:hover {
+  background: #1976d2;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.btn-feedback {
+  background: #4caf50;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-feedback:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.modal-content.large {
+  max-width: 900px;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section h3 {
+  color: #1976d2;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.ratings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.rating-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.rating-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.rating-input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.rating-input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.btn-hr-decision {
+  background: #ff9800;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-hr-decision:hover {
+  background: #f57c00;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.btn-hold {
+  background: #ff9800;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-hold:hover {
+  background: #f57c00;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.interviewer-status {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.status-label {
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.status-badge-small {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.status-badge-small.interviewer-selected {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge-small.interviewer-rejected {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.status-badge-small.interviewer-on_hold {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.interviewer-feedback-section {
+  background: #f5f5f5;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.interviewer-feedback-section h3 {
+  color: #1976d2;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.feedback-display {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.feedback-ratings h4,
+.feedback-status h4,
+.feedback-hold-reason h4 {
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.ratings-display-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.rating-display-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 6px;
+}
+
+.rating-display-label {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.rating-display-value {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.feedback-status {
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.feedback-hold-reason {
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.feedback-hold-reason p {
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+}
+
+.detail-section {
+  margin-bottom: 2rem;
+}
+
+.detail-section h3 {
+  color: #1976d2;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.detail-value {
+  color: #333;
+}
+
+.detail-text.hold {
+  background: #fff3e0;
+  color: #e65100;
+  padding: 1rem;
+  border-radius: 6px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.reason-hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: #ff9800;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Timeline Styles */
+.timeline-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.timeline-card h2 {
+  color: #333;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+}
+
+.empty-timeline {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.timeline-container {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 2rem;
+  padding-left: 2rem;
+}
+
+.timeline-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 0.25rem;
+  top: 2rem;
+  bottom: -2rem;
+  width: 2px;
+  background: #e0e0e0;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: 0;
+  top: 0.5rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.timeline-marker.marker-upload {
+  background: #2196f3;
+}
+
+.timeline-marker.marker-assign {
+  background: #9c27b0;
+}
+
+.timeline-marker.marker-schedule {
+  background: #ff9800;
+}
+
+.timeline-marker.marker-feedback {
+  background: #4caf50;
+}
+
+.timeline-marker.marker-decision {
+  background: #f44336;
+}
+
+.timeline-content {
+  background: #f9f9f9;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  border-left: 3px solid #e0e0e0;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.timeline-title {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.timeline-date {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.timeline-description {
+  color: #555;
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.timeline-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.detail-box {
+  background: white;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #666;
+}
+
+.detail-value {
+  color: #333;
+}
+
+.ratings-detail,
+.hold-reason-detail,
+.decision-reason-detail {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.ratings-detail strong,
+.hold-reason-detail strong,
+.decision-reason-detail strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.ratings-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.rating-detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.rating-key {
+  color: #666;
+}
+
+.rating-value {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.hold-reason-detail p,
+.decision-reason-detail p {
+  margin: 0.5rem 0 0 0;
+  color: #555;
+  line-height: 1.6;
+  padding: 0.75rem;
+  background: #fff3e0;
+  border-radius: 4px;
+}
+
+.timeline-user {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.user-label {
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.user-name {
+  color: #1976d2;
+}
+
+.status-badge.timeline-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.timeline-status.interviewer-selected {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.timeline-status.interviewer-rejected {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.status-badge.timeline-status.interviewer-on_hold {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.status-badge.timeline-status.hr-selected {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.timeline-status.hr-rejected {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.status-badge.timeline-status.hr-on_hold {
+  background: #fff3e0;
+  color: #e65100;
+}
+
 .card-header-section {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
@@ -1500,6 +2782,8 @@ export default {
 
 .footer-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.5rem;
   align-items: center;
 }
