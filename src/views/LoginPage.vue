@@ -51,7 +51,7 @@ export default {
   name: 'LoginPage',
   setup() {
     const router = useRouter();
-    const { login, loading, error } = useAuth();
+    const { login, loading, error, hasRole } = useAuth();
     
     const email = ref('');
     const password = ref('');

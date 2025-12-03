@@ -1,75 +1,149 @@
 <template>
   <div class="interviewer-dashboard">
     <div class="page-header">
-      <h2>My Interview Assignments</h2>
-      <select v-model="statusFilter" @change="fetchAssignments" class="filter-select">
-        <option value="">All Status</option>
-        <option value="pending">Pending</option>
-        <option value="selected">Selected</option>
-        <option value="rejected">Rejected</option>
-        <option value="on_hold">On Hold</option>
-      </select>
+      <h2>Interviewer Dashboard</h2>
     </div>
+
+    <div class="dashboard-grid">
+      <!-- Availability management -->
+      <div class="availability-card">
+        <div class="card-header">
+          <h3>My Availability</h3>
+        </div>
+        <div class="card-body">
+          <form class="slot-form" @submit.prevent="generateSlots">
+            <div class="form-group-inline">
+              <div class="form-group">
+                <label>Date *</label>
+                <input v-model="slotForm.date" type="date" required class="form-input" />
+              </div>
+              <div class="form-group">
+                <label>From</label>
+                <input v-model="slotForm.start_time" type="time" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label>To</label>
+                <input v-model="slotForm.end_time" type="time" class="form-input" />
+              </div>
+            </div>
+            <p class="hint-text">System will generate 45-minute slots between the selected times (default 9:00–18:00).</p>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" :disabled="generatingSlots">
+                <span v-if="generatingSlots">Generating...</span>
+                <span v-else>Generate Slots</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="slots-section">
+            <h4>Upcoming Slots</h4>
+            <div v-if="loadingSlots" class="loading">Loading slots...</div>
+            <div v-else-if="slots.length === 0" class="empty-state">
+              <p>No upcoming availability created.</p>
+            </div>
+            <div v-else class="slots-list">
+              <div
+                v-for="slot in slots"
+                :key="slot.id"
+                class="slot-row"
+                :class="{ booked: slot.is_booked }"
+              >
+                <div class="slot-info">
+                  <div class="slot-time">
+                    {{ formatDateTime(slot.start_time) }} – {{ formatTime(slot.end_time) }}
+                  </div>
+                  <div class="slot-status">
+                    <span v-if="slot.is_booked" class="status-pill booked">Booked</span>
+                    <span v-else class="status-pill available">Available</span>
+                  </div>
+                </div>
+                <button
+                  v-if="!slot.is_booked"
+                  class="btn btn-secondary btn-small"
+                  @click="deleteSlot(slot.id)"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignments -->
+      <div class="assignments-card">
+        <div class="card-header">
+          <h3>My Interview Assignments</h3>
+          <select v-model="statusFilter" @change="fetchAssignments" class="filter-select">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="selected">Selected</option>
+            <option value="rejected">Rejected</option>
+            <option value="on_hold">On Hold</option>
+          </select>
+        </div>
 
     <div v-if="loading" class="loading">Loading assignments...</div>
     <div v-else-if="error" class="error-message">{{ error }}</div>
     <div v-else-if="assignments.length === 0" class="empty-state">
       <p>No interview assignments found.</p>
     </div>
-    <div v-else class="assignments-grid">
-      <div v-for="assignment in assignments" :key="assignment.id" class="assignment-card">
-        <div class="card-header">
-          <div>
-            <h3>{{ assignment.resume?.name || assignment.candidate_name || 'Unknown Candidate' }}</h3>
-            <span :class="['status-badge', 'interviewer-' + assignment.interviewer_status]">
-              {{ assignment.interviewer_status || 'pending' }}
-            </span>
-          </div>
-          <div v-if="assignment.job_description" class="job-title">
-            {{ assignment.job_description.title }}
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="info-row">
-            <span class="label">Email:</span>
-            <span class="value">{{ assignment.resume?.email || assignment.email || 'N/A' }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Contact:</span>
-            <span class="value">{{ assignment.resume?.phone || assignment.contact_number || 'N/A' }}</span>
-          </div>
-          <div v-if="assignment.interview_date" class="info-row">
-            <span class="label">Interview Date:</span>
-            <span class="value">{{ formatDateTime(assignment.interview_date) }}</span>
-          </div>
-          <div v-if="assignment.interviewer_feedback" class="feedback-summary">
-            <strong>Feedback Submitted</strong>
-            <div v-if="assignment.interviewer_feedback" class="ratings-preview">
-              <div v-for="(rating, key) in assignment.interviewer_feedback" :key="key" class="rating-item">
-                <span class="rating-label">{{ key }}:</span>
-                <span class="rating-value">{{ rating }}/10</span>
+        <div v-else class="assignments-grid">
+          <div v-for="assignment in assignments" :key="assignment.id" class="assignment-card">
+            <div class="card-header">
+              <div>
+                <h3>{{ assignment.resume?.name || assignment.candidate_name || 'Unknown Candidate' }}</h3>
+                <span :class="['status-badge', 'interviewer-' + assignment.interviewer_status]">
+                  {{ assignment.interviewer_status || 'pending' }}
+                </span>
+              </div>
+              <div v-if="assignment.job_description" class="job-title">
+                {{ assignment.job_description.title }}
               </div>
             </div>
+            <div class="card-body">
+              <div class="info-row">
+                <span class="label">Email:</span>
+                <span class="value">{{ assignment.resume?.email || assignment.email || 'N/A' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Contact:</span>
+                <span class="value">{{ assignment.resume?.phone || assignment.contact_number || 'N/A' }}</span>
+              </div>
+              <div v-if="assignment.interview_date" class="info-row">
+                <span class="label">Interview Date:</span>
+                <span class="value">{{ formatDateTime(assignment.interview_date) }}</span>
+              </div>
+              <div v-if="assignment.interviewer_feedback" class="feedback-summary">
+                <strong>Feedback Submitted</strong>
+                <div v-if="assignment.interviewer_feedback" class="ratings-preview">
+                  <div v-for="(rating, key) in assignment.interviewer_feedback" :key="key" class="rating-item">
+                    <span class="rating-label">{{ key }}:</span>
+                    <span class="rating-value">{{ rating }}/10</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button 
+                v-if="assignment.interviewer_status === 'pending'" 
+                @click="openFeedbackModal(assignment)" 
+                class="btn btn-primary"
+              >
+                Submit Feedback
+              </button>
+              <button 
+                v-else 
+                @click="openFeedbackModal(assignment)" 
+                class="btn btn-secondary"
+              >
+                View/Edit Feedback
+              </button>
+              <button @click="viewCandidateDetails(assignment)" class="btn btn-secondary">
+                View Resume
+              </button>
+            </div>
           </div>
-        </div>
-        <div class="card-footer">
-          <button 
-            v-if="assignment.interviewer_status === 'pending'" 
-            @click="openFeedbackModal(assignment)" 
-            class="btn btn-primary"
-          >
-            Submit Feedback
-          </button>
-          <button 
-            v-else 
-            @click="openFeedbackModal(assignment)" 
-            class="btn btn-secondary"
-          >
-            View/Edit Feedback
-          </button>
-          <button @click="viewCandidateDetails(assignment)" class="btn btn-secondary">
-            View Resume
-          </button>
         </div>
       </div>
     </div>
@@ -204,6 +278,14 @@ export default {
       loading: false,
       error: null,
       statusFilter: '',
+      slots: [],
+      loadingSlots: false,
+      generatingSlots: false,
+      slotForm: {
+        date: '',
+        start_time: '09:00',
+        end_time: '18:00'
+      },
       showFeedbackModal: false,
       selectedAssignment: null,
       submitting: false,
@@ -222,9 +304,58 @@ export default {
     };
   },
   mounted() {
+    const today = new Date();
+    this.slotForm.date = today.toISOString().slice(0, 10);
     this.fetchAssignments();
+    this.fetchSlots();
   },
   methods: {
+    async fetchSlots() {
+      this.loadingSlots = true;
+      try {
+        const response = await axios.get(`${API_BASE_URL}/interviews/my-slots`);
+        if (response.data.success) {
+          this.slots = response.data.data || [];
+        }
+      } catch (error) {
+        console.error('Error fetching slots:', error);
+      } finally {
+        this.loadingSlots = false;
+      }
+    },
+    async generateSlots() {
+      if (!this.slotForm.date) return;
+      this.generatingSlots = true;
+      try {
+        const payload = {
+          date: this.slotForm.date,
+          start_time: this.slotForm.start_time || undefined,
+          end_time: this.slotForm.end_time || undefined
+        };
+        const response = await axios.post(`${API_BASE_URL}/interviews/slots/generate`, payload);
+        if (response.data.success) {
+          await this.fetchSlots();
+          alert('Availability slots generated successfully.');
+        }
+      } catch (error) {
+        console.error('Error generating slots:', error);
+        alert(error.response?.data?.error || 'Failed to generate slots.');
+      } finally {
+        this.generatingSlots = false;
+      }
+    },
+    async deleteSlot(id) {
+      if (!confirm('Remove this available slot?')) return;
+      try {
+        const response = await axios.delete(`${API_BASE_URL}/interviews/slots/${id}`);
+        if (response.data.success) {
+          this.slots = this.slots.filter(s => s.id !== id);
+        }
+      } catch (error) {
+        console.error('Error deleting slot:', error);
+        alert(error.response?.data?.error || 'Failed to delete slot.');
+      }
+    },
     async fetchAssignments() {
       this.loading = true;
       this.error = null;
@@ -328,6 +459,14 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       });
+    },
+    formatTime(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
     }
   }
 };
@@ -342,14 +481,34 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 h2 {
   color: #333;
   margin: 0;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr);
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.availability-card,
+.assignments-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
 .filter-select {
@@ -374,6 +533,104 @@ h2 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 1.5rem;
+}
+
+.slot-form {
+  margin-bottom: 1.5rem;
+}
+
+.form-group-inline {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  flex: 1;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.hint-text {
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.slots-section {
+  margin-top: 1rem;
+}
+
+.slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.slot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: #f8f9fb;
+}
+
+.slot-row.booked {
+  background: #fff3e0;
+}
+
+.slot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.slot-time {
+  font-weight: 500;
+  color: #333;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-pill.available {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-pill.booked {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
 }
 
 .assignment-card {

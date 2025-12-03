@@ -8,6 +8,7 @@ import CandidatesPage from '../views/CandidatesPage.vue';
 import LoginPage from '../views/LoginPage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
 import TalygenFilesPage from '../views/TalygenFilesPage.vue';
+import CandidateLinkPage from '../views/CandidateLinkPage.vue';
 import { useAuth } from '../composables/useAuth';
 
 const routes = [
@@ -70,6 +71,12 @@ const routes = [
     name: 'TalygenFiles',
     component: TalygenFilesPage,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/candidate/:token',
+    name: 'CandidateLink',
+    component: CandidateLinkPage,
+    meta: { requiresAuth: false }
   },
   {
     path: '/interviewer-dashboard',

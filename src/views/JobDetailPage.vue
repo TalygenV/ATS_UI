@@ -21,6 +21,22 @@
         <div class="card-header">
           <h2>{{ jobDescription.title }}</h2>
           <div v-if="hasWriteAccess" class="header-actions">
+            <button
+              v-if="!candidateLinkUrl"
+              @click="generateCandidateLink"
+              class="btn btn-primary"
+              :disabled="candidateLinkLoading"
+            >
+              <span v-if="candidateLinkLoading">Generating Link...</span>
+              <span v-else>Generate Candidate Link</span>
+            </button>
+            <button
+              v-else
+              @click="copyCandidateLink"
+              class="btn btn-primary"
+            >
+              Copy Candidate Link
+            </button>
             <button @click="editJob" class="btn btn-secondary">Edit</button>
             <button @click="deleteJob" class="btn btn-danger">Delete</button>
           </div>
@@ -927,7 +943,9 @@ export default {
         evaluation_id: null,
         status: '',
         reason: ''
-      }
+      },
+      candidateLinkUrl: '',
+      candidateLinkLoading: false
     };
   },
   computed: {
@@ -959,6 +977,40 @@ export default {
         this.error = 'Failed to fetch job description. Please try again.';
       } finally {
         this.loading = false;
+      }
+    },
+    async generateCandidateLink() {
+      if (!this.jobDescription) return;
+      this.candidateLinkLoading = true;
+      try {
+        const response = await axios.post(`${API_BASE_URL}/candidate-links/generate`, {
+          job_description_id: this.jobDescription.id
+        });
+        if (response.data.success && response.data.data.url) {
+          this.candidateLinkUrl = response.data.data.url;
+        } else {
+          alert(response.data.error || 'Failed to generate candidate link.');
+        }
+      } catch (error) {
+        console.error('Error generating candidate link:', error);
+        alert(error.response?.data?.error || 'Failed to generate candidate link.');
+      } finally {
+        this.candidateLinkLoading = false;
+      }
+    },
+    async copyCandidateLink() {
+      if (!this.candidateLinkUrl) return;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(this.candidateLinkUrl);
+          alert('Candidate link copied to clipboard.');
+        } else {
+          // Fallback
+          window.prompt('Copy this link:', this.candidateLinkUrl);
+        }
+      } catch (error) {
+        console.error('Error copying candidate link:', error);
+        window.prompt('Copy this link:', this.candidateLinkUrl);
       }
     },
     async fetchCandidates() {
