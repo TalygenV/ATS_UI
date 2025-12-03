@@ -625,7 +625,7 @@
           <form @submit.prevent="assignInterviewer">
             <div class="form-group">
               <label>Interviewer *</label>
-              <select v-model="assignmentData.interviewer_id" required class="form-input">
+              <select v-model="assignmentData.interviewer_id" @change="fetchAvailableSlots" required class="form-input">
                 <option value="">Select Interviewer</option>
                 <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
                   {{ interviewer.full_name || interviewer.email }}
@@ -633,12 +633,17 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Interview Date *</label>
-              <input v-model="assignmentData.interview_date" type="date" required class="form-input" />
-            </div>
-            <div class="form-group">
-              <label>Interview Time *</label>
-              <input v-model="assignmentData.interview_time" type="time" required class="form-input" />
+              <label>Available Slots *</label>
+              <select v-model="assignmentData.slot_id" required class="form-input">
+                <option value="">Select Time Slot</option>
+                <option v-for="slot in availableSlots" :key="slot.id" :value="slot.id">
+                  {{ formatDateTime(slot.start_time) }} – {{ formatTime(slot.end_time) }} 
+                  ({{ slot.interviewer?.full_name || slot.interviewer?.email || 'Interviewer' }})
+                </option>
+              </select>
+              <p v-if="availableSlots.length === 0 && assignmentData.interviewer_id" class="hint-text">
+                No available slots found for the selected interviewer. Ask interviewer to add availability.
+              </p>
             </div>
             <div class="form-actions">
               <button type="button" @click="showAssignModal = false" class="btn btn-secondary">Cancel</button>
@@ -919,9 +924,9 @@ export default {
       assignmentData: {
         evaluation_id: null,
         interviewer_id: null,
-        interview_date: '',
-        interview_time: ''
+        slot_id: ''
       },
+      availableSlots: [],
       selectedCandidateForFeedback: null,
       feedbackData: {
         ratings: {
@@ -1568,6 +1573,15 @@ export default {
         minute: '2-digit'
       });
     },
+    formatTime(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    },
     async fetchInterviewers() {
       try {
         const response = await axios.get(`${API_BASE_URL}/auth/users?role=Interviewer`);
@@ -1582,18 +1596,43 @@ export default {
       this.assignmentData = {
         evaluation_id: candidate.id,
         interviewer_id: candidate.interviewer_id || null,
-        interview_date: candidate.interview_date ? candidate.interview_date.split('T')[0] : '',
-        interview_time: candidate.interview_date ? candidate.interview_date.split('T')[1]?.substring(0, 5) : ''
+        slot_id: ''
       };
+      this.availableSlots = [];
+      if (candidate.interviewer_id) {
+        this.fetchAvailableSlots();
+      }
       this.showAssignModal = true;
     },
+    async fetchAvailableSlots() {
+      if (!this.assignmentData.interviewer_id) {
+        this.availableSlots = [];
+        return;
+      }
+      try {
+        const jobId = this.$route.params.id;
+        const response = await axios.get(
+          `${API_BASE_URL}/interviews/available-slots`,
+          {
+            params: {
+              job_description_id: jobId,
+              interviewer_id: this.assignmentData.interviewer_id
+            }
+          }
+        );
+        if (response.data.success) {
+          this.availableSlots = response.data.data || [];
+        }
+      } catch (error) {
+        console.error('Error fetching available slots:', error);
+        this.availableSlots = [];
+      }
+    },
     async assignInterviewer() {
-      if (!this.assignmentData.interviewer_id || !this.assignmentData.interview_date || !this.assignmentData.interview_time) {
+      if (!this.assignmentData.interviewer_id || !this.assignmentData.slot_id) {
         alert('Please fill in all required fields');
         return;
       }
-
-      const interviewDateTime = `${this.assignmentData.interview_date}T${this.assignmentData.interview_time}:00`;
 
       try {
         let response;
@@ -1603,7 +1642,8 @@ export default {
             `${API_BASE_URL}/interviews/assign/${this.assignmentData.evaluation_id}`,
             {
               interviewer_id: this.assignmentData.interviewer_id,
-              interview_date: interviewDateTime
+              interview_date: null,
+              slot_id: this.assignmentData.slot_id
             }
           );
         } else {
@@ -1613,7 +1653,8 @@ export default {
             {
               evaluation_id: this.assignmentData.evaluation_id,
               interviewer_id: this.assignmentData.interviewer_id,
-              interview_date: interviewDateTime
+              interview_date: null,
+              slot_id: this.assignmentData.slot_id
             }
           );
         }

@@ -25,8 +25,12 @@
                 <label>To</label>
                 <input v-model="slotForm.end_time" type="time" class="form-input" />
               </div>
+              <div class="form-group">
+                <label>Max Slots</label>
+                <input v-model.number="slotForm.max_slots" type="number" min="1" class="form-input" placeholder="No limit" />
+              </div>
             </div>
-            <p class="hint-text">System will generate 45-minute slots between the selected times (default 9:00–18:00).</p>
+            <p class="hint-text">System will generate 45-minute slots between the selected times (default 9:00–18:00). You can select which slots to make available.</p>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary" :disabled="generatingSlots">
                 <span v-if="generatingSlots">Generating...</span>
@@ -143,6 +147,63 @@
                 View Resume
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slot Selection Modal -->
+    <div v-if="showSlotSelectionModal" class="modal-overlay" @click="showSlotSelectionModal = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h2>Select Available Slots</h2>
+          <button @click="showSlotSelectionModal = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="slot-selection-info">
+            <p><strong>Date:</strong> {{ formatDate(slotForm.date) }}</p>
+            <p><strong>Time Range:</strong> {{ slotForm.start_time || '09:00' }} – {{ slotForm.end_time || '18:00' }}</p>
+            <p v-if="slotForm.max_slots" class="max-slots-info">
+              <strong>Max Slots:</strong> {{ slotForm.max_slots }} 
+              <span v-if="selectedSlotsCount > slotForm.max_slots" class="error-text">
+                ({{ selectedSlotsCount }} selected - exceeds limit!)
+              </span>
+              <span v-else class="success-text">
+                ({{ selectedSlotsCount }} selected)
+              </span>
+            </p>
+            <p v-else class="max-slots-info">
+              <strong>Selected:</strong> {{ selectedSlotsCount }} slots
+            </p>
+          </div>
+          <div class="slots-selection-grid">
+            <label
+              v-for="(slot, index) in generatedSlots"
+              :key="index"
+              class="slot-checkbox-label"
+              :class="{ disabled: slotForm.max_slots && selectedSlotsCount >= slotForm.max_slots && !slot.selected }"
+            >
+              <input
+                type="checkbox"
+                v-model="slot.selected"
+                :disabled="slotForm.max_slots && selectedSlotsCount >= slotForm.max_slots && !slot.selected"
+                @change="onSlotToggle"
+              />
+              <span class="slot-time-display">
+                {{ formatSlotTime(slot.start_time) }} – {{ formatSlotTime(slot.end_time) }}
+              </span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="showSlotSelectionModal = false" class="btn btn-secondary">Cancel</button>
+            <button 
+              type="button" 
+              @click="confirmSlotSelection" 
+              :disabled="selectedSlotsCount === 0 || (slotForm.max_slots && selectedSlotsCount > slotForm.max_slots)"
+              class="btn btn-primary"
+            >
+              Create Selected Slots ({{ selectedSlotsCount }})
+            </button>
           </div>
         </div>
       </div>
@@ -284,8 +345,11 @@ export default {
       slotForm: {
         date: '',
         start_time: '09:00',
-        end_time: '18:00'
+        end_time: '18:00',
+        max_slots: null
       },
+      showSlotSelectionModal: false,
+      generatedSlots: [],
       showFeedbackModal: false,
       selectedAssignment: null,
       submitting: false,
@@ -309,6 +373,11 @@ export default {
     this.fetchAssignments();
     this.fetchSlots();
   },
+  computed: {
+    selectedSlotsCount() {
+      return (this.generatedSlots || []).filter(slot => slot.selected).length;
+    }
+  },
   methods: {
     async fetchSlots() {
       this.loadingSlots = true;
@@ -323,26 +392,131 @@ export default {
         this.loadingSlots = false;
       }
     },
-    async generateSlots() {
+    generateSlots() {
       if (!this.slotForm.date) return;
+      
+      // Generate slots client-side
+      const startTime = this.slotForm.start_time || '09:00';
+      const endTime = this.slotForm.end_time || '18:00';
+      
+      // Parse date and time in local timezone
+      const [year, month, day] = this.slotForm.date.split('-').map(Number);
+      const [startHour, startMin] = startTime.split(':').map(Number);
+      const [endHour, endMin] = endTime.split(':').map(Number);
+      
+      const startDateTime = new Date(year, month - 1, day, startHour, startMin, 0);
+      const endDateTime = new Date(year, month - 1, day, endHour, endMin, 0);
+      
+      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        alert('Invalid date or time format');
+        return;
+      }
+      
+      if (endDateTime <= startDateTime) {
+        alert('End time must be after start time');
+        return;
+      }
+      
+      const slots = [];
+      let currentStart = new Date(startDateTime);
+      const slotMinutes = 45;
+      
+      while (currentStart < endDateTime) {
+        const currentEnd = new Date(currentStart.getTime() + slotMinutes * 60000);
+        if (currentEnd > endDateTime) break;
+        
+        // Format as YYYY-MM-DD HH:mm:ss in local time
+        const formatDateTime = (date) => {
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, '0');
+          const d = String(date.getDate()).padStart(2, '0');
+          const h = String(date.getHours()).padStart(2, '0');
+          const min = String(date.getMinutes()).padStart(2, '0');
+          const s = String(date.getSeconds()).padStart(2, '0');
+          return `${y}-${m}-${d} ${h}:${min}:${s}`;
+        };
+        
+        slots.push({
+          start_time: formatDateTime(currentStart),
+          end_time: formatDateTime(currentEnd),
+          selected: false
+        });
+        currentStart = currentEnd;
+      }
+      
+      if (slots.length === 0) {
+        alert('No 45-minute slots could be generated for the given range');
+        return;
+      }
+      
+      this.generatedSlots = slots;
+      this.showSlotSelectionModal = true;
+    },
+    onSlotToggle() {
+      // This method is called when a checkbox is toggled
+      // The max slots validation is handled by the disabled attribute
+    },
+    async confirmSlotSelection() {
+      if (this.selectedSlotsCount === 0) {
+        alert('Please select at least one slot');
+        return;
+      }
+      
+      if (this.slotForm.max_slots && this.selectedSlotsCount > this.slotForm.max_slots) {
+        alert(`You can only select up to ${this.slotForm.max_slots} slots`);
+        return;
+      }
+      
       this.generatingSlots = true;
       try {
-        const payload = {
-          date: this.slotForm.date,
-          start_time: this.slotForm.start_time || undefined,
-          end_time: this.slotForm.end_time || undefined
-        };
-        const response = await axios.post(`${API_BASE_URL}/interviews/slots/generate`, payload);
+        const selectedSlots = this.generatedSlots
+          .filter(slot => slot.selected)
+          .map(slot => ({
+            start_time: slot.start_time,
+            end_time: slot.end_time
+          }));
+        
+        const response = await axios.post(
+          `${API_BASE_URL}/interviews/slots/create-selected`,
+          { slots: selectedSlots }
+        );
+        
         if (response.data.success) {
           await this.fetchSlots();
-          alert('Availability slots generated successfully.');
+          this.showSlotSelectionModal = false;
+          alert(`Successfully created ${this.selectedSlotsCount} availability slot(s).`);
+          // Reset form
+          this.generatedSlots = [];
         }
       } catch (error) {
-        console.error('Error generating slots:', error);
-        alert(error.response?.data?.error || 'Failed to generate slots.');
+        console.error('Error creating slots:', error);
+        alert(error.response?.data?.error || 'Failed to create slots.');
       } finally {
         this.generatingSlots = false;
       }
+    },
+    formatSlotTime(timeString) {
+      if (!timeString) return '';
+      // Parse YYYY-MM-DD HH:mm:ss format
+      const [datePart, timePart] = timeString.split(' ');
+      if (!datePart || !timePart) return '';
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+      const date = new Date(year, month - 1, day, hour, minute);
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    },
+    formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString + 'T00:00:00');
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
     },
     async deleteSlot(id) {
       if (!confirm('Remove this available slot?')) return;
@@ -920,6 +1094,86 @@ h2 {
   gap: 1rem;
   justify-content: flex-end;
   margin-top: 2rem;
+}
+
+.slot-selection-info {
+  background: #f8f9fb;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.slot-selection-info p {
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.max-slots-info {
+  font-weight: 500;
+}
+
+.error-text {
+  color: #f44336;
+  font-weight: 600;
+}
+
+.success-text {
+  color: #2e7d32;
+}
+
+.slots-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.slot-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.slot-checkbox-label:hover:not(.disabled) {
+  border-color: #1976d2;
+  background: #f0f7ff;
+}
+
+.slot-checkbox-label.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f5f5f5;
+}
+
+.slot-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.slot-checkbox-label input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+}
+
+.slot-checkbox-label input[type="checkbox"]:checked + .slot-time-display {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.slot-time-display {
+  font-size: 0.95rem;
+  color: #333;
 }
 </style>
 
