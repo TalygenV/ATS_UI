@@ -1,19 +1,5 @@
 <template>
   <div class="upload-page">
-    <!-- Full Screen Loader - Teleported to body -->
-    <Teleport to="body">
-      <div v-if="uploading" class="fullscreen-loader">
-        <div class="loader-content">
-          <div class="fullscreen-spinner"></div>
-          <p class="loader-text">Processing Resumes...</p>
-          <p class="loader-subtext">
-            {{ selectedFiles.length === 1 
-              ? 'Please wait while we upload and parse your resume' 
-              : `Processing ${selectedFiles.length} resumes. This may take a few moments...` }}
-          </p>
-        </div>
-      </div>
-    </Teleport>
 
     <div v-if="!hasWriteAccess" class="card">
       <div class="access-denied">
@@ -168,13 +154,15 @@
 <script>
 import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
+import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
 
 export default {
   name: 'UploadPage',
   setup() {
     const { hasWriteAccess } = useAuth();
-    return { hasWriteAccess };
+    const { showLoader, hideLoader } = useLoader();
+    return { hasWriteAccess, showLoader, hideLoader };
   },
   data() {
     return {
@@ -295,6 +283,16 @@ export default {
       this.uploading = true;
       this.uploadResults = [];
       
+      const fileCount = this.selectedFiles.length;
+      const message = fileCount === 1 
+        ? 'Processing Resume' 
+        : `Processing ${fileCount} Resumes`;
+      const subMessage = fileCount === 1
+        ? 'Please wait while we upload and parse your resume'
+        : `Processing ${fileCount} resumes. This may take a few moments...`;
+      
+      this.showLoader(message, subMessage);
+      
       // Small delay to ensure the loader is rendered and visible
       await this.$nextTick();
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -375,6 +373,7 @@ export default {
         });
       } finally {
         this.uploading = false;
+        this.hideLoader();
       }
     }
   }
@@ -387,15 +386,20 @@ export default {
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 h2 {
-  color: #333;
-  margin-bottom: 0.5rem;
+  color: #1a202c;
+  margin-bottom: 0.75rem;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
@@ -475,23 +479,27 @@ h2 {
 }
 
 .upload-area {
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  padding: 3rem;
+  border: 3px dashed #cbd5e0;
+  border-radius: 20px;
+  padding: 4rem 3rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s;
-  background: #fafafa;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
 }
 
 .upload-area:hover {
-  border-color: #1976d2;
-  background: #f0f0ff;
+  border-color: #4299e1;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e6edff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.15);
 }
 
 .upload-area.drag-over {
-  border-color: #1976d2;
-  background: #e8e8ff;
+  border-color: #4299e1;
+  background: linear-gradient(135deg, #e6edff 0%, #d6e2ff 100%);
+  transform: scale(1.02);
+  box-shadow: 0 12px 40px rgba(66, 153, 225, 0.25);
 }
 
 .upload-icon {
@@ -577,13 +585,14 @@ h2 {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
 }
 
 .btn-secondary {
@@ -802,123 +811,6 @@ h2 {
   to {
     transform: rotate(360deg);
   }
-}
-
-.fullscreen-loader {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background: rgba(0, 0, 0, 0.85) !important;
-  backdrop-filter: blur(8px);
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  z-index: 99999 !important;
-  animation: fadeIn 0.2s ease-in;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.loader-content {
-  text-align: center;
-  color: white;
-}
-
-.fullscreen-spinner {
-  width: 60px;
-  height: 60px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 1.5rem;
-}
-
-.loader-text {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
-  color: white;
-}
-
-.loader-subtext {
-  font-size: 1rem;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.8);
-}
-</style>
-
-<style>
-/* Global styles for teleported fullscreen loader */
-.fullscreen-loader {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background: rgba(0, 0, 0, 0.85) !important;
-  backdrop-filter: blur(8px);
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  z-index: 99999 !important;
-  animation: fadeIn 0.2s ease-in;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.fullscreen-loader .loader-content {
-  text-align: center;
-  color: white;
-}
-
-.fullscreen-loader .fullscreen-spinner {
-  width: 60px;
-  height: 60px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 1.5rem;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.fullscreen-loader .loader-text {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
-  color: white;
-}
-
-.fullscreen-loader .loader-subtext {
-  font-size: 1rem;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.8);
 }
 </style>
 

@@ -98,7 +98,7 @@
               <div>
                 <h3>{{ assignment.resume?.name || assignment.candidate_name || 'Unknown Candidate' }}</h3>
                 <span :class="['status-badge', 'interviewer-' + assignment.interviewer_status]">
-                  {{ assignment.interviewer_status || 'pending' }}
+                  {{ (assignment.interviewer_status || 'pending').replace(/_/g, ' ') }}
                 </span>
               </div>
               <div v-if="assignment.job_description" class="job-title">
@@ -330,9 +330,14 @@
 <script>
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { useLoader } from '../composables/useLoader';
 
 export default {
   name: 'InterviewerDashboard',
+  setup() {
+    const { showLoader, hideLoader } = useLoader();
+    return { showLoader, hideLoader };
+  },
   data() {
     return {
       assignments: [],
@@ -468,6 +473,7 @@ export default {
       }
       
       this.generatingSlots = true;
+      this.showLoader('Creating Availability Slots', `Setting up ${this.selectedSlotsCount} time slot(s)...`);
       try {
         const selectedSlots = this.generatedSlots
           .filter(slot => slot.selected)
@@ -493,6 +499,7 @@ export default {
         alert(error.response?.data?.error || 'Failed to create slots.');
       } finally {
         this.generatingSlots = false;
+        this.hideLoader();
       }
     },
     formatSlotTime(timeString) {
@@ -533,6 +540,7 @@ export default {
     async fetchAssignments() {
       this.loading = true;
       this.error = null;
+      this.showLoader('Loading Assignments', 'Fetching your interview assignments...');
       try {
         const params = this.statusFilter ? `?status=${this.statusFilter}` : '';
         const response = await axios.get(`${API_BASE_URL}/interviews/my-assignments${params}`);
@@ -544,6 +552,7 @@ export default {
         this.error = 'Failed to fetch assignments. Please try again.';
       } finally {
         this.loading = false;
+        this.hideLoader();
       }
     },
     openFeedbackModal(assignment) {
@@ -590,6 +599,7 @@ export default {
       }
 
       this.submitting = true;
+      this.showLoader('Submitting Feedback', 'Saving interview evaluation...');
       try {
         const response = await axios.post(
           `${API_BASE_URL}/evaluations/${this.selectedAssignment.id}/interviewer-feedback`,
@@ -610,6 +620,7 @@ export default {
         alert('Failed to submit feedback. Please try again.');
       } finally {
         this.submitting = false;
+        this.hideLoader();
       }
     },
     viewCandidateDetails(assignment) {
@@ -655,58 +666,106 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 h2 {
-  color: #333;
+  color: #1a202c;
   margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr);
-  gap: 1.5rem;
+  gap: 2rem;
   align-items: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .availability-card,
 .assignments-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.availability-card:hover,
+.assignments-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 2px solid #f0f4f8;
+}
+
+.card-header h3 {
+  color: #1a202c;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .filter-select {
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.95rem;
   cursor: pointer;
+  background: white;
+  color: #2d3748;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
 }
 
 .loading, .error-message, .empty-state {
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: #718096;
+  font-size: 1rem;
 }
 
 .error-message {
-  color: #f44336;
+  color: #e53e3e;
+  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+  border-radius: 12px;
+  border-left: 4px solid #e53e3e;
+  padding: 1.5rem;
+  font-weight: 500;
 }
 
 .assignments-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .assignments-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .slot-form {
@@ -725,22 +784,34 @@ h2 {
 
 .form-group label {
   display: block;
-  margin-bottom: 0.25rem;
-  font-weight: 500;
-  color: #333;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 0.9rem;
+  letter-spacing: 0.3px;
 }
 
 .form-input {
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
 }
 
 .hint-text {
   font-size: 0.85rem;
-  color: #777;
-  margin-top: 0.25rem;
+  color: #718096;
+  margin-top: 0.5rem;
+  line-height: 1.5;
 }
 
 .form-actions {
@@ -764,13 +835,21 @@ h2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.6rem 0.75rem;
-  border-radius: 8px;
-  background: #f8f9fb;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slot-row:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .slot-row.booked {
-  background: #fff3e0;
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+  border-color: #fed7aa;
 }
 
 .slot-info {
@@ -786,20 +865,24 @@ h2 {
 
 .status-pill {
   display: inline-block;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .status-pill.available {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+  color: #22543d;
+  box-shadow: 0 2px 8px rgba(56, 161, 105, 0.2);
 }
 
 .status-pill.booked {
-  background: #fff3e0;
-  color: #e65100;
+  background: linear-gradient(135deg, #fed7aa 0%, #feb2b2 100%);
+  color: #742a2a;
+  box-shadow: 0 2px 8px rgba(245, 101, 101, 0.2);
 }
 
 .btn-small {
@@ -808,16 +891,18 @@ h2 {
 }
 
 .assignment-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .assignment-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
 }
 
 .card-header {
@@ -925,37 +1010,47 @@ h2 {
 }
 
 .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.3px;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .btn-secondary {
-  background: #e0e0e0;
-  color: #333;
+  background: #f7fafc;
+  color: #4a5568;
+  border: 2px solid #e2e8f0;
 }
 
 .btn-secondary:hover {
-  background: #d0d0d0;
+  background: #edf2f7;
+  border-color: #cbd5e0;
+  transform: translateY(-1px);
 }
 
 .modal-overlay {
@@ -964,22 +1059,42 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 2rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-content {
-  background: white;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
   max-width: 700px;
   max-height: 90vh;
   overflow-y: auto;
   width: 100%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-content.large {
@@ -1071,17 +1186,20 @@ h2 {
 .form-input,
 .form-textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 0.875rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 1rem;
   font-family: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
 }
 
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
 }
 
 .form-textarea {
@@ -1137,17 +1255,19 @@ h2 {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: white;
 }
 
 .slot-checkbox-label:hover:not(.disabled) {
-  border-color: #1976d2;
-  background: #f0f7ff;
+  border-color: #4299e1;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e6edff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
 }
 
 .slot-checkbox-label.disabled {

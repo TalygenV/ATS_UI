@@ -122,13 +122,15 @@
 <script>
 import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
+import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
 
 export default {
   name: 'JobDescriptionsPage',
   setup() {
     const { hasWriteAccess } = useAuth();
-    return { hasWriteAccess };
+    const { showLoader, hideLoader } = useLoader();
+    return { hasWriteAccess, showLoader, hideLoader };
   },
   data() {
     return {
@@ -161,6 +163,7 @@ export default {
     async fetchJobDescriptions() {
       this.loading = true;
       this.error = null;
+      this.showLoader('Loading Job Descriptions', 'Fetching available positions...');
       try {
         const response = await axios.get(`${API_BASE_URL}/job-descriptions`);
         if (response.data.success) {
@@ -172,10 +175,13 @@ export default {
         this.error = 'Failed to fetch job descriptions. Please try again.';
       } finally {
         this.loading = false;
+        this.hideLoader();
       }
     },
     async saveJob() {
       this.saving = true;
+      const action = this.showEditModal ? 'Updating' : 'Creating';
+      this.showLoader(`${action} Job Description`, 'Saving job details...');
       try {
         if (this.showEditModal) {
           // Update existing job
@@ -203,6 +209,7 @@ export default {
         alert('Failed to save job description. Please try again.');
       } finally {
         this.saving = false;
+        this.hideLoader();
       }
     },
     async fetchInterviewers() {
@@ -292,58 +299,79 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.page-header h2 {
+  color: #1a202c;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0;
 }
 
 .search-section {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #1976d2;
-}
-
-h2 {
-  color: #333;
-  margin: 0;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
 }
 
 .loading, .error-message, .empty-state {
   text-align: center;
-  padding: 3rem;
-  color: #666;
+  padding: 4rem 2rem;
+  color: #718096;
+  font-size: 1.1rem;
 }
 
 .error-message {
-  color: #f44336;
+  color: #e53e3e;
+  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+  border-radius: 12px;
+  border-left: 4px solid #e53e3e;
+  font-weight: 500;
 }
 
 .job-descriptions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1.5rem;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .job-descriptions-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .job-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .job-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
 }
 
 .card-header {
@@ -455,13 +483,14 @@ h2 {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
 }
 
 .btn-secondary {
@@ -479,22 +508,42 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 2rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 700px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  max-width: 750px;
   max-height: 90vh;
   overflow-y: auto;
   width: 100%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {
@@ -542,17 +591,20 @@ h2 {
 .form-input,
 .form-textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 0.875rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 1rem;
   font-family: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
 }
 
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
 }
 
 .form-textarea {

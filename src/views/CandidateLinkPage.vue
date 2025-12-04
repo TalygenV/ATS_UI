@@ -53,9 +53,9 @@
       </form>
 
       <div v-else class="section">
-        <h3>Evaluation Result</h3>
+        <!-- <h3>Evaluation Result</h3>
         <p>Your profile has been evaluated for this position.</p>
-        <p><strong>Overall Match:</strong> {{ formatScore(result.overall_match) }}%</p>
+        <p><strong>Overall Match:</strong> {{ formatScore(result.overall_match) }}%</p> -->
 
         <div v-if="result.status === 'rejected'" class="alert alert-warning">
           <p>
@@ -78,9 +78,9 @@
               <div class="slot-time">
                 {{ formatDateTime(slot.start_time) }} – {{ formatTime(slot.end_time) }}
               </div>
-              <div class="slot-interviewer" v-if="slot.interviewer">
+              <!-- <div class="slot-interviewer" v-if="slot.interviewer">
                 Interviewer: {{ slot.interviewer.full_name || slot.interviewer.email }}
-              </div>
+              </div> -->
             </button>
           </div>
 
@@ -108,10 +108,15 @@
 
 <script>
 import axios from 'axios';
+import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
 
 export default {
   name: 'CandidateLinkPage',
+  setup() {
+    const { showLoader, hideLoader } = useLoader();
+    return { showLoader, hideLoader };
+  },
   data() {
     return {
       loading: true,
@@ -130,6 +135,7 @@ export default {
   },
   async mounted() {
     const token = this.$route.params.token;
+    this.showLoader('Loading Application', 'Fetching job details...');
     try {
       const response = await axios.get(`${API_BASE_URL}/candidate-links/${token}`);
       if (response.data.success) {
@@ -146,6 +152,7 @@ export default {
         'This link is invalid or has expired.';
     } finally {
       this.loading = false;
+      this.hideLoader();
     }
   },
   methods: {
@@ -178,6 +185,7 @@ export default {
       if (!this.resumeFile) return;
       this.submitting = true;
       this.error = null;
+      this.showLoader('Submitting Application', 'Processing your resume and answers...');
 
       try {
         const token = this.$route.params.token;
@@ -215,12 +223,14 @@ export default {
           'Failed to submit application.';
       } finally {
         this.submitting = false;
+        this.hideLoader();
       }
     },
     async bookSlot() {
       if (!this.selectedSlotId || !this.result) return;
       this.booking = true;
       this.error = null;
+      this.showLoader('Booking Interview Slot', 'Confirming your selected time slot...');
 
       try {
         const token = this.$route.params.token;
@@ -251,6 +261,7 @@ export default {
           'Failed to book slot. Please try another one.';
       } finally {
         this.booking = false;
+        this.hideLoader();
       }
     }
   }
@@ -265,21 +276,27 @@ export default {
 }
 
 .card {
-  max-width: 800px;
+  max-width: 850px;
   width: 100%;
-  background: #fff;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .card.error {
-  border-left: 4px solid #f44336;
+  border-left: 4px solid #e53e3e;
+  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
 }
 
 h2 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
+  margin: 0 0 0.75rem 0;
+  color: #1a202c;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
@@ -335,8 +352,9 @@ input[type='file'] {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: #fff;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .btn-primary:disabled {

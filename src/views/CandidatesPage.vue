@@ -293,13 +293,15 @@
 <script>
 import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
+import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
 
 export default {
   name: 'CandidatesPage',
   setup() {
     const { hasWriteAccess, user } = useAuth();
-    return { hasWriteAccess, user };
+    const { showLoader, hideLoader } = useLoader();
+    return { hasWriteAccess, user, showLoader, hideLoader };
   },
   data() {
     return {
@@ -351,6 +353,7 @@ export default {
     async fetchCandidates() {
       this.loading = true;
       this.error = null;
+      this.showLoader('Loading Candidates', 'Fetching candidate evaluations...');
       try {
         const jobId = this.$route.params.jobId;
         const params = new URLSearchParams();
@@ -370,6 +373,7 @@ export default {
         this.error = 'Failed to fetch candidates. Please try again.';
       } finally {
         this.loading = false;
+        this.hideLoader();
       }
     },
     async updateStatus(id, status) {
@@ -473,6 +477,7 @@ export default {
         return;
       }
 
+      this.showLoader('Assigning Interviewer', 'Setting up interview assignment...');
       try {
         let response;
         if (this.assignmentData.evaluation_id && this.candidates.find(c => c.id === this.assignmentData.evaluation_id)?.interviewer_id) {
@@ -506,6 +511,8 @@ export default {
       } catch (error) {
         console.error('Error assigning interviewer:', error);
         alert('Failed to assign interviewer. Please try again.');
+      } finally {
+        this.hideLoader();
       }
     },
     openHRDecisionModal(candidate) {
@@ -527,6 +534,7 @@ export default {
         return;
       }
 
+      this.showLoader('Submitting Decision', 'Updating candidate status...');
       try {
         const response = await axios.post(
           `${API_BASE_URL}/evaluations/${this.hrDecisionData.evaluation_id}/hr-decision`,
@@ -544,6 +552,8 @@ export default {
       } catch (error) {
         console.error('Error updating HR decision:', error);
         alert('Failed to update decision. Please try again.');
+      } finally {
+        this.hideLoader();
       }
     },
     viewHoldDetails(candidate) {
@@ -618,17 +628,19 @@ h2 {
 }
 
 .candidate-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-  border-left: 4px solid #ddd;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid #e2e8f0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .candidate-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
 }
 
 .candidate-card.status-accepted {
@@ -722,30 +734,57 @@ h2 {
 }
 
 .btn-assign {
-  background: #2196f3;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
 }
 
-.btn-assign:hover {
-  background: #1976d2;
+.btn-assign:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
+}
+
+.btn-assign:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-hr-decision {
-  background: #ff9800;
+  background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(246, 173, 85, 0.4);
 }
 
-.btn-hr-decision:hover {
-  background: #f57c00;
+.btn-hr-decision:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(246, 173, 85, 0.5);
+}
+
+.btn-hr-decision:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-hold {
-  background: #ff9800;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
 }
 
-.btn-hold:hover {
-  background: #f57c00;
+.btn-hold:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.5);
+}
+
+.btn-hold:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .form-group {
@@ -762,17 +801,20 @@ h2 {
 .form-input,
 .form-textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 0.875rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 1rem;
   font-family: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
 }
 
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
 }
 
 .form-textarea {
@@ -788,13 +830,14 @@ h2 {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
 }
 
 .detail-text.hold {
@@ -804,10 +847,11 @@ h2 {
 
 .match-score {
   text-align: center;
-  padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  border-radius: 16px;
   color: white;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
 }
 
 .score-value {
@@ -866,10 +910,11 @@ h2 {
 
 .match-fill {
   flex: 1;
-  height: 8px;
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  border-radius: 4px;
-  transition: width 0.3s;
+  height: 10px;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  border-radius: 8px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .match-percentage {
@@ -909,22 +954,36 @@ h2 {
 }
 
 .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.3px;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .btn-secondary {
-  background: #1976d2;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
 }
 
-.btn-secondary:hover {
-  background: #1565c0;
+.btn-secondary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .modal-overlay {
@@ -933,22 +992,42 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 2rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 900px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  max-width: 950px;
   max-height: 90vh;
   overflow-y: auto;
   width: 100%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {
@@ -987,9 +1066,14 @@ h2 {
 }
 
 .detail-section h3 {
-  color: #1976d2;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .detail-grid {
@@ -1022,10 +1106,17 @@ h2 {
 
 .score-card {
   text-align: center;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  border-radius: 8px;
+  padding: 2rem;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  border-radius: 16px;
   color: white;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.score-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
 }
 
 .score-value-large {

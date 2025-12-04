@@ -4,15 +4,6 @@
       <button @click="$router.push('/job-descriptions')" class="btn-back">← Back to Job Descriptions</button>
     </div>
 
-    <!-- Full Screen Loader -->
-    <div v-if="uploading" class="full-screen-loader">
-      <div class="loader-content">
-        <div class="spinner"></div>
-        <p class="loader-text">Processing Resumes...</p>
-        <p class="loader-subtext">Please wait while we upload and parse your resumes</p>
-      </div>
-    </div>
-
     <div v-if="loading" class="loading">Loading...</div>
     <div v-else-if="error" class="error-message">{{ error }}</div>
     <div v-else-if="jobDescription" class="content">
@@ -169,7 +160,7 @@
                 <div v-if="candidate.interviewer_status && candidate.interviewer_status !== 'pending'" class="interviewer-status">
                   <span class="status-label">Interviewer Decision:</span>
                   <span :class="['status-badge-small', 'interviewer-' + candidate.interviewer_status]">
-                    {{ candidate.interviewer_status }}
+                    {{ candidate.interviewer_status.replace(/_/g, ' ') }}
                   </span>
                 </div>
               </div>
@@ -883,13 +874,15 @@
 <script>
 import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
+import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
 
 export default {
   name: 'JobDetailPage',
   setup() {
     const { hasWriteAccess, user, hasRole } = useAuth();
-    return { hasWriteAccess, user, hasRole };
+    const { showLoader, hideLoader } = useLoader();
+    return { hasWriteAccess, user, hasRole, showLoader, hideLoader };
   },
   data() {
     return {
@@ -972,6 +965,7 @@ export default {
     async fetchJobDescription() {
       this.loading = true;
       this.error = null;
+      this.showLoader('Loading Job Details', 'Fetching job description...');
       try {
         const response = await axios.get(`${API_BASE_URL}/job-descriptions/${this.$route.params.id}`);
         if (response.data.success) {
@@ -986,6 +980,7 @@ export default {
         this.error = 'Failed to fetch job description. Please try again.';
       } finally {
         this.loading = false;
+        this.hideLoader();
       }
     },
     async fetchExistingCandidateLink() {
@@ -1036,6 +1031,7 @@ export default {
     },
     async fetchCandidates() {
       this.loadingCandidates = true;
+      this.showLoader('Loading Candidates', 'Fetching candidate evaluations...');
       try {
         const jobId = this.$route.params.id;
         const params = new URLSearchParams();
@@ -1064,6 +1060,7 @@ export default {
         console.error('Error fetching candidates:', error);
       } finally {
         this.loadingCandidates = false;
+        this.hideLoader();
       }
     },
     triggerFileInput() {
@@ -1144,6 +1141,16 @@ export default {
 
       this.uploading = true;
       this.uploadResults = [];
+      
+      const fileCount = this.selectedFiles.length;
+      const message = fileCount === 1 
+        ? 'Processing Resume' 
+        : `Processing ${fileCount} Resumes`;
+      const subMessage = fileCount === 1
+        ? 'Please wait while we upload and parse your resume'
+        : `Processing ${fileCount} resumes. This may take a few moments...`;
+      
+      this.showLoader(message, subMessage);
 
       try {
         const formData = new FormData();
@@ -1213,6 +1220,7 @@ export default {
         });
       } finally {
         this.uploading = false;
+        this.hideLoader();
       }
     },
     async downloadResume(resumeId, candidate = null) {
@@ -1864,55 +1872,6 @@ export default {
 .job-detail-page.processing {
   opacity: 0.5;
   pointer-events: none;
-}
-
-.full-screen-loader {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  backdrop-filter: blur(2px);
-}
-
-.loader-content {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.spinner {
-  width: 60px;
-  height: 60px;
-  border: 5px solid #e0e0e0;
-  border-top: 5px solid #1976d2;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loader-text {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
-.loader-subtext {
-  font-size: 1rem;
-  color: #666;
-  margin: 0;
 }
 
 .btn-back {

@@ -392,8 +392,11 @@ export default {
 }
 
 .page-header h1 {
-  color: #333;
-  margin-bottom: 0.5rem;
+  color: #1a202c;
+  margin-bottom: 0.75rem;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
@@ -402,11 +405,13 @@ export default {
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
   margin-bottom: 2rem;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .upload-card h2,
@@ -748,13 +753,14 @@ export default {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
 }
 
 .btn-secondary {

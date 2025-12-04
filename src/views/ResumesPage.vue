@@ -183,9 +183,14 @@
 <script>
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { useLoader } from '../composables/useLoader';
 
 export default {
   name: 'ResumesPage',
+  setup() {
+    const { showLoader, hideLoader } = useLoader();
+    return { showLoader, hideLoader };
+  },
   data() {
     return {
       resumes: [],
@@ -202,6 +207,7 @@ export default {
     async fetchResumes() {
       this.loading = true;
       this.error = null;
+      this.showLoader('Loading Resumes', 'Fetching resume database...');
       try {
         const response = await axios.get(`${API_BASE_URL}/resumes`);
         if (response.data.success) {
@@ -212,6 +218,7 @@ export default {
         this.error = 'Failed to fetch resumes. Please try again.';
       } finally {
         this.loading = false;
+        this.hideLoader();
       }
     },
     async searchResumes() {
@@ -222,6 +229,7 @@ export default {
 
       this.loading = true;
       this.error = null;
+      this.showLoader('Searching Resumes', `Searching for "${this.searchQuery}"...`);
       try {
         const response = await axios.get(`${API_BASE_URL}/resumes/search/${encodeURIComponent(this.searchQuery)}`);
         if (response.data.success) {
@@ -232,6 +240,7 @@ export default {
         this.error = 'Failed to search resumes. Please try again.';
       } finally {
         this.loading = false;
+        this.hideLoader();
       }
     },
     viewDetails(resume) {
@@ -332,9 +341,17 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
+}
+
+.page-header h2 {
+  color: #1a202c;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0;
 }
 
 .header-actions {
@@ -344,46 +361,62 @@ export default {
 }
 
 .search-input {
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 0.875rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 1rem;
-  min-width: 250px;
+  min-width: 280px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
 }
 
 .loading, .error-message, .empty-state {
   text-align: center;
-  padding: 3rem;
-  color: #666;
+  padding: 4rem 2rem;
+  color: #718096;
+  font-size: 1.1rem;
 }
 
 .error-message {
-  color: #f44336;
+  color: #e53e3e;
+  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+  border-radius: 12px;
+  border-left: 4px solid #e53e3e;
+  font-weight: 500;
 }
 
 .resumes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .resumes-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .resume-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .resume-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
 }
 
 .card-header {
@@ -402,19 +435,23 @@ export default {
 }
 
 .card-header h3 {
-  color: #333;
-  font-size: 1.25rem;
+  color: #1a202c;
+  font-size: 1.35rem;
   margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .duplicate-badge {
-  background: #ff9800;
+  background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(237, 137, 54, 0.3);
 }
 
 
@@ -440,13 +477,14 @@ export default {
 }
 
 .experience-badge {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.85rem;
   display: inline-block;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .info-section {
@@ -463,11 +501,13 @@ export default {
 }
 
 .tag {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  background: linear-gradient(135deg, #e6edff 0%, #d6e2ff 100%);
+  color: #4299e1;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
   font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid rgba(102, 126, 234, 0.2);
 }
 
 .experience-list, .education-list {
@@ -522,19 +562,23 @@ export default {
 
 .view-details-btn {
   width: 100%;
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #1976d2;
+  margin-top: 1.25rem;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
-  font-weight: 500;
-  transition: background 0.3s;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
+  letter-spacing: 0.3px;
 }
 
 .view-details-btn:hover {
-  background: #1565c0;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
 }
 
 .modal-overlay {
@@ -543,22 +587,42 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 2rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 800px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  max-width: 850px;
   max-height: 90vh;
   overflow-y: auto;
   width: 100%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {
@@ -597,9 +661,14 @@ export default {
 }
 
 .detail-section h3 {
-  color: #1976d2;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .detail-grid {
@@ -631,9 +700,16 @@ export default {
 }
 
 .exp-detail, .edu-detail {
-  padding: 1rem;
-  background: #f9f9f9;
-  border-radius: 6px;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.exp-detail:hover, .edu-detail:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .exp-detail h4, .edu-detail h4 {

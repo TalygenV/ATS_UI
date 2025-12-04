@@ -184,13 +184,15 @@
 <script>
 import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
+import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
 
 export default {
   name: 'ResumeDetailPage',
   setup() {
     const { hasWriteAccess } = useAuth();
-    return { hasWriteAccess };
+    const { showLoader, hideLoader } = useLoader();
+    return { hasWriteAccess, showLoader, hideLoader };
   },
   data() {
     return {
@@ -219,6 +221,7 @@ export default {
     async fetchResumeDetail() {
       this.loading = true;
       this.error = null;
+      this.showLoader('Loading Resume Details', 'Fetching candidate information...');
       try {
         const evaluationId = this.$route.params.evaluationId;
         console.log('📋 Fetching resume detail for evaluation ID:', evaluationId);
@@ -227,6 +230,7 @@ export default {
         if (!evaluationId) {
           this.error = 'Evaluation ID is missing from the URL.';
           this.loading = false;
+          this.hideLoader();
           return;
         }
         
@@ -300,6 +304,7 @@ export default {
         }
       } finally {
         this.loading = false;
+        this.hideLoader();
       }
     },
     processEvaluationData(responseData) {
@@ -351,6 +356,7 @@ export default {
       }
     },
     async updateStatus() {
+      this.showLoader('Updating Status', 'Saving candidate status...');
       try {
         const response = await axios.patch(
           `${API_BASE_URL}/evaluations/${this.$route.params.evaluationId}/status`,
@@ -362,12 +368,16 @@ export default {
       } catch (error) {
         console.error('Error updating status:', error);
         alert('Failed to update status. Please try again.');
+      } finally {
+        this.hideLoader();
       }
     },
     async downloadResume() {
+      this.showLoader('Downloading Resume', 'Preparing file download...');
       try {
         if (!this.resume || !this.resume.id) {
           alert('Resume file not available for download.');
+          this.hideLoader();
           return;
         }
         const resumeId = this.resume.id;
@@ -417,6 +427,8 @@ export default {
       } catch (error) {
         console.error('Error downloading resume:', error);
         alert('Failed to download resume. Please try again.');
+      } finally {
+        this.hideLoader();
       }
     },
     goBack() {
@@ -480,15 +492,16 @@ export default {
 }
 
 .header-card {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
-  border-radius: 12px;
-  padding: 2rem;
+  border-radius: 24px;
+  padding: 2.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 2rem;
+  box-shadow: 0 8px 30px rgba(66, 153, 225, 0.3);
 }
 
 .header-content {
@@ -536,10 +549,12 @@ export default {
 .analysis-card,
 .resume-info-card,
 .job-description-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .scores-card h2,
@@ -559,10 +574,17 @@ export default {
 
 .score-card {
   text-align: center;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  border-radius: 8px;
+  padding: 2rem;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  border-radius: 16px;
   color: white;
+  box-shadow: 0 4px 20px rgba(66, 153, 225, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.score-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(66, 153, 225, 0.4);
 }
 
 .score-value {
@@ -596,9 +618,14 @@ export default {
 }
 
 .analysis-section h3 {
-  color: #1976d2;
-  margin: 0 0 1rem 0;
-  font-size: 1.2rem;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 1.25rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .analysis-content {
@@ -643,9 +670,14 @@ export default {
 }
 
 .info-section h3 {
-  color: #1976d2;
-  margin: 0 0 1rem 0;
-  font-size: 1.2rem;
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 1.25rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .summary-text {
@@ -661,11 +693,13 @@ export default {
 }
 
 .tag {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #e6edff 0%, #d6e2ff 100%);
+  color: #4299e1;
+  padding: 0.5rem 1.25rem;
   border-radius: 20px;
   font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid rgba(102, 126, 234, 0.2);
 }
 
 .experience-list,
@@ -677,9 +711,17 @@ export default {
 
 .experience-item,
 .education-item {
-  padding: 1.5rem;
-  background: #f9f9f9;
-  border-radius: 8px;
+  padding: 1.75rem;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.experience-item:hover,
+.education-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .experience-item h4,
