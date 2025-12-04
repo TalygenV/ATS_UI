@@ -976,12 +976,28 @@ export default {
         const response = await axios.get(`${API_BASE_URL}/job-descriptions/${this.$route.params.id}`);
         if (response.data.success) {
           this.jobDescription = response.data.data;
+          // Fetch existing candidate link after job description is loaded
+          if (this.hasWriteAccess) {
+            this.fetchExistingCandidateLink();
+          }
         }
       } catch (error) {
         console.error('Error fetching job description:', error);
         this.error = 'Failed to fetch job description. Please try again.';
       } finally {
         this.loading = false;
+      }
+    },
+    async fetchExistingCandidateLink() {
+      if (!this.jobDescription || !this.jobDescription.id) return;
+      try {
+        const response = await axios.get(`${API_BASE_URL}/candidate-links/job/${this.jobDescription.id}`);
+        if (response.data.success && response.data.data && response.data.data.url) {
+          this.candidateLinkUrl = response.data.data.url;
+        }
+      } catch (error) {
+        // Silently fail - link might not exist yet
+        console.log('No existing candidate link found for this job post');
       }
     },
     async generateCandidateLink() {

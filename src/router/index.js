@@ -9,6 +9,7 @@ import LoginPage from '../views/LoginPage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
 import TalygenFilesPage from '../views/TalygenFilesPage.vue';
 import CandidateLinkPage from '../views/CandidateLinkPage.vue';
+import InterviewBookingSuccess from '../views/InterviewBookingSuccess.vue';
 import { useAuth } from '../composables/useAuth';
 
 const routes = [
@@ -76,6 +77,12 @@ const routes = [
     path: '/candidate/:token',
     name: 'CandidateLink',
     component: CandidateLinkPage,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/interview-booking-success',
+    name: 'InterviewBookingSuccess',
+    component: InterviewBookingSuccess,
     meta: { requiresAuth: false }
   },
   {

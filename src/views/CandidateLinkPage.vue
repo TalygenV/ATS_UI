@@ -224,11 +224,25 @@ export default {
 
       try {
         const token = this.$route.params.token;
-        await axios.post(`${API_BASE_URL}/candidate-links/${token}/book-slot`, {
+        const response = await axios.post(`${API_BASE_URL}/candidate-links/${token}/book-slot`, {
           slot_id: this.selectedSlotId,
           evaluation_id: this.result.evaluation_id
         });
-        alert('Your interview slot has been booked. A confirmation email will be sent shortly.');
+
+        if (response.data.success) {
+          // Get the selected slot details
+          const selectedSlot = this.result.available_slots.find(s => s.id === this.selectedSlotId);
+          
+          // Redirect to success screen with booking details
+          this.$router.push({
+            name: 'InterviewBookingSuccess',
+            query: {
+              jobTitle: this.job?.title || '',
+              interviewDate: selectedSlot?.start_time || '',
+              interviewerName: selectedSlot?.interviewer?.full_name || selectedSlot?.interviewer?.email || ''
+            }
+          });
+        }
       } catch (err) {
         console.error('Error booking slot:', err);
         this.error =
