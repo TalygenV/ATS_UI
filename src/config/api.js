@@ -4,10 +4,10 @@
 
 const getApiBaseUrl = () => {
   // Check if we're in development (Vite dev server)
-  if (import.meta.env.DEV) {
+ // if (import.meta.env.DEV) {
     // Use proxy in development
-    return '/api';
-  }
+   // return '/api';
+  //}
   
   // In production, use the full API URL
   // You can override this with VITE_API_URL environment variable
