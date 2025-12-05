@@ -213,14 +213,28 @@ export default {
           this.result = response.data.data;
           this.submitted = true;
         } else {
-          this.error = response.data.error || 'Submission failed.';
+          const errorMsg = response.data.error || 'Submission failed.';
+          // Check for the specific "already applied" error
+          if (errorMsg.includes('already applied within the last 6 months')) {
+            alert(errorMsg);
+            return;
+          }
+          this.error = errorMsg;
         }
       } catch (err) {
         console.error('Error submitting application:', err);
-        this.error =
+        const errorMessage =
           err.response?.data?.message ||
           err.response?.data?.error ||
           'Failed to submit application.';
+        
+        // Check for the specific "already applied" error
+        if (errorMessage.includes('already applied within the last 6 months')) {
+          alert(errorMessage);
+          return;
+        }
+        
+        this.error = errorMessage;
       } finally {
         this.submitting = false;
         this.hideLoader();

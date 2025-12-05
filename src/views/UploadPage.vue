@@ -364,11 +364,22 @@ export default {
         }
       } catch (error) {
         console.error('Upload error:', error);
+        
+        // Check for the specific "already applied" error
+        const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Upload failed';
+        
+        if (errorMessage.includes('already applied within the last 6 months')) {
+          // Show alert instead of treating as failure
+          alert(errorMessage);
+          return;
+        }
+        
+        // Handle other errors normally
         this.selectedFiles.forEach(file => {
           this.uploadResults.push({
             fileName: file.name,
             success: false,
-            error: error.response?.data?.message || error.message || 'Upload failed'
+            error: errorMessage
           });
         });
       } finally {

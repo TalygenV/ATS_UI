@@ -170,7 +170,10 @@
                 </div>
               </div>
               <div class="status-badge-top">
-                <span v-if="candidate.isDuplicate" class="duplicate-badge">Duplicate ({{ candidate.duplicateCount }})</span>
+                <span v-if="candidate.isVersion || candidate.isDuplicate" class="version-badge">
+                  Version {{ candidate.versionNumber || 1 }}
+                  <span v-if="candidate.totalVersions > 1" class="version-count">({{ candidate.totalVersions }} total)</span>
+                </span>
                 <span :class="['status-badge', candidate.status]">{{ candidate.status }}</span>
               </div>
             </div>
@@ -250,6 +253,14 @@
                 </button>
                 <button @click="downloadResume(candidate.resume_id, candidate)" class="btn btn-icon" title="Download Resume">
                   ⬇️
+                </button>
+                <button 
+                  v-if="candidate.isVersion || candidate.isDuplicate" 
+                  @click="viewVersionHistory(candidate)" 
+                  class="btn btn-version-history"
+                  title="View Version History"
+                >
+                  📜 Versions
                 </button>
                 <button @click="viewResumeDetail(candidate)" class="btn btn-primary-small">View Details</button>
               </div>
@@ -868,6 +879,102 @@
         </div>
       </div>
     </div>
+
+    <!-- Version History Modal -->
+    <div v-if="showVersionHistoryModal" class="modal-overlay" @click="closeVersionHistoryModal">
+      <div class="modal-content version-history-modal" @click.stop>
+        <div class="modal-header">
+          <h2>Resume Version History</h2>
+          <button @click="closeVersionHistoryModal" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="selectedCandidateForVersions" class="candidate-info-header">
+            <h3>{{ selectedCandidateForVersions.candidate_name || selectedCandidateForVersions.resume?.name || 'Unknown Candidate' }}</h3>
+            <p class="candidate-email">{{ selectedCandidateForVersions.email || selectedCandidateForVersions.resume?.email || 'N/A' }}</p>
+          </div>
+          
+          <div v-if="loadingVersionHistory" class="loading">Loading version history...</div>
+          <div v-else-if="versionHistory.length === 0" class="empty-state">
+            <p>No version history found.</p>
+          </div>
+          <div v-else class="version-list">
+            <div 
+              v-for="version in versionHistory" 
+              :key="version.resume_id" 
+              class="version-item"
+              :class="{ 'current-version': version.version === (selectedCandidateForVersions?.versionNumber || 1) }"
+            >
+              <div class="version-header">
+                <div class="version-number-badge">
+                  <span class="version-label">Version</span>
+                  <span class="version-number">{{ version.version }}</span>
+                </div>
+                <span class="version-date">{{ formatDateTime(version.uploaded_on) }}</span>
+              </div>
+              
+              <div class="version-details">
+                <div class="version-info">
+                  <div class="info-row">
+                    <span class="info-label">File:</span>
+                    <span class="info-value">{{ version.file_name }}</span>
+                  </div>
+                  <div v-if="version.results" class="version-results">
+                    <div class="results-section">
+                      <h4>Extracted Results:</h4>
+                      <div v-if="version.results.name" class="result-item">
+                        <strong>Name:</strong> {{ version.results.name }}
+                      </div>
+                      <div v-if="version.results.email" class="result-item">
+                        <strong>Email:</strong> {{ version.results.email }}
+                      </div>
+                      <div v-if="version.results.phone" class="result-item">
+                        <strong>Phone:</strong> {{ version.results.phone }}
+                      </div>
+                      <div v-if="version.results.location" class="result-item">
+                        <strong>Location:</strong> {{ version.results.location }}
+                      </div>
+                      <div v-if="version.results.total_experience" class="result-item">
+                        <strong>Total Experience:</strong> {{ formatExperience(version.results.total_experience) }}
+                      </div>
+                      <div v-if="version.results.skills && version.results.skills.length > 0" class="result-item">
+                        <strong>Skills:</strong>
+                        <div class="skills-tags">
+                          <span v-for="(skill, idx) in version.results.skills" :key="idx" class="skill-tag">
+                            {{ skill }}
+                          </span>
+                        </div>
+                      </div>
+                      <div v-if="version.results.experience && version.results.experience.length > 0" class="result-item">
+                        <strong>Experience:</strong>
+                        <ul class="experience-list">
+                          <li v-for="(exp, idx) in version.results.experience" :key="idx">
+                            {{ exp.position || exp.title || 'Position' }} at {{ exp.company || 'Company' }}
+                            <span v-if="exp.duration"> ({{ exp.duration }})</span>
+                          </li>
+                        </ul>
+                      </div>
+                      <div v-if="version.results.education && version.results.education.length > 0" class="result-item">
+                        <strong>Education:</strong>
+                        <ul class="education-list">
+                          <li v-for="(edu, idx) in version.results.education" :key="idx">
+                            {{ edu.degree || 'Degree' }}
+                            <span v-if="edu.institution"> from {{ edu.institution }}</span>
+                            <span v-if="edu.year"> ({{ edu.year }})</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="closeVersionHistoryModal" class="btn btn-primary">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -943,7 +1050,11 @@ export default {
         reason: ''
       },
       candidateLinkUrl: '',
-      candidateLinkLoading: false
+      candidateLinkLoading: false,
+      showVersionHistoryModal: false,
+      versionHistory: [],
+      loadingVersionHistory: false,
+      selectedCandidateForVersions: null
     };
   },
   computed: {
@@ -1211,11 +1322,22 @@ export default {
         }
       } catch (error) {
         console.error('Upload error:', error);
+        
+        // Check for the specific "already applied" error
+        const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Upload failed';
+        
+        if (errorMessage.includes('already applied within the last 6 months')) {
+          // Show alert instead of treating as failure
+          alert(errorMessage);
+          return;
+        }
+        
+        // Handle other errors normally
         this.selectedFiles.forEach(file => {
           this.uploadResults.push({
             fileName: file.name,
             success: false,
-            error: error.response?.data?.message || error.message || 'Upload failed'
+            error: errorMessage
           });
         });
       } finally {
@@ -1356,6 +1478,44 @@ export default {
         
         alert(errorMessage);
       }
+    },
+    async viewVersionHistory(candidate) {
+      this.showVersionHistoryModal = true;
+      this.selectedCandidateForVersions = candidate;
+      this.versionHistory = [];
+      this.loadingVersionHistory = true;
+      
+      try {
+        const resumeId = candidate.resume_id || candidate.resume?.id;
+        if (!resumeId) {
+          alert('Resume ID not found. Cannot fetch version history.');
+          this.loadingVersionHistory = false;
+          return;
+        }
+        
+        const token = localStorage.getItem('auth_token');
+        const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/versions`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.data && response.data.success) {
+          this.versionHistory = response.data.data || [];
+        } else {
+          alert(response.data?.error || 'Failed to fetch version history.');
+        }
+      } catch (error) {
+        console.error('Error fetching version history:', error);
+        alert(error.response?.data?.error || 'Failed to fetch version history.');
+      } finally {
+        this.loadingVersionHistory = false;
+      }
+    },
+    closeVersionHistoryModal() {
+      this.showVersionHistoryModal = false;
+      this.versionHistory = [];
+      this.selectedCandidateForVersions = null;
     },
     async viewResumeDetail(candidate) {
       this.showResumeModal = true;
@@ -2830,6 +2990,192 @@ export default {
   background: #fff3e0;
   color: #e65100;
   margin-right: 0.5rem;
+}
+
+.version-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e3f2fd;
+  color: #1976d2;
+  margin-right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.version-count {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.btn-version-history {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #90caf9;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-version-history:hover {
+  background: #bbdefb;
+  border-color: #64b5f6;
+}
+
+.version-history-modal {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.candidate-info-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.candidate-info-header h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.candidate-info-header .candidate-email {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.version-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fff;
+  transition: all 0.2s;
+}
+
+.version-item.current-version {
+  border-color: #1976d2;
+  background: #e3f2fd;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.1);
+}
+
+.version-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.version-number-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #1976d2;
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.version-label {
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+.version-number {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.version-date {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.version-details {
+  margin-top: 1rem;
+}
+
+.version-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.info-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #666;
+  min-width: 80px;
+}
+
+.info-value {
+  color: #333;
+}
+
+.version-results {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.results-section h4 {
+  margin: 0 0 0.75rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.result-item {
+  margin-bottom: 0.75rem;
+  color: #555;
+}
+
+.result-item strong {
+  color: #333;
+  margin-right: 0.5rem;
+}
+
+.skills-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.skill-tag {
+  padding: 0.25rem 0.75rem;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.experience-list,
+.education-list {
+  margin: 0.5rem 0 0 1.5rem;
+  padding: 0;
+  list-style-type: disc;
+}
+
+.experience-list li,
+.education-list li {
+  margin-bottom: 0.25rem;
+  color: #555;
 }
 
 .card-footer-section {
