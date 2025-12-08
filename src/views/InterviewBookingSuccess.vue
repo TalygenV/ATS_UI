@@ -22,10 +22,10 @@
           <strong>Interview Date & Time:</strong>
           <span>{{ formatDateTime(bookingDetails.interviewDate) }}</span>
         </div>
-        <div v-if="bookingDetails.interviewerName" class="detail-item">
+        <!-- <div v-if="bookingDetails.interviewerName" class="detail-item">
           <strong>Interviewer:</strong>
           <span>{{ bookingDetails.interviewerName }}</span>
-        </div>
+        </div> -->
       </div>
 
       <!-- <div class="actions">

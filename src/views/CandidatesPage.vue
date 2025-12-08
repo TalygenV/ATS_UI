@@ -60,6 +60,18 @@
               {{ candidate.interviewer_status }}
             </span>
           </div>
+          <div v-if="hasWriteAccess && candidate.totalVersions > 1" class="info-row version-info">
+            <span class="label">Versions:</span>
+            <span class="value">
+              <span class="version-badge">v{{ candidate.versionNumber }} of {{ candidate.totalVersions }}</span>
+            </span>
+          </div>
+          <div v-if="hasWriteAccess && candidate.totalVersions === 1 && candidate.versionNumber" class="info-row version-info">
+            <span class="label">Version:</span>
+            <span class="value">
+              <span class="version-badge">v{{ candidate.versionNumber }}</span>
+            </span>
+          </div>
           <div class="match-breakdown">
             <div class="match-item">
               <span class="match-label">Skills:</span>
@@ -98,6 +110,9 @@
             </button>
             <button v-if="candidate.hr_final_status === 'on_hold' || candidate.interviewer_status === 'on_hold'" @click="viewHoldDetails(candidate)" class="btn btn-hold">
               View Hold Details
+            </button>
+            <button v-if="hasWriteAccess && candidate.totalVersions > 1" @click="viewVersions(candidate)" class="btn btn-versions">
+              View Versions
             </button>
             <button @click="viewDetails(candidate)" class="btn btn-secondary">View Details</button>
           </div>
@@ -287,6 +302,62 @@
         </div>
       </div>
     </div>
+
+    <!-- Versions Modal -->
+    <div v-if="showVersionsModal && selectedCandidateForVersions" class="modal-overlay" @click="showVersionsModal = false">
+      <div class="modal-content versions-modal" @click.stop>
+        <div class="modal-header">
+          <h2>Resume Versions - {{ selectedCandidateForVersions.candidate_name || selectedCandidateForVersions.resume?.name || 'Unknown' }}</h2>
+          <button @click="showVersionsModal = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="loadingVersions" class="loading">Loading versions...</div>
+          <div v-else-if="versionsError" class="error-message">{{ versionsError }}</div>
+          <div v-else-if="versions.length === 0" class="empty-state">
+            <p>No versions found.</p>
+          </div>
+          <div v-else class="versions-list">
+            <div v-for="version in versions" :key="version.resume_id" class="version-item" :class="{ 'version-current': version.version === (selectedCandidateForVersions.versionNumber || 1) }">
+              <div class="version-header">
+                <div class="version-title">
+                  <span class="version-number">Version {{ version.version }}</span>
+                  <span v-if="version.version === (selectedCandidateForVersions.versionNumber || 1)" class="current-badge">Current</span>
+                </div>
+                <div class="version-date">{{ formatDateTime(version.uploaded_on) }}</div>
+              </div>
+              <div class="version-details">
+                <div class="version-info-row">
+                  <span class="version-label">File Name:</span>
+                  <span class="version-value">{{ version.file_name || 'N/A' }}</span>
+                </div>
+                <div v-if="version.results" class="version-results">
+                  <div class="version-info-row">
+                    <span class="version-label">Name:</span>
+                    <span class="version-value">{{ version.results.name || 'N/A' }}</span>
+                  </div>
+                  <div class="version-info-row">
+                    <span class="version-label">Email:</span>
+                    <span class="version-value">{{ version.results.email || 'N/A' }}</span>
+                  </div>
+                  <div v-if="version.results.phone" class="version-info-row">
+                    <span class="version-label">Phone:</span>
+                    <span class="version-value">{{ version.results.phone }}</span>
+                  </div>
+                  <div v-if="version.results.location" class="version-info-row">
+                    <span class="version-label">Location:</span>
+                    <span class="version-value">{{ version.results.location }}</span>
+                  </div>
+                  <div v-if="version.results.total_experience" class="version-info-row">
+                    <span class="version-label">Total Experience:</span>
+                    <span class="version-value">{{ version.results.total_experience }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -315,6 +386,11 @@ export default {
       showAssignModal: false,
       showHRDecisionModal: false,
       showHoldModal: false,
+      showVersionsModal: false,
+      selectedCandidateForVersions: null,
+      versions: [],
+      loadingVersions: false,
+      versionsError: null,
       interviewers: [],
       assignmentData: {
         evaluation_id: null,
@@ -420,6 +496,14 @@ export default {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    },
+    formatTime(timeString) {
+      if (!timeString) return 'N/A';
+      const date = new Date(timeString);
+      return date.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit'
       });
@@ -559,6 +643,38 @@ export default {
     viewHoldDetails(candidate) {
       this.holdCandidate = candidate;
       this.showHoldModal = true;
+    },
+    async viewVersions(candidate) {
+      this.selectedCandidateForVersions = candidate;
+      this.showVersionsModal = true;
+      this.loadingVersions = true;
+      this.versionsError = null;
+      this.versions = [];
+
+      try {
+        // Get the resume ID from the candidate
+        // The resume_id is directly on the candidate object from evaluations
+        const resumeId = candidate.resume_id || candidate.resume?.id;
+        if (!resumeId) {
+          this.versionsError = 'Resume ID not found';
+          this.loadingVersions = false;
+          return;
+        }
+
+        // Fetch versions from the API
+        // Use the resume ID to get all versions
+        const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/versions`);
+        if (response.data.success) {
+          this.versions = response.data.data || [];
+        } else {
+          this.versionsError = 'Failed to fetch versions';
+        }
+      } catch (error) {
+        console.error('Error fetching versions:', error);
+        this.versionsError = 'Failed to load versions. Please try again.';
+      } finally {
+        this.loadingVersions = false;
+      }
     }
   }
 };
@@ -1141,6 +1257,127 @@ h2 {
 .detail-text.rejection {
   background: #ffebee;
   color: #c62828;
+}
+
+.version-info {
+  margin-top: 0.5rem;
+}
+
+.version-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-versions {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-versions:hover:not(:disabled) {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+}
+
+.versions-modal {
+  max-width: 800px;
+}
+
+.versions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.version-item {
+  background: #f9f9f9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.version-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.version-item.version-current {
+  background: linear-gradient(135deg, #e8f0fe 0%, #f3e8ff 100%);
+  border-color: #667eea;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.version-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.version-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.version-number {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.current-badge {
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.version-date {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.version-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.version-info-row {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.version-label {
+  font-weight: 500;
+  color: #666;
+  min-width: 100px;
+}
+
+.version-value {
+  color: #333;
+  flex: 1;
+}
+
+.version-results {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e2e8f0;
 }
 </style>
 

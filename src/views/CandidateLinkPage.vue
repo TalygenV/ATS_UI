@@ -10,7 +10,7 @@
     </div>
 
     <div class="card" v-else-if="link && job">
-      <h2>Interview Pre‑screen - {{ job.title }}</h2>
+      <h2> {{ job.title }}</h2>
       <p class="subtitle">
         Please upload your resume and answer the questions below to continue the interview process.
       </p>
