@@ -620,7 +620,7 @@ export default {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
+} 
 
 .error-text {
   color: #f44336;
