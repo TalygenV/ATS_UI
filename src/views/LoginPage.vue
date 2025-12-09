@@ -1,5 +1,5 @@
 <template>
-  <div class="main-wrapper bg-white">
+  <div class="w-100 bg-white">
          <div class="overflow-hidden p-3 acc-vh">
             <!-- start row -->
             <div class="row vh-100 w-100 g-0">
