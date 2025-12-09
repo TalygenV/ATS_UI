@@ -35,7 +35,7 @@
         </div>
       </div>
     </nav>
-    <main class="main-content">
+    <main class="w-100">
       <router-view />
     </main>
   </div>
