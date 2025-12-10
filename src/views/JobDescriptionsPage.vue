@@ -44,6 +44,13 @@
           <div class="resume-count-preview">
             <strong>Parsed Resumes:</strong>
             <span class="resume-count">{{ job.resume_count || 0 }} resume(s)</span>
+          </div >
+          
+          <div class="resume-count-preview"> 
+             <strong> Status :</strong>
+              <span data-v-368fdc2f="" class="status-badge accepted">accepted {{job.accepted || 0}}</span>
+            <span data-v-368fdc2f="" class="status-badge pending">pending {{job.pending || 0}}</span>
+            <span data-v-368fdc2f="" class="status-badge rejected">rejected {{job.rejected || 0}}</span>
           </div>
         </div>
         <div class="card-footer">

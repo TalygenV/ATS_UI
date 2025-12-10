@@ -8,15 +8,17 @@
     <div v-else-if="error" class="error-message">{{ error }}</div>
     <div v-else-if="jobDescription" class="content">
           <!-- <span data-v-368fdc2f="" class="status-badge ">accepted 5</span> -->
-           <span :class="['status-badge', canditateAcceptCount.key]">{{ canditateAcceptCount.key }} {{ canditateAcceptCount.value }}</span>
-               <span :class="['status-badge', canditatePendingCount.key]">{{ canditatePendingCount.key }} {{ canditatePendingCount.value }}</span>
-                   <span :class="['status-badge', canditateRejectedCount.key]">{{ canditateRejectedCount.key }} {{ canditateRejectedCount.value }}</span>
-                    
+          
                        <!-- <span :class="['status-badge', canditateOnholdCount.key]">{{ canditateOnholdCount.key }} {{ canditateOnholdCount.value }}</span>
                        <span :class="['status-badge', canditateSelectedCount.key]">{{ canditateSelectedCount.key }} {{ canditateSelectedCount.value }}</span> -->
 
       <!-- Job Description Info -->
       <div class="job-info-card">
+           <div class="mb-3">
+           <span :class="['status-badge', canditateAcceptCount.key]">{{ canditateAcceptCount.key }} {{ canditateAcceptCount.value }}</span>
+               <span :class="['status-badge', canditatePendingCount.key]">{{ canditatePendingCount.key }} {{ canditatePendingCount.value }}</span>
+                   <span :class="['status-badge', canditateRejectedCount.key]">{{ canditateRejectedCount.key }} {{ canditateRejectedCount.value }}</span>
+          </div>  
         <div class="card-header">
           <h2>{{ jobDescription.title }}</h2>
           <div v-if="hasWriteAccess" class="header-actions">
