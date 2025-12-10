@@ -214,25 +214,27 @@ export default {
           this.submitted = true;
         } else {
           const errorMsg = response.data.error || 'Submission failed.';
+           alert(errorMsg);
           // Check for the specific "already applied" error
-          if (errorMsg.includes('already applied within the last 6 months')) {
-            alert(errorMsg);
-            return;
-          }
-          this.error = errorMsg;
+          // if (errorMsg.includes('already applied within the last 6 months')) {
+           
+          //   return;
+          // }
+          // this.error = errorMsg;
         }
       } catch (err) {
-        console.error('Error submitting application:', err);
-        const errorMessage =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          'Failed to submit application.';
-        
+        // console.error('Error submitting application:', err);
+        // const errorMessage =
+        //   err.response?.data?.message ||
+        //   err.response?.data?.error ||
+        //   'Failed to submit application.';
+         const errorMessage =  'Failed to submit application.';
         // Check for the specific "already applied" error
-        if (errorMessage.includes('already applied within the last 6 months')) {
-          alert(errorMessage);
-          return;
-        }
+         alert(errorMessage);
+        // if (errorMessage.includes('already applied within the last 6 months')) {
+         
+        //   return;
+        // }
         
         this.error = errorMessage;
       } finally {

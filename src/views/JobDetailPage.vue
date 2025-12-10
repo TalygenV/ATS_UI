@@ -7,6 +7,14 @@
     <div v-if="loading" class="loading">Loading...</div>
     <div v-else-if="error" class="error-message">{{ error }}</div>
     <div v-else-if="jobDescription" class="content">
+          <!-- <span data-v-368fdc2f="" class="status-badge ">accepted 5</span> -->
+           <span :class="['status-badge', canditateAcceptCount.key]">{{ canditateAcceptCount.key }} {{ canditateAcceptCount.value }}</span>
+               <span :class="['status-badge', canditatePendingCount.key]">{{ canditatePendingCount.key }} {{ canditatePendingCount.value }}</span>
+                   <span :class="['status-badge', canditateRejectedCount.key]">{{ canditateRejectedCount.key }} {{ canditateRejectedCount.value }}</span>
+                    
+                       <!-- <span :class="['status-badge', canditateOnholdCount.key]">{{ canditateOnholdCount.key }} {{ canditateOnholdCount.value }}</span>
+                       <span :class="['status-badge', canditateSelectedCount.key]">{{ canditateSelectedCount.key }} {{ canditateSelectedCount.value }}</span> -->
+
       <!-- Job Description Info -->
       <div class="job-info-card">
         <div class="card-header">
@@ -33,6 +41,7 @@
           </div>
         </div>
         <div class="card-body">
+      
           <div class="info-section">
             <h3>Job Description</h3>
             <p class="description-text">{{ jobDescription.description }}</p>
@@ -111,6 +120,15 @@
             </div>
           </div>
         </div>
+
+        <div v-if="uploadResults.length > 0" > 
+          <h4>Detailed Results</h4>
+            <div v-for="(result, index) in uploadResults" :key="index" class="upload-result-item" :class="{ 'success': result.success, 'error': !result.success }">
+              <p class="result-file-name mb-0"> File Name : {{ result.fileName }}</p>
+              <span v-if="result.success" class="result-success"> Message :  Uploaded Successfully</span>
+              <span v-else class="result-error"> Message : {{ result.error }}</span>
+            </div>
+          </div>
       </div>
 
       <!-- Candidates List -->
@@ -119,11 +137,15 @@
           <h3>Candidates ({{ candidates.length }})</h3>
           <div class="header-actions">
             <select v-model="statusFilter" @change="fetchCandidates" class="filter-select">
-              <option value="">All Status</option>
+              <!-- <option value="">All Status</option>
               <option value="selected">Selected</option>
               <option value="rejected">Rejected</option>
               <option value="on_hold">On Hold</option>
+              <option value="pending">Pending</option> -->
+                <option value="">All Status</option>
+              <option value="accepted">Accepted</option>
               <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
             </select>
             <select v-model="sortBy" @change="fetchCandidates" class="filter-select">
               <option value="match">Sort by Match Score</option>
@@ -1063,7 +1085,41 @@ export default {
     },
     errorCount() {
       return this.uploadResults.filter(r => !r.success).length;
-    }
+    },
+    canditateAcceptCount() {
+      return {
+           key : 'accepted',
+           value :this.candidates.filter(c => c.status === 'accepted').length
+      }
+    },
+       canditatePendingCount() {
+      return {
+           key : 'pending',
+           value :this.candidates.filter(c =>  c?.status === 'pending').length
+      }
+    },   
+     canditateRejectedCount() {
+      return {
+           key : 'rejected',
+           value :this.candidates.filter(c =>  c?.status === 'rejected').length
+      }
+    },
+    //     canditateOnholdCount() {
+    //   return {
+    //        key : 'on_hold',
+    //        value :this.candidates.filter(c => c?.interviewer_status === 'on_hold' ||  c?.status === 'on_hold').length
+    //   }
+    // },
+
+    //         canditateSelectedCount() {
+    //   return {
+    //        key : 'selected',
+    //        value :this.candidates.filter(c => c?.interviewer_status === 'selected' ||  c?.status === 'selected').length
+    //   }
+    // },
+
+ 
+ 
   },
   mounted() {
     this.fetchJobDescription();
@@ -1282,7 +1338,16 @@ export default {
               data: response.data.data
             });
           }
-        } else {
+          else {
+            this.uploadResults.push({
+              fileName: this.selectedFiles[0].name,
+              success: false,
+              error: response.data.error || 'Upload failed'
+            });
+          }
+        }
+        
+        else {
           this.selectedFiles.forEach(file => {
             formData.append('resumes', file);
           });
@@ -1315,11 +1380,11 @@ export default {
         await this.fetchCandidates();
 
         // Clear files after successful upload
-        if (this.uploadResults.every(r => r.success)) {
-          setTimeout(() => {
-            this.clearFiles();
-          }, 3000);
-        }
+        // if (this.uploadResults.every(r => r.success)) {
+        //   setTimeout(() => {
+        //     this.clearFiles();
+        //   }, 3000);
+        // }
       } catch (error) {
         console.error('Upload error:', error);
         
@@ -1341,6 +1406,9 @@ export default {
           });
         });
       } finally {
+          setTimeout(() => {
+            this.clearFiles();
+          }, 5000);
         this.uploading = false;
         this.hideLoader();
       }
@@ -1419,7 +1487,7 @@ export default {
     }
 
     // Extract the path *after* the domain (e.g., /files/DocStorage//...)
-    const urlParts = externalFileUrl.split('https://stagefilemedia.talygen.com');
+    const urlParts = externalFileUrl.split('https://appfilemedia.talygen.com');
     if (urlParts.length !== 2) {
         console.error("Invalid external file path format:", externalFileUrl);
         return;

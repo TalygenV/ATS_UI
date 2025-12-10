@@ -275,7 +275,7 @@ export default {
         const fileName = apiResponse.data.file_name || resume?.file_name || 'download.pdf';
 
         // Extract the path after the Talygen domain
-        const urlParts = externalFileUrl.split('https://stagefilemedia.talygen.com');
+        const urlParts = externalFileUrl.split('https://appfilemedia.talygen.com');
         if (urlParts.length !== 2) {
           console.error('Invalid external file path format:', externalFileUrl);
           alert('Unable to download resume file.');
