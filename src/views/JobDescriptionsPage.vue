@@ -41,6 +41,10 @@
             <strong>Assigned Interviewers:</strong>
             <span class="interviewer-count">{{ job.interviewers.length }} interviewer(s)</span>
           </div>
+          <div class="resume-count-preview">
+            <strong>Parsed Resumes:</strong>
+            <span class="resume-count">{{ job.resume_count || 0 }} resume(s)</span>
+          </div>
         </div>
         <div class="card-footer">
           <span class="date">{{ formatDate(job.created_at) }}</span>
@@ -448,6 +452,29 @@ export default {
   display: inline-block;
   background: #e3f2fd;
   color: #1976d2;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.resume-count-preview {
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.resume-count-preview strong {
+  color: #333;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.resume-count {
+  display: inline-block;
+  background: #f0fdf4;
+  color: #16a34a;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.85rem;
