@@ -1412,6 +1412,12 @@ export default {
     const externalFileUrl = apiResponse.data.file_path;
     const fileName = apiResponse.data.file_name || 'download.pdf';
 
+    // Validate that we have a valid file path
+    if (!externalFileUrl) {
+        console.error("No file path returned from API:", apiResponse.data);
+        throw new Error('Resume file path not found in API response');
+    }
+
     // Extract the path *after* the domain (e.g., /files/DocStorage//...)
     const urlParts = externalFileUrl.split('https://stagefilemedia.talygen.com');
     if (urlParts.length !== 2) {
