@@ -25,15 +25,21 @@ const routes = [
     component: RegisterPage,
     meta: { requiresAuth: true, requiresAdmin: true }
   },
-  {
-    path: '/',
-    name: 'JobDescriptions',
-    component: JobDescriptionsPage,
+  // {
+  //   path: '/allJobDescriptions',
+  //   name: 'JobDescriptions',
+  //   component: JobDescriptionsPage,
+  //   meta: { requiresAuth: true }
+  // },
+    {
+    path : '/',
+    name : 'Dashboard',
+    component : () => import('../views/Dashboard.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/job-descriptions',
-    name: 'JobDescriptionsList',
+    name: 'JobDescriptions',
     component: JobDescriptionsPage,
     meta: { requiresAuth: true }
   },
@@ -85,12 +91,13 @@ const routes = [
     component: InterviewBookingSuccess,
     meta: { requiresAuth: false }
   },
-  {
-    path: '/interviewer-dashboard',
-    name: 'InterviewerDashboard',
-    component: () => import('../views/InterviewerDashboard.vue'),
-    meta: { requiresAuth: true }
-  }
+  // {
+  //   path: '/interviewer-dashboard',
+  //   name: 'InterviewerDashboard',
+  //   component: () => import('../views/InterviewerDashboard.vue'),
+  //   meta: { requiresAuth: true }
+  // },
+
 ];
 
 const router = createRouter({

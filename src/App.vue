@@ -18,13 +18,14 @@
            <router-link :to="{ name: 'JobDescriptions' }" class="nav-link">Job Descriptions</router-link>
            <router-link v-if="user?.role !== 'Interviewer'" to="/resumes" class="nav-link">All Resumes</router-link>
            <!-- For interviewers, show a clear dashboard link for managing availability and interviews -->
-           <router-link
+           <!-- <router-link
              v-if="user?.role === 'Interviewer'"
              :to="{ name: 'InterviewerDashboard' }"
              class="nav-link"
            >
              Dashboard
-           </router-link>
+           </router-link> -->
+             <router-link  to="/" class="nav-link">Dashboard</router-link>
            
            <router-link v-if="isAdmin" to="/register" class="nav-link">Create User</router-link>
            <div class="user-info">
