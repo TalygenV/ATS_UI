@@ -1,195 +1,90 @@
 <template>
-   <!-- Global Fullscreen Loader -->
-   <Teleport to="body">
-      <div v-if="isLoading" class="global-loader">
+   <div id="app">
+     <!-- Global Fullscreen Loader -->
+     <Teleport to="body">
+       <div v-if="isLoading" class="global-loader">
          <div class="loader-content">
-            <div class="loader-spinner"></div>
-            <p class="loader-text">{{ loaderMessage }}</p>
-            <p v-if="loaderSubMessage" class="loader-subtext">{{ loaderSubMessage }}</p>
+           <div class="loader-spinner"></div>
+           <p class="loader-text">{{ loaderMessage }}</p>
+           <p v-if="loaderSubMessage" class="loader-subtext">{{ loaderSubMessage }}</p>
          </div>
-      </div>
-   </Teleport>
-   <!-- Topbar Start -->
-   <header class="navbar-header" v-if="isAuthenticated" >
-      <div class="page-container topbar-menu">
-         <div class="d-flex align-items-center gap-2">
-            <a href="javascript:;" class="logo">
-            <span class="logo-light">
-            <span class="logo-lg"><img src="../img/logo.png" alt="logo"></span>
-            <span class="logo-sm"><img src="../img/logo.png" alt="small logo"></span>
-            </span>
-            <span class="logo-dark">
-            <span class="logo-lg"><img src="../img/logo.png" alt="dark logo"></span>
-            </span>
-            </a>
-            <a id="mobile_btn" class="mobile-btn" href="#sidebar">
-            <i class="ti ti-menu-deep fs-24"></i>
-            </a>
-            <button class="sidenav-toggle-btn btn border-0 p-0" id="toggle_btn2"> 
-            <i class="ti ti-arrow-bar-to-right"></i>
-            </button> 
-            <div class="me-auto d-flex align-items-center header-search d-lg-flex d-none">
-               <div class="input-icon position-relative me-2">
-                  <input type="text" class="form-control" placeholder="Search Keyword">
-                  <span class="input-icon-addon d-inline-flex p-0 header-search-icon"><i class="ti ti-command"></i></span>
-               </div>
-            </div>
-         </div>
-         <div class="d-flex align-items-center">
-            <div class="header-item d-flex d-lg-none me-2">
-               <button class="topbar-link btn" data-bs-toggle="modal" data-bs-target="#searchModal" type="button">
-               <i class="ti ti-search fs-16"></i>
-               </button>
-            </div>
-            <div class="header-item">
-               <div class="dropdown me-2">
-                  <a href="javascript:void(0);" class="btn topbar-link btnFullscreen"><i class="ti ti-maximize"></i></a>
-               </div>
-            </div>
-            <div class="header-item d-none d-sm-flex me-2">
-               <button class="topbar-link btn topbar-link" id="light-dark-mode" type="button">
-               <i class="ti ti-moon fs-16"></i>
-               </button>
-            </div>
-            <div class="dropdown profile-dropdown d-flex align-items-center justify-content-center">
-               <a href="javascript:void(0);" class="topbar-link dropdown-toggle drop-arrow-none position-relative" data-bs-toggle="dropdown" data-bs-offset="0,22" aria-haspopup="false" aria-expanded="false">
-               <img src="../img/user-15.jpg" width="38" class="rounded-1 d-flex" alt="user">
-               <span class="online text-success"><i class="ti ti-circle-filled d-flex bg-white rounded-circle border border-1 border-white"></i></span>
-               </a>
-               <div class="dropdown-menu dropdown-menu-end dropdown-menu-md p-2">
-                  <div class="d-flex align-items-center bg-light rounded-3 p-2 mb-2">
-                     <img src="../img/user-15.jpg" class="rounded-circle" width="42" height="42" alt="Img">
-                     <div class="ms-2">
-                        <p class="fw-medium text-dark mb-0">{{ user?.full_name || user?.email }}</p>
-                        <span class="d-block fs-13">{{ user?.role }}</span>
-                     </div>
-                  </div>
-                  <button @click="handleLogout" class="dropdown-item"><i class="ti ti-user-circle me-1 align-middle"></i> Logout</button>                 
-               </div>
-            </div>
-         </div>
-      </div>
-   </header>
-   <!-- Topbar End -->
-   <!-- Sidenav Menu Start -->
-   <div class="sidebar" id="sidebar" v-if="isAuthenticated">
-      <div class="sidebar-logo">
-         <div>
-            <a href="index-2.html" class="logo logo-normal">
-            <img src="../img/logo.png" alt="Logo">
-            </a>
-            <a href="index-2.html" class="logo-small">
-            <img src="../img/logo.png" alt="Logo">
-            </a>
-            <a href="index-2.html" class="dark-logo">
-            <img src="../img/logo.png" alt="Logo">
-            </a>
-         </div>
-         <button class="sidenav-toggle-btn btn border-0 p-0 active" id="toggle_btn"> 
-         <i class="ti ti-arrow-bar-to-left"></i>
-         </button>
-         <button class="sidebar-close">
-         <i class="ti ti-x align-middle"></i>
-         </button>				               
-      </div>
-      <div class="sidebar-inner" data-simplebar>
-         <div id="sidebar-menu" class="sidebar-menu">
-            <ul>
-               <li class="menu-title"><span>Main Menu</span></li>
-               <li>
-                  <ul>
-                     <li>
-                        <router-link :to="{ name: 'JobDescriptions' }" class="nav-link"><i class="ti ti-user-up"></i><span>Job Descriptions</span></router-link>
-                     </li>
-                     <li>
-                        <router-link v-if="user?.role !== 'Interviewer'" to="/resumes" class="nav-link"><i class="ti ti-building-community"></i><span>All Resumes</span></router-link>                     
-                     </li>
-                      <!-- For interviewers, show a clear dashboard link for managing availability and interviews -->
-                     <li>                       
-                        <router-link
-                          v-if="user?.role === 'Interviewer'"
-                          :to="{ name: 'InterviewerDashboard' }"
-                          class="nav-link"
-                          >
-                          <i class="ti ti-medal"></i><span>Deals</span>
-                        </router-link>
-                     </li>
-                     <li>
-                        <router-link v-if="isAdmin" to="/register" class="nav-link"><i class="ti ti-chart-arcs"></i><span>Create User</span></router-link>        
-                     </li>
-                     <li>
-                        <a @click="handleLogout" class="nav-link"><i class="ti ti-timeline-event-exclamation"></i><span>Logout</span></a>                  
-                     </li>
-                  </ul>
-               </li>
-            </ul>
-         </div>
-      </div>
-   </div>
-   <!-- <nav v-if="isAuthenticated" class="navbar">
-      <div class="container">
+       </div>
+     </Teleport>
+ 
+     <nav v-if="isAuthenticated" class="navbar">
+       <div class="container">
          <h1 class="logo">ATS System</h1>
          <div class="nav-links">
-            
+           <router-link :to="{ name: 'JobDescriptions' }" class="nav-link">Job Descriptions</router-link>
+           <router-link v-if="user?.role !== 'Interviewer'" to="/resumes" class="nav-link">All Resumes</router-link>
+           <!-- For interviewers, show a clear dashboard link for managing availability and interviews -->
+           <router-link
+             v-if="user?.role === 'Interviewer'"
+             :to="{ name: 'InterviewerDashboard' }"
+             class="nav-link"
+           >
+             Dashboard
+           </router-link>
            
-            
-            
-            <div class="user-info">
-               <span class="user-name">{{ user?.full_name || user?.email }}</span>
-               <span class="user-role">{{ user?.role }}</span>
-               
-            </div>
+           <router-link v-if="isAdmin" to="/register" class="nav-link">Create User</router-link>
+           <div class="user-info">
+             <span class="user-name">{{ user?.full_name || user?.email }}</span>
+             <span class="user-role">{{ user?.role }}</span>
+             <button @click="handleLogout" class="logout-btn">Logout</button>
+           </div>
          </div>
-      </div>
-   </nav> -->
-   <div class="page-wrapper">
-   <main class="content pb-0">
-      <router-view />
-   </main>
+       </div>
+     </nav>
+     <main class="main-content">
+       <router-view />
+     </main>
    </div>
-</template>
-<script>
-   import { onMounted } from 'vue';
-   import { useRouter } from 'vue-router';
-   import { useAuth } from './composables/useAuth';
-   import { useLoader } from './composables/useLoader';
-   
-   export default {
-     name: 'App',
-     setup() {
-       const router = useRouter();
-       const { user, isAuthenticated, isAdmin, hasRole, logout, init } = useAuth();
-       const { isLoading, loaderMessage, loaderSubMessage } = useLoader();
-       
-       onMounted(async () => {
-         await init();
-       });
-       
-       const handleLogout = async () => {
-         await logout();
-         router.push('/login');
-       };
-       
-       return {
-         user,
-         isAuthenticated,
-         isAdmin,
-         hasRole,
-         handleLogout,
-         isLoading,
-         loaderMessage,
-         loaderSubMessage
-       };
-     }
-   };
-</script>
-<style>
-   * {
+ </template>
+ 
+ <script>
+ import { onMounted } from 'vue';
+ import { useRouter } from 'vue-router';
+ import { useAuth } from './composables/useAuth';
+ import { useLoader } from './composables/useLoader';
+ 
+ export default {
+   name: 'App',
+   setup() {
+     const router = useRouter();
+     const { user, isAuthenticated, isAdmin, hasRole, logout, init } = useAuth();
+     const { isLoading, loaderMessage, loaderSubMessage } = useLoader();
+     
+     onMounted(async () => {
+       await init();
+     });
+     
+     const handleLogout = async () => {
+       await logout();
+       router.push('/login');
+     };
+     
+     return {
+       user,
+       isAuthenticated,
+       isAdmin,
+       hasRole,
+       handleLogout,
+       isLoading,
+       loaderMessage,
+       loaderSubMessage
+     };
+   }
+ };
+ </script>
+ 
+ <style>
+ * {
    margin: 0;
    padding: 0;
    box-sizing: border-box;
-   }
-   body {
+ }
+ 
+ body {
    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Helvetica Neue', Arial, sans-serif;
    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
    background-attachment: fixed;
@@ -197,11 +92,13 @@
    line-height: 1.6;
    -webkit-font-smoothing: antialiased;
    -moz-osx-font-smoothing: grayscale;
-   }
-   #app {
+ }
+ 
+ #app {
    min-height: 100vh;
-   }
-   .navbar {
+ }
+ 
+ .navbar {
    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
    color: white;
    padding: 1.25rem 0;
@@ -212,16 +109,18 @@
    width: 100%;
    z-index: 999;
    backdrop-filter: blur(10px);
-   }
-   .navbar .container {
+ }
+ 
+ .navbar .container {
    max-width: 1400px;
    margin: 0 auto;
    padding: 0 2.5rem;
    display: flex;
    justify-content: space-between;
    align-items: center;
-   }
-   .logo {
+ }
+ 
+ .logo {
    font-size: 1.75rem;
    font-weight: 700;
    letter-spacing: -0.5px;
@@ -229,14 +128,16 @@
    -webkit-background-clip: text;
    -webkit-text-fill-color: transparent;
    background-clip: text;
-   }
-   .nav-links {
+ }
+ 
+ .nav-links {
    display: flex;
    gap: 2.5rem;
    align-items: center;
    flex-wrap: wrap;
-   }
-   .nav-link {
+ }
+ 
+ .nav-link {
    color: rgba(255, 255, 255, 0.95);
    text-decoration: none;
    font-weight: 500;
@@ -244,8 +145,9 @@
    padding: 0.5rem 0;
    position: relative;
    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-   }
-   .nav-link::after {
+ }
+ 
+ .nav-link::after {
    content: '';
    position: absolute;
    bottom: 0;
@@ -254,35 +156,42 @@
    height: 2px;
    background: white;
    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-   }
-   .nav-link:hover {
+ }
+ 
+ .nav-link:hover {
    color: white;
    transform: translateY(-1px);
-   }
-   .nav-link:hover::after {
+ }
+ 
+ .nav-link:hover::after {
    width: 100%;
-   }
-   .nav-link.router-link-active {
+ }
+ 
+ .nav-link.router-link-active {
    color: white;
    font-weight: 600;
-   }
-   .nav-link.router-link-active::after {
+ }
+ 
+ .nav-link.router-link-active::after {
    width: 100%;
-   }
-   .user-info {
+ }
+ 
+ .user-info {
    display: flex;
    align-items: center;
    gap: 1.25rem;
    margin-left: auto;
    padding-left: 2rem;
    border-left: 1px solid rgba(255, 255, 255, 0.2);
-   }
-   .user-name {
+ }
+ 
+ .user-name {
    color: white;
    font-weight: 500;
    font-size: 0.95rem;
-   }
-   .user-role {
+ }
+ 
+ .user-role {
    background: rgba(255, 255, 255, 0.25);
    backdrop-filter: blur(10px);
    color: white;
@@ -293,8 +202,9 @@
    text-transform: uppercase;
    letter-spacing: 0.5px;
    border: 1px solid rgba(255, 255, 255, 0.2);
-   }
-   .logout-btn {
+ }
+ 
+ .logout-btn {
    background: rgba(255, 255, 255, 0.2);
    backdrop-filter: blur(10px);
    color: white;
@@ -305,36 +215,43 @@
    font-weight: 500;
    font-size: 0.9rem;
    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-   }
-   .logout-btn:hover {
+ }
+ 
+ .logout-btn:hover {
    background: rgba(255, 255, 255, 0.3);
    transform: translateY(-1px);
    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-   }
-   .main-content {
+ }
+ 
+ .main-content {
    max-width: 1400px;
    margin: 0 auto;
    padding: 0 2.5rem;
    padding-top: 90px !important;
-   }
-   @media (max-width: 768px) {
+ }
+ 
+ @media (max-width: 768px) {
    .navbar .container {
-   padding: 0 1.5rem;
+     padding: 0 1.5rem;
    }
+   
    .nav-links {
-   gap: 1.5rem;
+     gap: 1.5rem;
    }
+   
    .user-info {
-   gap: 0.75rem;
-   padding-left: 1.5rem;
+     gap: 0.75rem;
+     padding-left: 1.5rem;
    }
+   
    .main-content {
-   padding: 0 1.5rem;
-   padding-top: 90px !important;
+     padding: 0 1.5rem;
+     padding-top: 90px !important;
    }
-   }
-   /* Global Fullscreen Loader */
-   .global-loader {
+ }
+ 
+ /* Global Fullscreen Loader */
+ .global-loader {
    position: fixed !important;
    top: 0 !important;
    left: 0 !important;
@@ -349,21 +266,24 @@
    animation: fadeIn 0.2s ease-in;
    margin: 0 !important;
    padding: 0 !important;
-   }
-   @keyframes fadeIn {
+ }
+ 
+ @keyframes fadeIn {
    from {
-   opacity: 0;
+     opacity: 0;
    }
    to {
-   opacity: 1;
+     opacity: 1;
    }
-   }
-   .loader-content {
+ }
+ 
+ .loader-content {
    text-align: center;
    color: white;
    padding: 2rem;
-   }
-   .loader-spinner {
+ }
+ 
+ .loader-spinner {
    width: 70px;
    height: 70px;
    border: 5px solid rgba(255, 255, 255, 0.2);
@@ -371,25 +291,29 @@
    border-radius: 50%;
    animation: spin 0.8s linear infinite;
    margin: 0 auto 2rem;
-   }
-   @keyframes spin {
+ }
+ 
+ @keyframes spin {
    to {
-   transform: rotate(360deg);
+     transform: rotate(360deg);
    }
-   }
-   .loader-text {
+ }
+ 
+ .loader-text {
    font-size: 1.75rem;
    font-weight: 600;
    margin: 0 0 0.75rem 0;
    color: white;
    letter-spacing: 0.3px;
-   }
-   .loader-subtext {
+ }
+ 
+ .loader-subtext {
    font-size: 1.1rem;
    margin: 0;
    color: rgba(255, 255, 255, 0.85);
    line-height: 1.6;
    max-width: 500px;
    margin: 0 auto;
-   }
-</style>
+ }
+ </style>
+ 
