@@ -332,6 +332,21 @@
                 class="form-textarea"
               ></textarea>
             </div>
+            <div class="form-group">
+              <label for="interviewers">Assign Interviewers (Optional)</label>
+              <select
+                id="interviewers"
+                v-model="editForm.interviewers"
+                multiple
+                class="form-select"
+                style="min-height: 120px;"
+              >
+                <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
+                  {{ interviewer.full_name || interviewer.email }}
+                </option>
+              </select>
+              <small class="form-hint">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
+            </div>
             <div class="form-actions">
               <button type="button" @click="closeEditModal" class="btn btn-secondary">Cancel</button>
               <button type="submit" :disabled="saving" class="btn btn-primary">
@@ -1033,7 +1048,8 @@ export default {
       editForm: {
         title: '',
         description: '',
-        requirements: ''
+        requirements: '',
+         interviewers:  []
       },
       showResumeModal: false,
       resumeDetailEvaluation: null,
@@ -1762,8 +1778,10 @@ export default {
       this.editForm = {
         title: this.jobDescription.title,
         description: this.jobDescription.description,
-        requirements: this.jobDescription.requirements || ''
+        requirements: this.jobDescription.requirements || '',
+        interviewers: this.jobDescription.interviewers || []
       };
+      
       this.showEditModal = true;
     },
     async saveJob() {
