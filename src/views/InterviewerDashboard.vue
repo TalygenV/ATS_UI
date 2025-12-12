@@ -4,42 +4,59 @@
       <h2>Interviewer Dashboard</h2>
     </div>
 
-    <div class="dashboard-grid">
+    <div class="interviewer-dashboard">
       <!-- Availability management -->
-      <div class="availability-card">
-        <div class="card-header">
-          <h3>My Availability</h3>
-        </div>
-        <div class="card-body">
-          <form class="slot-form" @submit.prevent="generateSlots">
-            <div class="form-group-inline">
-              <div class="form-group">
-                <label>Date *</label>
-                <input v-model="slotForm.date" type="date" required class="form-input" />
-              </div>
-              <div class="form-group">
-                <label>From</label>
-                <input v-model="slotForm.start_time" type="time" class="form-input" />
-              </div>
-              <div class="form-group">
-                <label>To</label>
-                <input v-model="slotForm.end_time" type="time" class="form-input" />
-              </div>
-              <div class="form-group">
-                <label>Max Slots</label>
-                <input v-model.number="slotForm.max_slots" type="number" min="1" class="form-input" placeholder="No limit" />
-              </div>
-            </div>
-            <p class="hint-text">System will generate 45-minute slots between the selected times (default 9:00–18:00). You can select which slots to make available.</p>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary" :disabled="generatingSlots">
-                <span v-if="generatingSlots">Generating...</span>
-                <span v-else>Generate Slots</span>
-              </button>
-            </div>
-          </form>
+      <div class="availability-card row m-0">
 
-          <div class="slots-section">
+        <div class="my-availability col-5">
+
+            <div class="card-header">
+              <h3>My Availability</h3>
+            </div>
+              <div class="card-body">
+                <form class="slot-form" @submit.prevent="generateSlots">
+                  <div class="form-group-inline">
+                    <div class="form-group">
+                      <label>Date *</label>
+                      <input v-model="slotForm.date" type="date" required class="form-input" />
+                    </div>
+                    <div class="form-group">
+                      <label>From</label>
+                      <input v-model="slotForm.start_time" type="time" class="form-input" />
+                    </div>
+                  
+                 
+                    <div class="form-group">
+                      <label>To</label>
+                      <input v-model="slotForm.end_time" type="time" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                      <label>Max Slots</label>
+                      <input v-model.number="slotForm.max_slots" type="number" min="1" class="form-input" placeholder="No limit" />
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-8">
+                      <p class="hint-text">System will generate 45-minute slots between the selected times (default 9:00–18:00). You can select which slots to make available.</p>
+                    </div>
+                    <div class="col-4">
+                      <div class="form-actions mt-2">
+                        <button type="submit" class="btn btn-primary" :disabled="generatingSlots">
+                          <span v-if="generatingSlots">Generating...</span>
+                          <span v-else>Generate Slots</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                </form>
+
+              
+              </div>
+        </div>
+       
+
+         <div class="slots-section col-7">
             <h4>Upcoming Slots</h4>
             <div v-if="loadingSlots" class="loading">Loading slots...</div>
             <div v-else-if="slots.length === 0" class="empty-state">
@@ -49,14 +66,14 @@
               <div
                 v-for="slot in slots"
                 :key="slot.id"
-                class="slot-row"
+                class="slot-row col-4"
                 :class="{ booked: slot.is_booked }"
               >
                 <div class="slot-info">
                   <div class="slot-time">
                     {{ formatDateTime(slot.start_time) }} – {{ formatTime(slot.end_time) }}
                   </div>
-                  <div class="slot-status">
+                  <div class="slot-status mt-3">
                     <span v-if="slot.is_booked" class="status-pill booked">Booked</span>
                     <span v-else class="status-pill available">Available</span>
                   </div>
@@ -71,12 +88,11 @@
               </div>
             </div>
           </div>
-        </div>
       </div>
 
       <!-- Assignments -->
-      <div class="assignments-card">
-        <div class="card-header">
+       <div class="assignments-card my-4">
+       <div class="card-header">
           <h3>My Interview Assignments</h3>
           <select v-model="statusFilter" @change="fetchAssignments" class="filter-select">
             <option value="">All Status</option>
@@ -86,14 +102,148 @@
             <option value="on_hold">On Hold</option>
           </select>
         </div>
+       </div>
+      <div class="">
+       
 
     <div v-if="loading" class="loading">Loading assignments...</div>
     <div v-else-if="error" class="error-message">{{ error }}</div>
-    <div v-else-if="assignments.length === 0" class="empty-state">
+    <div v-else-if="assignments.length === 0" class="empty-state assignments-card">
       <p>No interview assignments found.</p>
     </div>
-        <div v-else class="assignments-grid">
-          <div v-for="assignment in assignments" :key="assignment.id" class="assignment-card">
+    <div v-else class="row ">
+         
+        <div class="col-4 assignments-card1">
+           <h3 class="assignments-card-header" > Upcoming Interviews </h3>  
+          <div v-for="assignment in upcomingSlots" :key="assignment.id" class="assignment-card my-2">
+            <div class="card-header">
+              <div>
+                <h3>{{ assignment.resume?.name || assignment.candidate_name || 'Unknown Candidate' }}</h3>
+                <span :class="['status-badge', 'interviewer-' + assignment.interviewer_status]">
+                  {{ (assignment.interviewer_status || 'pending').replace(/_/g, ' ') }}
+                </span>
+              </div>
+              <div v-if="assignment.job_description" class="job-title">
+                {{ assignment.job_description.title }}
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="info-row">
+                <span class="label">Email:</span>
+                <span class="value">{{ assignment.resume?.email || assignment.email || 'N/A' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Contact: </span>
+                <span class="value">{{ assignment.resume?.phone || assignment.contact_number || 'N/A' }}</span>
+              </div>
+              <div v-if="assignment.interview_date" class="info-row">
+                <span class="label">Interview Date: </span>
+                <span class="value">{{ formatDateTime(assignment.interview_date) }}</span>
+              </div>
+              <!-- <div v-if="assignment.interviewer_feedback" class="feedback-summary">
+                <strong>Feedback Submitted</strong>
+                <div v-if="assignment.interviewer_feedback" class="ratings-preview">
+                  <div v-for="(rating, key) in assignment.interviewer_feedback" :key="key" class="rating-item">
+                    <span class="rating-label">{{ key }}:</span>
+                    <span class="rating-value">{{ rating }}/10</span>
+                  </div>
+                </div>
+              </div> -->
+            </div>
+            <div class="card-footer">
+              <!-- <button 
+                v-if="assignment.interviewer_status === 'pending'" 
+                @click="openFeedbackModal(assignment)" 
+                class="btn btn-primary"
+              >
+                Submit Feedback
+              </button>
+              <button 
+                v-else 
+                @click="openFeedbackModal(assignment)" 
+                class="btn btn-secondary"
+              >
+                View/Edit Feedback
+              </button> -->
+              <button @click="viewCandidateDetails(assignment)" class="btn btn-secondary">
+                View Resume
+              </button>
+            </div>
+        </div>
+                <div v-if="upcomingSlots.length === 0" class="empty-state assignments-card">
+      <p>No Dession Pending interview  found.</p>
+    </div>
+
+       
+
+        
+         
+        </div>
+
+        <div class="col-4 assignments-card1">
+            <h3 class="assignments-card-header" > Dession Pending  </h3>
+          <div v-for="assignment in pastDecissionPendingSlots" :key="assignment.id" class="assignment-card my-2">
+          
+            
+  
+              <div class="card-header">
+                <div>
+                  <h3>{{ assignment.resume?.name || assignment.candidate_name || 'Unknown Candidate' }}</h3>
+                  <span :class="['status-badge', 'interviewer-' + assignment.interviewer_status]">
+                    {{ (assignment.interviewer_status || 'pending').replace(/_/g, ' ') }}
+                  </span>
+                </div>
+                <div v-if="assignment.job_description" class="job-title">
+                  {{ assignment.job_description.title }}
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="info-row">
+                  <span class="label">Email:</span>
+                  <span class="value">{{ assignment.resume?.email || assignment.email || 'N/A' }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Contact:</span>
+                  <span class="value">{{ assignment.resume?.phone || assignment.contact_number || 'N/A' }}</span>
+                </div>
+                <div v-if="assignment.interview_date" class="info-row">
+                  <span class="label">Interview Date:</span>
+                  <span class="value">{{ formatDateTime(assignment.interview_date) }}</span>
+                </div>
+                
+              </div>
+              <div class="card-footer">
+                <button 
+                  v-if="assignment.interviewer_status === 'pending'" 
+                  @click="openFeedbackModal(assignment)" 
+                  class="btn btn-primary"
+                >
+                  Submit Feedback
+                </button>
+                <button 
+                  v-else 
+                  @click="openFeedbackModal(assignment)" 
+                  class="btn btn-secondary"
+                >
+                  View/Edit Feedback
+                </button>
+                <button @click="viewCandidateDetails(assignment)" class="btn btn-secondary">
+                  View Resume
+                </button>
+              </div>
+          
+          </div>
+           <div v-if="pastDecissionPendingSlots.length === 0" class="empty-state assignments-card">
+      <p>No Dession Pending interview  found.</p>
+    </div>
+        </div>
+
+        <div class="col-4 assignments-card1">
+              <h3 class="assignments-card-header" > Dession Done</h3>
+          <div v-for="assignment in pastDecissionDoneSlots" :key="assignment.id" class="assignment-card my-2">
+        
+         
+
             <div class="card-header">
               <div>
                 <h3>{{ assignment.resume?.name || assignment.candidate_name || 'Unknown Candidate' }}</h3>
@@ -147,8 +297,14 @@
                 View Resume
               </button>
             </div>
+        
           </div>
+              <div v-if="pastDecissionDoneSlots.length === 0" class="empty-state assignments-card">
+      <p>No Dession Pending interview  found.</p>
+    </div>
+
         </div>
+    </div>
       </div>
     </div>
 
@@ -372,6 +528,8 @@ export default {
       }
     };
   },
+
+ 
   mounted() {
     const today = new Date();
     this.slotForm.date = today.toISOString().slice(0, 10);
@@ -381,7 +539,31 @@ export default {
   computed: {
     selectedSlotsCount() {
       return (this.generatedSlots || []).filter(slot => slot.selected).length;
+    },
+        upcomingSlots() {
+       const now = new Date();
+       return this.assignments.filter(slot => new Date(slot.interview_date) > now);
+     },
+    
+    // pastSlots () {
+    //   const now = new Date();
+    //   return this.assignments.filter(slot => new Date(slot.interview_date) <= now);
+    // },
+
+    pastDecissionPendingSlots() {
+      const now = new Date();
+      return this.assignments.filter(
+        slot => new Date(slot.interview_date) <= now && slot.interviewer_feedback === null
+      );
+    },
+
+    pastDecissionDoneSlots() {
+      const now = new Date();
+      return this.assignments.filter(
+        slot => new Date(slot.interview_date) <= now && slot.interviewer_feedback !== null
+      );
     }
+
   },
   methods: {
     async fetchSlots() {
@@ -700,6 +882,15 @@ h2 {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.assignments-card-header {
+      font-size: 1.25rem;
+      font-weight: 700;
+  background-color: white;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+    border-radius: 20px;
+}
+
 .availability-card:hover,
 .assignments-card:hover {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
@@ -709,14 +900,14 @@ h2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 2px solid #f0f4f8;
+  /* margin-bottom: 1.5rem; */
+  /* padding-bottom: 1.25rem; */
+  /* border-bottom: 2px solid #f0f4f8; */
 }
 
 .card-header h3 {
   color: #1a202c;
-  font-size: 1.5rem;
+  font-size: 2.5rem;
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.3px;
@@ -826,9 +1017,12 @@ h2 {
 
 .slots-list {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.5rem;
   margin-top: 0.75rem;
+    height: 100%;
+    overflow: auto;
+    max-height: 180px;
 }
 
 .slot-row {
@@ -905,15 +1099,15 @@ h2 {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
 }
 
-.card-header {
+/* .card-header {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #eee;
-}
+} */
 
 .card-header h3 {
   color: #333;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   margin: 0 0 0.5rem 0;
 }
 

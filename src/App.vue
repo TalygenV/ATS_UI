@@ -12,7 +12,7 @@
      </Teleport>
  
      <nav v-if="isAuthenticated" class="navbar">
-       <div class="container">
+       <div class="container-fluid px-4 my-2">
          <h1 class="logo">ATS System</h1>
          <div class="nav-links">
            <router-link :to="{ name: 'JobDescriptions' }" class="nav-link">Job Descriptions</router-link>
@@ -225,10 +225,10 @@
  }
  
  .main-content {
-   max-width: 1400px;
+   max-width: 90%;
    margin: 0 auto;
    padding: 0 2.5rem;
-   padding-top: 90px !important;
+   padding-top: 10px !important;
  }
  
  @media (max-width: 768px) {

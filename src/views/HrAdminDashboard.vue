@@ -1,25 +1,19 @@
 <template>
-  <div class="container">
+  <div class="">
         <div v-if="loading" class="loading">Loading dashboard...</div>
     <header>
-      <div class="logo">
+      <div class="logo-own">
         <i class="fas fa-user-tie"></i>
         <span>{{user.role}} Interview Dashboard</span>
       </div>
-      <div class="header-right">
-        <div class="date-display" id="current-date">{{ currentDate }}</div>
-        <div class="user-profile">
-          <!-- <img :src="profileAvatar" alt="HR Manager" /> -->
-          <span>{{ user.full_name }}</span>
-        </div>
-      </div>
+
     </header>
 
     <div class="stats">
       <div class="stat-card">
-        <div class="stat-icon interview">
+        <!-- <div class="stat-icon interview">
           <i class="fas fa-calendar-day"></i>
-        </div>
+        </div> -->
         <div class="stat-info">
           <h3>{{ totalInterviews }}</h3>
           <p>Today's Interviews</p>
@@ -27,19 +21,20 @@
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon candidate">
+        <!-- <div class="stat-icon candidate">
           <i class="fas fa-users"></i>
-        </div>
+        </div> -->
+       
         <div class="stat-info">
           <h3>{{ newCandidates.length }}</h3>
-          <p>New Candidates</p>
+          <p >New Candidates</p>
         </div>
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon position">
+        <!-- <div class="stat-icon position">
           <i class="fas fa-briefcase"></i>
-        </div>
+        </div> -->
         <div class="stat-info">
           <h3>{{totalJobPositions}}</h3>
           <p>Open Positions</p>
@@ -49,7 +44,7 @@
 
     <div class="dashboard-content">
       <div class="card today-interviews">
-        <div class="card-header">
+        <div class="card-header-own">
           <h2 class="card-title">Today's Scheduled Interviews</h2>
           <button class="card-action">View All</button>
         </div>
@@ -85,7 +80,7 @@
       </div>
 
       <div class="card ongoing-interviews">
-        <div class="card-header">
+        <div class="card-header-own">
           <h2 class="card-title">Ongoing Interviews</h2>
           <button class="card-action" @click="refreshOngoing">Refresh</button>
         </div>
@@ -118,7 +113,7 @@
       </div>
 
       <div class="card new-candidates">
-        <div class="card-header">
+        <div class="card-header-own">
           <h2 class="card-title">New Candidates</h2>
           <router-link to="/resumes">
           <button class="card-action">View All</button>
@@ -154,7 +149,7 @@
       </div>
 
       <!-- <div class="card schedule-interview">
-        <div class="card-header">
+        <div class="card-header-own">
           <h2 class="card-title">Schedule New Interview</h2>
         </div>
         <form @submit.prevent="scheduleInterview">
@@ -340,7 +335,7 @@ const getLatestCandidates = async ()=> {
             appliedDate,
             experience: item.total_experience  || 'N/A',
             initials: item.name ? item.name.split(' ').map(n => n[0]).join('') : 'NA',
-            bg: ['#4361ee', '#3f37c9', '#4cc9f0', '#f72585', '#7209b7'][Math.floor(Math.random() * 5)]
+            // bg: ['#4361ee', '#3f37c9', '#4cc9f0', '#f72585', '#7209b7'][Math.floor(Math.random() * 5)]
           };
         });
         newCandidates.value = mapped;
@@ -407,99 +402,393 @@ function refreshOngoing() {
 </script>
 
 <style scoped>
-/* :root {
-  --primary-color: #4361ee;
-  --primary-light: #e6ebff;
-  --secondary-color: #3f37c9;
-  --success-color: #4cc9f0;
-  --warning-color: #f72585;
-  --dark-color: #2b2d42;
-  --light-color: #f8f9fa;
-  --gray-color: #adb5bd;
-  --border-radius: 10px;
-  --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-  --transition: all 0.3s ease;
-} */
 
-* { box-sizing: border-box; }
 
-.container {
-  max-width: 1400px;
+/* .container {
+  max-width: 80%;
   margin: 0 auto;
   padding: 20px;
   font-family: 'Poppins', sans-serif;
-  color: var(--dark-color);
-}
+  color: #1a202c;
+} */
 
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  /* margin-bottom: 30px; */
   padding-bottom: 20px;
-  border-bottom: 1px solid #eaeaea;
+  /* border-bottom: 1px solid #eaeaea; */
 }
 
-.logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.8rem; color:#4361ee; }
-.logo i { font-size:2rem; }
-.logo span { color:#081d7c;  }
+.logo-own { 
+  display:flex; 
+  align-items:center; 
+  gap:10px; 
+  font-weight:700; 
+  font-size:1.8rem; 
+  margin-top: 15px;
+  /* color:#4361ee; */
+  letter-spacing: -0.5px;
+}
+.logo-own i { font-size:2rem; }
+.logo-own span 
 
-.header-right { display:flex; align-items:center; gap:20px; }
-.date-display, .user-profile { background:white; padding:8px 15px; border-radius:var(--border-radius); box-shadow:var(--box-shadow); }
-.user-profile { display:flex; align-items:center; gap:10px }
-.user-profile img { width:35px; height:35px; border-radius:50%; object-fit:cover }
+.header-right { 
+  display:flex; 
+  align-items:center; 
+  gap:20px; 
+}
 
-.dashboard-content { display:grid; grid-template-columns: repeat(12, 1fr); gap:25px; }
-.card { background:white; border-radius:var(--border-radius); box-shadow:var(--box-shadow); padding:25px; transition:var(--transition); border-top:4px solid var(--primary-color); }
-.card:hover { transform:translateY(-5px); box-shadow:0 10px 20px rgba(0,0,0,0.1); }
-.card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px }
-.card-title { font-size:1.3rem; font-weight:600 }
-.card-action { color:var(--primary-color); background:none; border:none; font-size:0.9rem; font-weight:500; cursor:pointer }
-.card-action:hover { color:var(--secondary-color) }
+.date-display, .user-profile { 
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding:8px 15px; 
+  border-radius:12px; 
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.date-display:hover, .user-profile:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+}
+
+.user-profile { 
+  display:flex; 
+  align-items:center; 
+  gap:10px;
+}
+.user-profile img { 
+  width:35px; 
+  height:35px; 
+  border-radius:50%; 
+  object-fit:cover;
+}
+
+.dashboard-content { 
+  display:grid; 
+  grid-template-columns: repeat(12, 1fr); 
+  gap:25px; 
+}
+
+.card { 
+  background: rgba(255, 255, 255, 0.95);
+  /* backdrop-filter: blur(10px); */
+  border: none;
+  border-radius:20px; 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  padding:25px; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  /* border-top:4px solid #4361ee; */
+}
+
+.card:hover { 
+  transform:translateY(-6px); 
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+}
+
+.card-header-own { 
+  display:flex; 
+  justify-content:space-between; 
+  align-items:center; 
+  margin-bottom:20px;
+}
+
+.card-title { 
+  font-size:1.3rem; 
+  font-weight:600;
+  color: #1a202c;
+  letter-spacing: -0.3px;
+}
+
+.card-action { 
+  /* color:#4361ee;  */
+  background:none; 
+  border:none; 
+  font-size:0.9rem; 
+  font-weight:500; 
+  cursor:pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* .card-action:hover { 
+  color:#3f37c9;
+} */
 
 .today-interviews { grid-column: span 8 }
 .ongoing-interviews { grid-column: span 4 }
 .new-candidates { grid-column: span 6 }
 .schedule-interview { grid-column: span 6 }
 
-.interview-list { display:flex; flex-direction:column; gap:15px }
-.interview-item { display:flex; justify-content:space-between; align-items:center; padding:15px; border-radius:var(--border-radius); background-color:var(--light-color); border-left:4px solid var(--primary-color) }
-.interview-item.ongoing { border-left-color:var(--warning-color) }
-.interview-info h4 { font-size:1rem; margin-bottom:5px }
-.interview-info p { font-size:0.9rem; color:var(--gray-color); display:flex; align-items:center; gap:8px }
-.interview-time { display:flex; flex-direction:column; align-items:center; background-color:var(--primary-light); padding:10px 15px; border-radius:var(--border-radius); min-width:100px }
-.interview-time span:first-child { font-weight:600; color:var(--primary-color) }
-.interview-time span:last-child { font-size:0.8rem; color:var(--gray-color) }
+.interview-list { 
+  display:flex; 
+  flex-direction:column; 
+  gap:15px;
+}
 
-.candidate-list { display:flex; flex-direction:column; gap:15px }
-.candidate-item { display:flex; align-items:center; gap:15px; padding:15px; border-radius:var(--border-radius); background-color:var(--light-color) }
-.candidate-avatar { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1.2rem }
-.candidate-details h4 { font-size:1rem; margin-bottom:5px }
-.candidate-details p { font-size:0.9rem; color:var(--gray-color); display:flex; align-items:center; gap:8px }
-.status-badge { padding:5px 10px; border-radius:20px; font-size:0.8rem; font-weight:500; margin-left:auto }
-.status-new { background-color:#e3f2fd; color:var(--primary-color) }
+.interview-item { 
+  display:flex; 
+  justify-content:space-between; 
+  align-items:center; 
+  padding:15px; 
+  border-radius:16px; 
+  /* background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); */
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  /* border-left:4px solid #4361ee; */
+  /* border: 1px solid #e2e8f0; */
+  /* border-left:4px solid #4361ee; */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+}
 
-.form-group { margin-bottom:20px }
-.form-group label { display:block; margin-bottom:8px; font-weight:500; font-size:0.9rem }
-.form-control { width:100%; padding:12px 15px; border:1px solid #e0e0e0; border-radius:var(--border-radius); font-size:0.95rem }
-.form-control:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 0 3px rgba(67,97,238,0.2) }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:15px }
-.btn { padding:12px 25px; border:none; border-radius:var(--border-radius); font-weight:500; font-size:1rem; cursor:pointer }
-.btn-primary { background-color:var(--primary-color); color:white }
-.btn-primary:hover { background-color:var(--secondary-color) }
-.btn-block { width:100% }
+/* .interview-item:hover {
+  transform: translateX(4px);
 
-.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:30px }
-.stat-card { background:white; border-radius:var(--border-radius); box-shadow:var(--box-shadow); padding:20px; display:flex; align-items:center; gap:15px }
-.stat-icon { width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:white }
-.stat-icon.interview { background-color:var(--primary-color) }
-.stat-icon.candidate { background-color:var(--success-color) }
-.stat-icon.position { background-color:var(--warning-color) }
-.stat-info h3 { font-size:1.8rem; margin-bottom:5px }
-.stat-info p { font-size:0.9rem; color:var(--gray-color) }
+} */
 
-.empty-state { text-align:center; padding:30px; color:var(--gray-color) }
-.empty-state i { font-size:3rem; margin-bottom:15px; opacity:0.5 }
+.interview-item.ongoing { 
+  /* border-left-color:#f72585; */
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+  border-color: #fed7aa;
+}
+
+.interview-info h4 { 
+  font-size:1rem; 
+  margin-bottom:5px;
+  color: #1a202c;
+}
+
+.interview-info p { 
+  font-size:0.9rem; 
+  color:#718096; 
+  display:flex; 
+  align-items:center; 
+  gap:8px;
+}
+
+.interview-time { 
+  display:flex; 
+  flex-direction:column; 
+  align-items:center; 
+  background: linear-gradient(135deg, #f0f4ff 0%, #e6edff 100%);
+  
+  padding:10px 15px; 
+  border-radius:12px; 
+  min-width:100px;
+  border: 1px solid rgba(66, 153, 225, 0.2);
+}
+
+.interview-time span:first-child { 
+  font-weight:600; 
+  /* color:#4361ee; */
+}
+
+.interview-time span:last-child { 
+  font-size:0.8rem; 
+  color:#718096;
+}
+
+.candidate-list { 
+  display:flex; 
+  flex-direction:column; 
+  gap:15px;
+}
+
+.candidate-item { 
+  display:flex; 
+  align-items:center; 
+  gap:15px; 
+  padding:15px; 
+  border-radius:16px; 
+       background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.candidate-item:hover {
+  transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+}
+
+.candidate-avatar { 
+  width:50px; 
+  height:50px; 
+  border-radius:50%; 
+  display:flex; 
+  align-items:center; 
+  justify-content:center; 
+  font-weight:600; 
+  font-size:1.2rem;
+}
+
+.candidate-details h4 { 
+  font-size:1rem; 
+  margin-bottom:5px;
+  color: #1a202c;
+}
+
+.candidate-details p { 
+  font-size:0.9rem; 
+  color:#718096; 
+  display:flex; 
+  align-items:center; 
+  gap:8px;
+}
+
+.status-badge { 
+  padding:5px 10px; 
+  border-radius:20px; 
+  font-size:0.8rem; 
+  font-weight:600; 
+  margin-left:auto;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-new { 
+  background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+  color:#22543d;
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+}
+
+.form-group { 
+  margin-bottom:20px;
+}
+
+.form-group label { 
+  display:block; 
+  margin-bottom:8px; 
+  font-weight:500; 
+  font-size:0.9rem;
+  color: #2d3748;
+  letter-spacing: 0.3px;
+}
+
+.form-control { 
+  width:100%; 
+  padding:12px 15px; 
+  border:2px solid #e2e8f0; 
+  border-radius:12px; 
+  font-size:0.95rem;
+  background: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-control:focus { 
+  outline:none; 
+  /* border-color:#4361ee;  */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+}
+
+.form-row { 
+  display:grid; 
+  grid-template-columns:1fr 1fr; 
+  gap:15px;
+}
+
+.btn { 
+  padding:12px 25px; 
+  border:none; 
+  border-radius:12px; 
+  font-weight:600; 
+  font-size:1rem; 
+  cursor:pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.3px;
+}
+
+.btn-primary { 
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  color:white;
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+}
+
+.btn-primary:hover { 
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-block { 
+  width:100%;
+}
+
+.stats { 
+  display:grid; 
+  grid-template-columns:repeat(3,1fr); 
+  gap:20px; 
+  margin-bottom:30px;
+}
+
+.stat-card { 
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius:20px; 
+  box-shadow:0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset; 
+  padding:20px; 
+  display:flex; 
+  align-items:center; 
+  gap:15px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+}
+
+.stat-icon { 
+  width:60px; 
+  height:60px; 
+  border-radius:50%; 
+  display:flex; 
+  align-items:center; 
+  justify-content:center; 
+  font-size:1.5rem; 
+  color:white;
+}
+
+.stat-icon.interview { 
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
+}
+
+.stat-icon.candidate { 
+  background: linear-gradient(135deg, #4cc9f0 0%, #38b6b6 100%);
+  box-shadow: 0 4px 15px rgba(76, 201, 240, 0.4);
+}
+
+.stat-icon.position { 
+  background: linear-gradient(135deg, #f72585 0%, #d61a6f 100%);
+  box-shadow: 0 4px 15px rgba(247, 37, 133, 0.4);
+}
+
+.stat-info h3 { 
+  font-size:1.8rem; 
+  margin-bottom:5px;
+  color: #1a202c;
+  font-weight: 700;
+}
+
+.stat-info p { 
+  font-size:0.9rem; 
+  color:#718096;
+}
+
+.empty-state { 
+  text-align:center; 
+  padding:30px; 
+  color:#718096;
+}
+
+.empty-state i { 
+  font-size:3rem; 
+  margin-bottom:15px; 
+  opacity:0.5;
+}
 
 @media (max-width: 1200px) {
   .today-interviews, .new-candidates, .schedule-interview { grid-column: span 12 }

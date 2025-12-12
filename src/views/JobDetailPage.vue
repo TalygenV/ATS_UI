@@ -1426,7 +1426,7 @@ export default {
       } finally {
           setTimeout(() => {
             this.clearFiles();
-          }, 5000);
+          }, 10000);
         this.uploading = false;
         this.hideLoader();
       }
