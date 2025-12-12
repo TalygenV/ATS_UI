@@ -171,7 +171,7 @@
             </div>
         </div>
                 <div v-if="upcomingSlots.length === 0" class="empty-state assignments-card">
-      <p>No Dession Pending interview  found.</p>
+      <p>No upcoming interview  found.</p>
     </div>
 
        
@@ -234,7 +234,7 @@
           
           </div>
            <div v-if="pastDecissionPendingSlots.length === 0" class="empty-state assignments-card">
-      <p>No Dession Pending interview  found.</p>
+      <p>No dession pending interview  found.</p>
     </div>
         </div>
 
@@ -300,7 +300,7 @@
         
           </div>
               <div v-if="pastDecissionDoneSlots.length === 0" class="empty-state assignments-card">
-      <p>No Dession Pending interview  found.</p>
+      <p>No dession done interview  found.</p>
     </div>
 
         </div>
