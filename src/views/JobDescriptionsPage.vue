@@ -52,14 +52,14 @@
           
           <div v-if="hasWriteAccess" class="resume-count-preview"> 
                 <strong style="font-weight:bold"> Application Status :</strong>
-                
+                <div class="application-count-wrapper">
                   <span data-v-368fdc2f="" class="status-badge accepted"> Scheduled Interview {{job.scheduledInterview || 0}}</span>
-                 <span data-v-368fdc2f="" class="status-badge accepted"> Total Pending {{job.totalPending || 0}}</span>
-            <span data-v-368fdc2f="" class="status-badge pending">On Hold {{job.onhold || 0}}</span>
-              <span data-v-368fdc2f="" class="status-badge rejected">Dession Pending {{job.totalDecisionPending || 0}}</span>
+                 <span data-v-368fdc2f="" class="status-badge pending"> Total Pending {{job.totalPending || 0}}</span>
+            <span data-v-368fdc2f="" class="status-badge on_hold">On Hold {{job.onhold || 0}}</span>
+              <span data-v-368fdc2f="" class="status-badge pending">Dession Pending {{job.totalDecisionPending || 0}}</span>
             <span data-v-368fdc2f="" class="status-badge rejected">Rejected {{job.finalRejected || 0}}</span>
             <span data-v-368fdc2f="" class="status-badge accepted">Final Accepted {{job.finalSelected || 0}}</span>
-            
+            </div>
           </div>
         </div>
         <div class="card-footer">
@@ -308,6 +308,12 @@ export default {
   padding: 2rem 0;
 }
 
+.application-count-wrapper {
+     display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -337,6 +343,11 @@ export default {
   font-size: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: white;
+}
+
+.on_hold {
+  background: #fff3e0;
+  color: #e65100;
 }
 
 .search-input:focus {
