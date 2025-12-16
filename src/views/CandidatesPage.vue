@@ -366,6 +366,7 @@ import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
 import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
+import { formatDate, formatDateTime, formatTime } from '../utils/datetimeUtils';
 
 export default {
   name: 'CandidatesPage',
@@ -480,34 +481,9 @@ export default {
         'status-on-hold': status === 'on_hold'
       };
     },
-    formatDate(dateString) {
-      if (!dateString) return 'N/A';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    },
-    formatDateTime(dateString) {
-      if (!dateString) return 'N/A';
-      const date = new Date(dateString);
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    },
-    formatTime(timeString) {
-      if (!timeString) return 'N/A';
-      const date = new Date(timeString);
-      return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    },
+    formatDate,
+    formatDateTime,
+    formatTime,
     formatScore(score) {
       if (score === null || score === undefined) return '0';
       return Math.round(parseFloat(score));

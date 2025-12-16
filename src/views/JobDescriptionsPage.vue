@@ -144,6 +144,7 @@ import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
 import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
+import { formatDate } from '../utils/datetimeUtils';
 
 export default {
   name: 'JobDescriptionsPage',
@@ -297,15 +298,7 @@ export default {
       if (text.length <= length) return text;
       return text.substring(0, length) + '...';
     },
-    formatDate(dateString) {
-      if (!dateString) return 'N/A';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    }
+    formatDate
   }
 };
 </script>

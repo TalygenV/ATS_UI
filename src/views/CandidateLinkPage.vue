@@ -110,6 +110,7 @@
 import axios from 'axios';
 import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
+import { formatDateTime, formatTime } from '../utils/datetimeUtils';
 
 export default {
   name: 'CandidateLinkPage',
@@ -164,23 +165,8 @@ export default {
       if (score === null || score === undefined) return 0;
       return Math.round(parseFloat(score));
     },
-    formatDateTime(dateString) {
-      if (!dateString) return '';
-      return new Date(dateString).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    },
-    formatTime(dateString) {
-      if (!dateString) return '';
-      return new Date(dateString).toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    },
+    formatDateTime,
+    formatTime,
     async submitApplication() {
       if (!this.resumeFile) return;
       this.submitting = true;

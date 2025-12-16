@@ -184,6 +184,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import { useLoader } from '../composables/useLoader';
+import { formatDate } from '../utils/datetimeUtils';
 
 export default {
   name: 'ResumesPage',
@@ -306,15 +307,7 @@ export default {
         alert('Failed to download resume. Please try again.');
       }
     },
-    formatDate(dateString) {
-      if (!dateString) return 'N/A';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    },
+    formatDate,
     formatExperience(years) {
       if (!years && years !== 0) return 'N/A';
       const totalYears = parseFloat(years);

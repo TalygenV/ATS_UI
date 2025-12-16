@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { formatDateTime as formatDateUTC } from '../utils/datetimeUtils';
 
 // Reactive state
 const files = ref([]);
@@ -152,18 +153,8 @@ export function useTalygenFiles() {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
-  // Format date to readable format
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Format date to readable format (using UTC utility)
+  const formatDate = (dateString) => formatDateUTC(dateString);
 
   // Get upload status text
   const getUploadStatus = (status) => {

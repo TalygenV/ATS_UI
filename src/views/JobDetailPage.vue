@@ -1033,13 +1033,14 @@ import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
 import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
+import { formatDate, formatDateTime, formatTime, formatDateRange } from '../utils/datetimeUtils';
 
 export default {
   name: 'JobDetailPage',
   setup() {
     const { hasWriteAccess, user, hasRole } = useAuth();
     const { showLoader, hideLoader } = useLoader();
-    return { hasWriteAccess, user, hasRole, showLoader, hideLoader };
+    return { hasWriteAccess, user, hasRole, showLoader, hideLoader, formatDateRange };
   },
   data() {
     return {
@@ -1780,11 +1781,6 @@ export default {
       if (months === 0) return `${wholeYears} ${wholeYears === 1 ? 'year' : 'years'}`;
       return `${wholeYears} ${wholeYears === 1 ? 'year' : 'years'} ${months} ${months === 1 ? 'month' : 'months'}`;
     },
-    formatDateRange(startDate, endDate) {
-      const start = new Date(startDate);
-      const end = endDate === 'Present' ? new Date() : new Date(endDate);
-      return `${start.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${endDate === 'Present' ? 'Present' : end.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
-    },
     editJob() {
       this.editForm = {
         title: this.jobDescription.title,
@@ -1842,35 +1838,9 @@ export default {
         'status-on-hold': status === 'on_hold'
       };
     },
-    formatDate(dateString) {
-      if (!dateString) return 'N/A';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    },
-    formatDateTime(dateString) {
-      if (!dateString) return 'N/A';
-      const date = new Date(dateString);
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    },
-    formatTime(dateString) {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    },
+    formatDate,
+    formatDateTime,
+    formatTime,
     async fetchInterviewers() {
       try {
         const response = await axios.get(`${API_BASE_URL}/auth/users?role=Interviewer`);

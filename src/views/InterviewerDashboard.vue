@@ -18,7 +18,7 @@
                   <div class="form-group-inline">
                     <div class="form-group">
                       <label>Date *</label>
-                      <input v-model="slotForm.date" type="date" required class="form-input" />
+                      <input v-model="slotForm.date" type="date" :min="minDate" required class="form-input" />
                     </div>
                     <div class="form-group">
                       <label>From</label>
@@ -487,6 +487,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import { useLoader } from '../composables/useLoader';
+import { formatDateTime, formatTime, formatSlotTime, toUTCISOString, createUTCDate } from '../utils/datetimeUtils';
 
 export default {
   name: 'InterviewerDashboard',
@@ -537,6 +538,10 @@ export default {
     this.fetchSlots();
   },
   computed: {
+    minDate() {
+      const today = new Date();
+      return today.toISOString().slice(0, 10);
+    },
     selectedSlotsCount() {
       return (this.generatedSlots || []).filter(slot => slot.selected).length;
     },
@@ -586,11 +591,12 @@ export default {
       const startTime = this.slotForm.start_time || '09:00';
       const endTime = this.slotForm.end_time || '18:00';
       
-      // Parse date and time in local timezone
+      // Parse date and time - treat as local time, then convert to UTC for API
       const [year, month, day] = this.slotForm.date.split('-').map(Number);
       const [startHour, startMin] = startTime.split(':').map(Number);
       const [endHour, endMin] = endTime.split(':').map(Number);
       
+      // Create dates in local timezone first
       const startDateTime = new Date(year, month - 1, day, startHour, startMin, 0);
       const endDateTime = new Date(year, month - 1, day, endHour, endMin, 0);
       
@@ -607,32 +613,34 @@ export default {
       const slots = [];
       let currentStart = new Date(startDateTime);
       const slotMinutes = 45;
+      const now = new Date();
+      
+      // Check if selected date is today
+      const selectedDate = new Date(year, month - 1, day);
+      const today = new Date();
+      const isToday = selectedDate.toDateString() === today.toDateString();
       
       while (currentStart < endDateTime) {
         const currentEnd = new Date(currentStart.getTime() + slotMinutes * 60000);
         if (currentEnd > endDateTime) break;
         
-        // Format as YYYY-MM-DD HH:mm:ss in local time
-        const formatDateTime = (date) => {
-          const y = date.getFullYear();
-          const m = String(date.getMonth() + 1).padStart(2, '0');
-          const d = String(date.getDate()).padStart(2, '0');
-          const h = String(date.getHours()).padStart(2, '0');
-          const min = String(date.getMinutes()).padStart(2, '0');
-          const s = String(date.getSeconds()).padStart(2, '0');
-          return `${y}-${m}-${d} ${h}:${min}:${s}`;
-        };
+        // Skip past time slots if the selected date is today
+        if (isToday && currentStart <= now) {
+          currentStart = currentEnd;
+          continue;
+        }
         
+        // Convert to UTC ISO strings for API
         slots.push({
-          start_time: formatDateTime(currentStart),
-          end_time: formatDateTime(currentEnd),
+          start_time: toUTCISOString(currentStart),
+          end_time: toUTCISOString(currentEnd),
           selected: false
         });
         currentStart = currentEnd;
       }
       
       if (slots.length === 0) {
-        alert('No 45-minute slots could be generated for the given range');
+        alert('No 45-minute slots could be generated for the given range. Please check if the time range includes future times.');
         return;
       }
       
@@ -684,20 +692,7 @@ export default {
         this.hideLoader();
       }
     },
-    formatSlotTime(timeString) {
-      if (!timeString) return '';
-      // Parse YYYY-MM-DD HH:mm:ss format
-      const [datePart, timePart] = timeString.split(' ');
-      if (!datePart || !timePart) return '';
-      const [year, month, day] = datePart.split('-').map(Number);
-      const [hour, minute] = timePart.split(':').map(Number);
-      const date = new Date(year, month - 1, day, hour, minute);
-      return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    },
+    formatSlotTime,
     formatDate(dateString) {
       if (!dateString) return '';
       const date = new Date(dateString + 'T00:00:00');
@@ -816,25 +811,9 @@ export default {
         });
       }
     },
-    formatDateTime(dateString) {
-      if (!dateString) return 'N/A';
-      const date = new Date(dateString);
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    },
-    formatTime(dateString) {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
+    formatDateTime,
+    formatTime,
+    formatSlotTime,
   }
 };
 </script>

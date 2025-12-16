@@ -186,6 +186,7 @@ import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
 import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
+import { formatDateRange } from '../utils/datetimeUtils';
 
 export default {
   name: 'ResumeDetailPage',
@@ -456,11 +457,7 @@ export default {
       if (months === 0) return `${wholeYears} ${wholeYears === 1 ? 'year' : 'years'}`;
       return `${wholeYears} ${wholeYears === 1 ? 'year' : 'years'} ${months} ${months === 1 ? 'month' : 'months'}`;
     },
-    formatDateRange(startDate, endDate) {
-      const start = new Date(startDate);
-      const end = endDate === 'Present' ? new Date() : new Date(endDate);
-      return `${start.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${endDate === 'Present' ? 'Present' : end.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
-    }
+    formatDateRange
   }
 };
 </script>

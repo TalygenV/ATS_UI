@@ -38,6 +38,8 @@
 </template>
 
 <script>
+import { formatDateTime } from '../utils/datetimeUtils';
+
 export default {
   name: 'InterviewBookingSuccess',
   data() {
@@ -67,21 +69,7 @@ export default {
     }
   },
   methods: {
-    formatDateTime(dateString) {
-      if (!dateString) return 'N/A';
-      try {
-        const date = new Date(dateString);
-        return date.toLocaleString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      } catch (e) {
-        return dateString;
-      }
-    },
+    formatDateTime,
     closeWindow() {
       // Try to close the window/tab
       // Note: This will only work if the window was opened by JavaScript
