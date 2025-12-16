@@ -44,13 +44,22 @@
           <div class="resume-count-preview">
             <strong>Parsed Resumes:</strong>
             <span class="resume-count">{{ job.resume_count || 0 }} resume(s)</span>
-          </div >
-          
-          <div class="resume-count-preview"> 
-             <strong> Status :</strong>
+               <span style="font-weight:bold">Parse Status :</span>
               <span data-v-368fdc2f="" class="status-badge accepted">accepted {{job.accepted || 0}}</span>
             <span data-v-368fdc2f="" class="status-badge pending">pending {{job.pending || 0}}</span>
             <span data-v-368fdc2f="" class="status-badge rejected">rejected {{job.rejected || 0}}</span>
+          </div >
+          
+          <div v-if="hasWriteAccess" class="resume-count-preview"> 
+                <strong style="font-weight:bold"> Application Status :</strong>
+                
+                  <span data-v-368fdc2f="" class="status-badge accepted"> Scheduled Interview {{job.scheduledInterview || 0}}</span>
+                 <span data-v-368fdc2f="" class="status-badge accepted"> Total Pending {{job.totalPending || 0}}</span>
+            <span data-v-368fdc2f="" class="status-badge pending">On Hold {{job.onhold || 0}}</span>
+              <span data-v-368fdc2f="" class="status-badge rejected">Dession Pending {{job.totalDecisionPending || 0}}</span>
+            <span data-v-368fdc2f="" class="status-badge rejected">Rejected {{job.finalRejected || 0}}</span>
+            <span data-v-368fdc2f="" class="status-badge accepted">Final Accepted {{job.finalSelected || 0}}</span>
+            
           </div>
         </div>
         <div class="card-footer">

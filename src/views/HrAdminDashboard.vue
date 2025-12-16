@@ -43,8 +43,8 @@
     </div>
 
     <div class="dashboard-content">
-      <div class="card today-interviews">
-        <div class="card-header-own">
+      <div class=" today-interviews">
+        <div class=" card-header-own">
           <h2 class="card-title">Today's Scheduled Interviews</h2>
           <button class="card-action">View All</button>
         </div>
@@ -60,13 +60,13 @@
             <div
               v-for="interview in todayInterviews"
               :key="interview.id"
-              class="interview-item"
+              class="interview-item "
               :class="{ ongoing: interview.status === 'ongoing' }"
             >
               <div class="interview-info">
-                <h4>Candidate : {{ interview.name }}</h4>
-                <p><i class="fas fa-briefcase"></i> Job Discription : {{ interview.position }}</p>
-                <p><i class="fas fa-user-tie"></i>
+                <p class="mb-0">Candidate : {{ interview.name }}</p>
+                <p class="mb-0"> Job Discription : {{ interview.position }}</p>
+                <p>
                    Interviewer :  {{ interview.interviewer }} 
                 </p>
               </div>
@@ -79,7 +79,7 @@
         </div>
       </div>
 
-      <div class="card ongoing-interviews">
+      <div class="ongoing-interviews">
         <div class="card-header-own">
           <h2 class="card-title">Ongoing Interviews</h2>
           <button class="card-action" @click="refreshOngoing">Refresh</button>
@@ -99,9 +99,9 @@
               class="interview-item ongoing"
             >
               <div class="interview-info">
-                <h4>{{ interview.name }}</h4>
-                <p><i class="fas fa-briefcase"></i> {{ interview.position }}</p>
-                <p><i class="fas fa-user-tie"></i> {{ interview.interviewer }} • {{ interview.type }}</p>
+                <p class="mb-0">{{ interview.name }}</p>
+                <p class="mb-0"> {{ interview.position }}</p>
+                <p class="mb-0"> {{ interview.interviewer }} • {{ interview.type }}</p>
               </div>
               <div class="interview-time">
                 <span>{{ interview.time }}</span>
@@ -112,7 +112,7 @@
         </div>
       </div>
 
-      <div class="card new-candidates">
+      <div class="new-candidates">
         <div class="card-header-own">
           <h2 class="card-title">New Candidates</h2>
           <router-link to="/resumes">
@@ -137,10 +137,10 @@
                 {{ cand.initials }}
               </div> -->
               <div class="candidate-details">
-                <h4>{{ cand.name }}</h4>
-                <p><i class="fas fa-briefcase"></i> Email:  {{ cand.email }}</p>
-                <p><i class="fas fa-calendar-alt"></i> Applied: {{ cand.appliedDate }}</p>
-                <p><i class="fas fa-chart-line"></i> {{ formatExperience(cand.experience) }} experience</p>
+                <p class="mb-0">Name : {{ cand.name }}</p>
+                <p class="mb-0"> Email:  {{ cand.email }}</p>
+                <p class="mb-0"> Applied: {{ cand.appliedDate }}</p>
+                <p class="mb-0"> Experience : {{ formatExperience(cand.experience) }} </p>
               </div>
               <div class="status-badge status-new">NEW</div>
             </div>
@@ -427,8 +427,9 @@ header {
   gap:10px; 
   font-weight:700; 
   font-size:1.8rem; 
-  margin-top: 15px;
+  margin-top: 2rem;
   /* color:#4361ee; */
+      margin-bottom: 2rem;
   letter-spacing: -0.5px;
 }
 .logo-own i { font-size:2rem; }
@@ -492,13 +493,22 @@ header {
   justify-content:space-between; 
   align-items:center; 
   margin-bottom:20px;
+    background: rgba(255, 255, 255, 0.95);
+  /* backdrop-filter: blur(10px); */
+  border: none;
+  border-radius:20px; 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  padding:25px; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+
 }
 
 .card-title { 
-  font-size:1.3rem; 
-  font-weight:600;
-  color: #1a202c;
+
   letter-spacing: -0.3px;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .card-action { 
@@ -532,8 +542,15 @@ header {
   align-items:center; 
   padding:15px; 
   border-radius:16px; 
+      background: rgba(255, 255, 255, 0.95);
+  /* backdrop-filter: blur(10px); */
+  border: none;
+  border-radius:20px; 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  padding:25px; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
   /* background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); */
-      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      /* background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); */
   /* border-left:4px solid #4361ee; */
   /* border: 1px solid #e2e8f0; */
   /* border-left:4px solid #4361ee; */
@@ -550,6 +567,13 @@ header {
   /* border-left-color:#f72585; */
   background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
   border-color: #fed7aa;
+      background: rgba(255, 255, 255, 0.95);
+  /* backdrop-filter: blur(10px); */
+  border: none;
+  border-radius:20px; 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  padding:25px; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
 }
 
 .interview-info h4 { 
@@ -600,9 +624,16 @@ header {
   gap:15px; 
   padding:15px; 
   border-radius:16px; 
-       background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+       /* background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); */
   border: 1px solid #e2e8f0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(255, 255, 255, 0.95);
+  /* backdrop-filter: blur(10px); */
+  border: none;
+  border-radius:20px; 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+  padding:25px; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
 }
 
 .candidate-item:hover {
@@ -788,6 +819,12 @@ header {
   font-size:3rem; 
   margin-bottom:15px; 
   opacity:0.5;
+}
+
+.name {
+  color: #333;
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem 0;
 }
 
 @media (max-width: 1200px) {

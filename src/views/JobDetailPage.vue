@@ -160,18 +160,23 @@
         <div v-else-if="candidates.length === 0" class="empty-state">
           <p>No candidates found. Upload resumes to get started!</p>
         </div>
+              <!-- v-show="hasRole('Interviewer') ? candidate.interviewer_id === user?.id : true "  -->
         <div v-else class="candidates-grid">
           <div 
             v-for="candidate in candidates" 
             :key="candidate.id" 
             class="candidate-card" 
             :class="getStatusClass(candidate.status)"
-            v-show="hasRole('Interviewer') ? candidate.interviewer_id === user?.id : true"
+      
+            v-show="hasRole('Interviewer')
+  ? (candidate.interviewer_id === user?.id || candidate.isDuplicate)
+  : true"
           >
             <div class="card-header-section">
               <div class="candidate-header">
               <div class="candidate-info">
                 <h4>{{ candidate.candidate_name || 'Unknown' }}</h4>
+                  <!-- <h4>{{ candidate.resume_id || 'Unknown' }}</h4> -->
                 <span class="candidate-email">{{ candidate.email || 'N/A' }}</span>
                 <div v-if="candidate.interviewer" class="interviewer-info">
                   <span class="interviewer-label">Interviewer:</span>
@@ -185,6 +190,12 @@
                   <span class="status-label">Interviewer Decision:</span>
                   <span :class="['status-badge-small', 'interviewer-' + candidate.interviewer_status]">
                     {{ candidate.interviewer_status.replace(/_/g, ' ') }}
+                  </span>
+                </div>
+                <div v-if="!['Interviewer'].includes(user.role) && candidate.hr_final_status && candidate.hr_final_status !== 'pending'" class="interviewer-status">
+                  <span class="status-label">HR Final Decision:</span>
+                  <span :class="['status-badge-small', 'interviewer-' + candidate.hr_final_status]">
+                    {{ candidate.hr_final_status.replace(/_/g, ' ') }}
                   </span>
                 </div>
               </div>
@@ -284,7 +295,7 @@
                   class="btn btn-version-history"
                   title="View Version History"
                 >
-                  📜 Versions
+                  📜 Versions 
                 </button>
                 <button @click="viewResumeDetail(candidate)" class="btn btn-primary-small">View Details</button>
               </div>
