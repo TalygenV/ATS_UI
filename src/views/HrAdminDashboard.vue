@@ -60,15 +60,27 @@
             <div
               v-for="interview in todayInterviews"
               :key="interview.id"
-              class="interview-item "
+              class="interview-item scheduled-interviews"
               :class="{ ongoing: interview.status === 'ongoing' }"
             >
               <div class="interview-info">
-                <p class="mb-0">Candidate : {{ interview.name }}</p>
-                <p class="mb-0"> Job Discription : {{ interview.position }}</p>
-                <p>
+                <div class="info-row">
+                    <span class="label">Candidate:</span>
+                    <span class="value">{{ interview.name  || 'N/A' }}</span>
+                </div>
+                 <div class="info-row">
+                    <span class="label">Job Discription:</span>
+                    <span class="value">{{ interview.position  || 'N/A' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Interviewer:</span>
+                    <span class="value">{{ interview.interviewer  || 'N/A' }}</span>
+                  </div>
+                <!-- <p class="mb-0">Candidate : {{ interview.name }}</p> -->
+                <!-- <p class="mb-0"> Job Discription : {{ interview.position }}</p> -->
+                <!-- <p>
                    Interviewer :  {{ interview.interviewer }} 
-                </p>
+                </p> -->
               </div>
               <div class="interview-time">
                 <span>{{ interview.time }}</span>
@@ -86,7 +98,7 @@
         </div>
         <div class="interview-list">
           <template v-if="ongoingInterviews.length === 0">
-            <div class="empty-state">
+            <div class="empty-state ">
               <i class="fas fa-clock"></i>
               <p>No ongoing interviews at the moment</p>
             </div>
@@ -98,12 +110,31 @@
               :key="interview.id"
               class="interview-item ongoing"
             >
-              <div class="interview-info">
+              <!-- <div class="interview-info">
                 <p class="mb-0">{{ interview.name }}</p>
                 <p class="mb-0"> {{ interview.position }}</p>
                 <p class="mb-0"> {{ interview.interviewer }} • {{ interview.type }}</p>
+              </div> -->
+                   <div class="interview-info">
+                <div class="info-row">
+                    <span class="label">Candidate:</span>
+                    <span class="value">{{ interview.name  || 'N/A' }}</span>
+                </div>
+                 <div class="info-row">
+                    <span class="label">Job Discription:</span>
+                    <span class="value">{{ interview.position  || 'N/A' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Interviewer:</span>
+                    <span class="value">{{ interview.interviewer  || 'N/A' }}</span>
+                  </div>
+                <!-- <p class="mb-0">Candidate : {{ interview.name }}</p> -->
+                <!-- <p class="mb-0"> Job Discription : {{ interview.position }}</p> -->
+                <!-- <p>
+                   Interviewer :  {{ interview.interviewer }} 
+                </p> -->
               </div>
-              <div class="interview-time">
+              <div class="in-progress">
                 <span>{{ interview.time }}</span>
                 <span>In Progress</span>
               </div>
@@ -128,7 +159,7 @@
           </template>
 
           <template v-else>
-            <div v-for="cand in newCandidates" :key="cand.id" class="candidate-item">
+            <div v-for="cand in newCandidates" :key="cand.id" class="candidate-item new-candidate">
               <!-- <div
                 class="candidate-avatar"
                 :style="{ backgroundColor: cand.bg + '20', color: cand.bg }
@@ -136,13 +167,65 @@
               >
                 {{ cand.initials }}
               </div> -->
-              <div class="candidate-details">
-                <p class="mb-0">Name : {{ cand.name }}</p>
-                <p class="mb-0"> Email:  {{ cand.email }}</p>
+              <div class="candidate-details ">
+                 <div class="interview-info">
+                <div class="info-row">
+                    <span class="label">Name:</span>
+                    <span class="value">{{ cand.name  || 'N/A' }}</span>
+                </div>
+
+                   <div class="info-row">
+                    <span class="label">Email:</span>
+                    <span class="value">{{ cand.email  || 'N/A' }}</span>
+                </div>
+
+                   <div class="info-row">
+                    <span class="label">Applied:</span>
+                    <span class="value">{{ cand.appliedDate  || 'N/A' }}</span>
+                </div>
+
+                   <div class="info-row">
+                    <span class="label">Experience:</span>
+                    <span class="value">{{ formatExperience(cand.experience) }}</span>
+                </div>
+                 </div>
+                <!-- <p class="mb-0"> :  {{ cand.email }}</p>
                 <p class="mb-0"> Applied: {{ cand.appliedDate }}</p>
-                <p class="mb-0"> Experience : {{ formatExperience(cand.experience) }} </p>
+                <p class="mb-0"> Experience : {{ formatExperience(cand.experience) }} </p> -->
               </div>
-              <div class="status-badge status-new">NEW</div>
+
+              
+
+               <!-- <div class="interview-info"> -->
+                
+                 <!-- <div class="info-row">
+                    <span class="label">Job Discription:</span>
+                    <span class="value">{{ interview.position  || 'N/A' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Interviewer:</span>
+                    <span class="value">{{ interview.interviewer  || 'N/A' }}</span>
+                  </div> -->
+                <!-- <p class="mb-0">Candidate : {{ interview.name }}</p> -->
+                <!-- <p class="mb-0"> Job Discription : {{ interview.position }}</p> -->
+                <!-- <p>
+                   Interviewer :  {{ interview.interviewer }} 
+                </p> -->
+              <!-- </div> -->
+
+
+
+
+
+
+
+              <div class="status-badge status-new">
+                 
+                <span>NEW</span>
+                <span>Candidates</span>
+              
+              </div>
+              
             </div>
           </template>
         </div>
@@ -525,9 +608,9 @@ header {
   color:#3f37c9;
 } */
 
-.today-interviews { grid-column: span 8 }
+.today-interviews { grid-column: span 4 }
 .ongoing-interviews { grid-column: span 4 }
-.new-candidates { grid-column: span 6 }
+.new-candidates { grid-column: span 4 }
 .schedule-interview { grid-column: span 6 }
 
 .interview-list { 
@@ -537,9 +620,9 @@ header {
 }
 
 .interview-item { 
-  display:flex; 
-  justify-content:space-between; 
+  display: flex; 
   align-items:center; 
+  justify-content:space-between;
   padding:15px; 
   border-radius:16px; 
       background: rgba(255, 255, 255, 0.95);
@@ -551,30 +634,25 @@ header {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
   /* background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); */
       /* background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); */
-  /* border-left:4px solid #4361ee; */
+ border-top:4px solid #d7d7d7;
   /* border: 1px solid #e2e8f0; */
   /* border-left:4px solid #4361ee; */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
 }
 
-/* .interview-item:hover {
-  transform: translateX(4px);
-
-} */
+.interview-item.scheduled-interviews{
+      border-top-color: #9c2a2a;
+}
 
 .interview-item.ongoing { 
-  /* border-left-color:#f72585; */
-  background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
-  border-color: #fed7aa;
-      background: rgba(255, 255, 255, 0.95);
-  /* backdrop-filter: blur(10px); */
-  border: none;
-  border-radius:20px; 
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
-  padding:25px; 
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      border-top-color: #1976d2;
 }
+
+.candidate-item.new-candidate { 
+      border-top-color: #4caf50;
+}
+
 
 .interview-info h4 { 
   font-size:1rem; 
@@ -590,32 +668,88 @@ header {
   gap:8px;
 }
 
+
+.info-row {
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  
+}
+
+.label {
+  font-weight: 500;
+  color: #666;
+  min-width: 100px;
+  margin-right: 10px;
+}
+
+.value {
+  color: #333;
+  flex: 1;
+  text-align: right;
+}
+
+
 .interview-time { 
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  background: linear-gradient(135deg, #f0f4ff 0%, #e6edff 100%);
-  
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+  justify-content: center;
   padding:10px 15px; 
   border-radius:12px; 
   min-width:100px;
   border: 1px solid rgba(66, 153, 225, 0.2);
+      border-color: #fed7aa;
 }
+ .in-progress{  
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+   background: #e3f2fd; 
+   color: #1976d2; 
+    padding: 10px 15px;
+    border-radius: 12px;
+    min-width: 100px;
+    border: 1px solid rgba(66, 153, 225, 0.2);
+    border-color: #aed7ff;
+
+ }
+
+
+.in-progress span[data-v-91557d31]:first-child {
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.in-progress span:last-child {
+    font-size: 0.8rem;
+    color: #1976d2;
+}
+
+
+
+
+
 
 .interview-time span:first-child { 
   font-weight:600; 
-  /* color:#4361ee; */
+   color:#742a2a; 
+       padding-right: 10px;
+       
+
 }
 
 .interview-time span:last-child { 
   font-size:0.8rem; 
-  color:#718096;
+  color:#742a2a;
+  font-size: 1rem;
 }
 
 .candidate-list { 
   display:flex; 
   flex-direction:column; 
-  gap:15px;
+  gap:8px;
 }
 
 .candidate-item { 
@@ -634,6 +768,7 @@ header {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
   padding:25px; 
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  border-top: 4px solid #ddd;
 }
 
 .candidate-item:hover {
@@ -679,7 +814,14 @@ header {
 .status-new { 
   background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
   color:#22543d;
-   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 12px;
+    min-width: 100px;
+    border: 1px solid rgb(132 222 161);
+
 }
 
 .form-group { 
@@ -751,7 +893,7 @@ header {
   display:grid; 
   grid-template-columns:repeat(3,1fr); 
   gap:20px; 
-  margin-bottom:30px;
+  margin-bottom:24px;
 }
 
 .stat-card { 
@@ -813,10 +955,16 @@ header {
   text-align:center; 
   padding:30px; 
   color:#718096;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+        padding: 25px;
 }
 
 .empty-state i { 
   font-size:3rem; 
+
   margin-bottom:15px; 
   opacity:0.5;
 }

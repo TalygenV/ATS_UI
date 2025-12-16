@@ -115,7 +115,7 @@
          
         <div class="col-4 assignments-card1">
            <h3 class="assignments-card-header" > Upcoming Interviews </h3>  
-          <div v-for="assignment in upcomingSlots" :key="assignment.id" class="assignment-card my-2">
+          <div v-for="assignment in upcomingSlots" :key="assignment.id" class="assignment-card upcoming-interview my-2">
             <div class="card-header">
               <div>
                 <h3>{{ assignment.resume?.name || assignment.candidate_name || 'Unknown Candidate' }}</h3>
@@ -181,8 +181,8 @@
         </div>
 
         <div class="col-4 assignments-card1">
-            <h3 class="assignments-card-header" > Dession Pending  </h3>
-          <div v-for="assignment in pastDecissionPendingSlots" :key="assignment.id" class="assignment-card my-2">
+            <h3 class="assignments-card-header" > Decision Pending  </h3>
+          <div v-for="assignment in pastDecissionPendingSlots" :key="assignment.id" class="assignment-card pending-interview my-3">
           
             
   
@@ -233,14 +233,14 @@
               </div>
           
           </div>
-           <div v-if="pastDecissionPendingSlots.length === 0" class="empty-state assignments-card">
-      <p>No dession pending interview  found.</p>
+           <div v-if="pastDecissionPendingSlots.length === 0" class="empty-state assignments-card my-3">
+      <p>No Decision pending interview  found.</p>
     </div>
         </div>
 
         <div class="col-4 assignments-card1">
-              <h3 class="assignments-card-header" > Dession Done</h3>
-          <div v-for="assignment in pastDecissionDoneSlots" :key="assignment.id" class="assignment-card my-2">
+              <h3 class="assignments-card-header" > Decision Done</h3>
+          <div v-for="assignment in pastDecissionDoneSlots" :key="assignment.id" class="assignment-card decision-done my-3">
         
          
 
@@ -300,7 +300,7 @@
         
           </div>
               <div v-if="pastDecissionDoneSlots.length === 0" class="empty-state assignments-card">
-      <p>No dession done interview  found.</p>
+      <p>No Decision done interview  found.</p>
     </div>
 
         </div>
@@ -861,6 +861,18 @@ h2 {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.assignment-card.upcoming-interview{
+  border-top-color: #1976d2;
+}
+
+.assignment-card.pending-interview{
+  border-top-color:#e65100;
+}
+
+.assignment-card.decision-done{
+  border-top-color: #2e7d32;
+}
+
 .assignments-card-header {
       font-size: 1.25rem;
       font-weight: 700;
@@ -1070,7 +1082,19 @@ h2 {
   padding: 1.75rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 4px solid #ddd;
+}
+
+.assignment-card.status-pending{
+    border-top-color: #ff9800;
+}
+
+.assignment-card.status-selected {
+    border-top-color: #4caf50;
+}
+
+.assignment-card.status-rejected {
+    border-top-color: #f44336;
 }
 
 .assignment-card:hover {
@@ -1104,6 +1128,7 @@ h2 {
   text-transform: uppercase;
   display: inline-block;
   margin-top: 0.5rem;
+  margin-bottom: 24px;
 }
 
 .status-badge.interviewer-pending {
@@ -1131,7 +1156,6 @@ h2 {
 }
 
 .info-row {
-  display: flex;
   margin-bottom: 0.75rem;
   font-size: 0.9rem;
 }
@@ -1140,6 +1164,7 @@ h2 {
   font-weight: 500;
   color: #666;
   min-width: 100px;
+  margin-right: 10px;
 }
 
 .value {

@@ -56,7 +56,7 @@
                   <span data-v-368fdc2f="" class="status-badge accepted"> Scheduled Interview {{job.scheduledInterview || 0}}</span>
                  <span data-v-368fdc2f="" class="status-badge pending"> Total Pending {{job.totalPending || 0}}</span>
             <span data-v-368fdc2f="" class="status-badge on_hold">On Hold {{job.onhold || 0}}</span>
-              <span data-v-368fdc2f="" class="status-badge pending">Dession Pending {{job.totalDecisionPending || 0}}</span>
+              <span data-v-368fdc2f="" class="status-badge pending">Decision Pending {{job.totalDecisionPending || 0}}</span>
             <span data-v-368fdc2f="" class="status-badge rejected">Rejected {{job.finalRejected || 0}}</span>
             <span data-v-368fdc2f="" class="status-badge accepted">Final Accepted {{job.finalSelected || 0}}</span>
             </div>
