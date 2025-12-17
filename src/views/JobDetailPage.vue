@@ -1215,15 +1215,15 @@ export default {
       if (!this.candidateLinkUrl) return;
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(this.candidateLinkUrl);
+          await navigator.clipboard.writeText(`${location.origin}${this.candidateLinkUrl}`);
           alert('Candidate link copied to clipboard.');
         } else {
           // Fallback
-          window.prompt('Copy this link:', this.candidateLinkUrl);
+          window.prompt('Copy this link:', `${location.origin}${this.candidateLinkUrl}`);
         }
       } catch (error) {
         console.error('Error copying candidate link:', error);
-        window.prompt('Copy this link:', this.candidateLinkUrl);
+        window.prompt('Copy this link:', `${location.origin}${this.candidateLinkUrl}`);
       }
     },
     async fetchCandidates() {
