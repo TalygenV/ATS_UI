@@ -1892,6 +1892,8 @@ export default {
         alert('Please fill in all required fields');
         return;
       }
+       this.loading = true;
+      this.showLoader('Assigning to interviewer...');
 
       try {
         let response;
@@ -1930,6 +1932,11 @@ export default {
       } catch (error) {
         console.error('Error assigning interviewer:', error);
         alert('Failed to assign interviewer. Please try again.');
+      } finally {
+      
+        this.loading = false;
+        this.hideLoader();
+      
       }
     },
     openFeedbackModal(candidate) {

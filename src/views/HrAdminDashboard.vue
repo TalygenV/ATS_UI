@@ -219,7 +219,7 @@
 
 
 
-              <div class="status-badge status-new">
+              <div class="d-none d-md-flex status-badge status-new">
                  
                 <span>NEW</span>
                 <span>Candidates</span>

@@ -230,6 +230,12 @@
    padding: 0 2.5rem;
    padding-top: 10px !important;
  }
+
+ @media screen and (max-width: 1440px) {
+
+.main-content {   max-width: 100%;}
+}
+
  
  @media (max-width: 768px) {
    .navbar .container {
@@ -247,7 +253,7 @@
    
    .main-content {
      padding: 0 1.5rem;
-     padding-top: 90px !important;
+     padding-top: 10px !important;
    }
  }
  

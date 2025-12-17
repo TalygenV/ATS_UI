@@ -8,7 +8,7 @@
       <!-- Availability management -->
       <div class="availability-card row m-0">
 
-        <div class="my-availability col-5">
+        <div class="my-availability col-md-12 col-lg-6 col-xxl-5">
 
             <div class="card-header">
               <h3>My Availability</h3>
@@ -36,11 +36,11 @@
                     </div>
                   </div>
                   <div class="row">
-                    <div class="col-8">
+                    <div class="col-12 col-md-8">
                       <p class="hint-text">System will generate 45-minute slots between the selected times (default 9:00–18:00). You can select which slots to make available.</p>
                     </div>
-                    <div class="col-4">
-                      <div class="form-actions mt-2">
+                    <div class="col-12 col-md-4">
+                      <div class="form-actions generate-slots-btn mt-2">
                         <button type="submit" class="btn btn-primary" :disabled="generatingSlots">
                           <span v-if="generatingSlots">Generating...</span>
                           <span v-else>Generate Slots</span>
@@ -56,17 +56,17 @@
         </div>
        
 
-         <div class="slots-section col-7">
+         <div class="slots-section col-md-12 col-lg-6 col-xxl-7">
             <h4>Upcoming Slots</h4>
             <div v-if="loadingSlots" class="loading">Loading slots...</div>
             <div v-else-if="slots.length === 0" class="empty-state">
               <p>No upcoming availability created.</p>
             </div>
-            <div v-else class="slots-list">
+            <div v-else class="slots-list" ref="slotsList">
               <div
                 v-for="slot in slots"
                 :key="slot.id"
-                class="slot-row col-4"
+                class="slot-row col-11 col-md-6 col-lg-9 col-xl-6"
                 :class="{ booked: slot.is_booked }"
               >
                 <div class="slot-info">
@@ -113,7 +113,7 @@
     </div>
     <div v-else class="row ">
          
-        <div class="col-4 assignments-card1">
+        <div class="col-12 col-lg-6 col-xl-4 assignments-card1">
            <h3 class="assignments-card-header" > Upcoming Interviews </h3>  
           <div v-for="assignment in upcomingSlots" :key="assignment.id" class="assignment-card upcoming-interview my-2">
             <div class="card-header">
@@ -180,7 +180,7 @@
          
         </div>
 
-        <div class="col-4 assignments-card1">
+        <div class="col-12 col-lg-6 col-xl-4 assignments-card1">
             <h3 class="assignments-card-header" > Decision Pending  </h3>
           <div v-for="assignment in pastDecissionPendingSlots" :key="assignment.id" class="assignment-card pending-interview my-3">
           
@@ -238,7 +238,7 @@
     </div>
         </div>
 
-        <div class="col-4 assignments-card1">
+        <div class="col-12 col-lg-6 col-xl-4 assignments-card1">
               <h3 class="assignments-card-header" > Decision Done</h3>
           <div v-for="assignment in pastDecissionDoneSlots" :key="assignment.id" class="assignment-card decision-done my-3">
         
@@ -536,6 +536,7 @@ export default {
     this.slotForm.date = today.toISOString().slice(0, 10);
     this.fetchAssignments();
     this.fetchSlots();
+
   },
   computed: {
     minDate() {
@@ -814,7 +815,31 @@ export default {
     formatDateTime,
     formatTime,
     formatSlotTime,
+  },
+    watch: {
+  slots(newSlots) {
+    if (!newSlots || newSlots.length === 0) return;
+
+    this.$nextTick(() => {
+      const el = this.$refs.slotsList;
+      if (!el || el.__wheelBound) return;
+
+      el.addEventListener(
+        'wheel',
+        (e) => {
+          if (e.deltaY !== 0) {
+            e.preventDefault();
+            el.scrollLeft += e.deltaY;
+          }
+        },
+        { passive: false }
+      );
+
+      // prevent double binding
+      el.__wheelBound = true;
+    });
   }
+},
 };
 </script>
 
@@ -822,6 +847,7 @@ export default {
 .interviewer-dashboard {
   padding: 2rem 0;
 }
+
 
 .page-header {
   display: flex;
@@ -1493,5 +1519,74 @@ h2 {
   font-size: 0.95rem;
   color: #333;
 }
+
+
+@media screen and (max-width: 1600px) {
+
+.slot-form .form-group-inline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.slot-form .form-group-inline .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header[data-v-fbd5810a] {
+    margin-bottom: 10px;
+}
+
+}
+
+
+@media screen and (max-width: 992px) {
+
+ .slot-form .form-group-inline { grid-template-columns: repeat(2, 1fr); }
+ .assignments-card1 { margin-top: 30px;}
+
+.slots-section{ height: 100%;}
+
+}
+
+@media screen and (max-width: 767px) {
+
+.slot-form .form-group-inline[data-v-fbd5810a] {
+    grid-template-columns: repeat(1, 1fr);
+    gap: 5px;
+}
+
+.form-actions.generate-slots-btn{
+    justify-content: start;
+}
+
+.availability-card {
+    padding: 30px 15px !important;
+}
+
+}
+
+
+@media screen and (max-width: 575px) {
+
+.assignments-card .card-header {
+    display: flex;
+    align-items: start;
+    width: 100%;
+    flex-direction: column;
+}
+
+.assignments-card .card-header .filter-select{
+  width: 100%;
+}
+
+.assignments-card .card-header h3 {
+    margin-bottom: 20px;
+}
+
+}
+
+
 </style>
 
