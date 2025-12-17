@@ -585,69 +585,80 @@ export default {
         this.loadingSlots = false;
       }
     },
-    generateSlots() {
-      if (!this.slotForm.date) return;
-      
-      // Generate slots client-side
-      const startTime = this.slotForm.start_time || '09:00';
-      const endTime = this.slotForm.end_time || '18:00';
-      
-      // Parse date and time - treat as local time, then convert to UTC for API
-      const [year, month, day] = this.slotForm.date.split('-').map(Number);
-      const [startHour, startMin] = startTime.split(':').map(Number);
-      const [endHour, endMin] = endTime.split(':').map(Number);
-      
-      // Create dates in local timezone first
-      const startDateTime = new Date(year, month - 1, day, startHour, startMin, 0);
-      const endDateTime = new Date(year, month - 1, day, endHour, endMin, 0);
-      
-      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-        alert('Invalid date or time format');
-        return;
-      }
-      
-      if (endDateTime <= startDateTime) {
-        alert('End time must be after start time');
-        return;
-      }
-      
-      const slots = [];
-      let currentStart = new Date(startDateTime);
-      const slotMinutes = 45;
-      const now = new Date();
-      
-      // Check if selected date is today
-      const selectedDate = new Date(year, month - 1, day);
-      const today = new Date();
-      const isToday = selectedDate.toDateString() === today.toDateString();
-      
-      while (currentStart < endDateTime) {
-        const currentEnd = new Date(currentStart.getTime() + slotMinutes * 60000);
-        if (currentEnd > endDateTime) break;
-        
-        // Skip past time slots if the selected date is today
-        if (isToday && currentStart <= now) {
-          currentStart = currentEnd;
-          continue;
-        }
-        
-        // Convert to UTC ISO strings for API
-        slots.push({
-          start_time: toUTCISOString(currentStart),
-          end_time: toUTCISOString(currentEnd),
-          selected: false
-        });
-        currentStart = currentEnd;
-      }
-      
-      if (slots.length === 0) {
-        alert('No 45-minute slots could be generated for the given range. Please check if the time range includes future times.');
-        return;
-      }
-      
-      this.generatedSlots = slots;
-      this.showSlotSelectionModal = true;
-    },
+     utcToLocalDate(utcString) {
+  return new Date(utcString); // JS auto converts UTC → local
+},
+ isOverlapping(startA, endA, startB, endB) {
+  return startA < endB && endA > startB;
+},
+   generateSlots() {
+  if (!this.slotForm.date) return;
+
+  const startTime = this.slotForm.start_time || '09:00';
+  const endTime = this.slotForm.end_time || '18:00';
+
+  const [year, month, day] = this.slotForm.date.split('-').map(Number);
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+
+  const startDateTime = new Date(year, month - 1, day, startHour, startMin, 0);
+  const endDateTime = new Date(year, month - 1, day, endHour, endMin, 0);
+
+  if (endDateTime <= startDateTime) {
+    alert('End time must be after start time');
+    return;
+  }
+
+  const slotMinutes = 45;
+  const now = new Date();
+
+  const selectedDate = new Date(year, month - 1, day);
+  const isToday = selectedDate.toDateString() === new Date().toDateString();
+
+  // ✅ Convert existing slots to local date ranges
+  const existingSlots = this.slots.map(s => ({
+    start: new Date(s.start_time),
+    end: new Date(s.end_time)
+  }));
+
+  const slots = [];
+  let currentStart = new Date(startDateTime);
+
+  while (currentStart < endDateTime) {
+    const currentEnd = new Date(currentStart.getTime() + slotMinutes * 60000);
+    if (currentEnd > endDateTime) break;
+
+    // Skip past time if today
+    if (isToday && currentStart <= now) {
+      currentStart = currentEnd;
+      continue;
+    }
+
+    // 🚫 Check overlap with existing slots
+    const hasConflict = existingSlots.some(es =>
+      currentStart < es.end && currentEnd > es.start
+    );
+
+    if (!hasConflict) {
+      slots.push({
+        start_time: toUTCISOString(currentStart),
+        end_time: toUTCISOString(currentEnd),
+        selected: false
+      });
+    }
+
+    currentStart = currentEnd;
+  }
+
+  if (!slots.length) {
+    alert('No available 45-minute slots (all clash with existing ones).');
+    return;
+  }
+
+  this.generatedSlots = slots;
+  this.showSlotSelectionModal = true;
+},
+
     onSlotToggle() {
       // This method is called when a checkbox is toggled
       // The max slots validation is handled by the disabled attribute
