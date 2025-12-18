@@ -1,5 +1,5 @@
 <template>
-  <div class="resumes-page">
+  <div class="resumes-page ">
     <div class="page-header">
       <h2>Resume Database</h2>
       <div class="header-actions">

@@ -763,7 +763,7 @@ h2 {
   font-size: 1rem;
 }
 
-.status-badge {
+/* .status-badge {
   display: inline-block;
   padding: 0.5rem 1rem;
   border-radius: 6px;
@@ -785,7 +785,7 @@ h2 {
 .status-badge.rejected {
   background: #ffebee;
   color: #c62828;
-}
+} */
 
 .access-denied {
   text-align: center;
