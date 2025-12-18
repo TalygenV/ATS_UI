@@ -1,14 +1,12 @@
 <template>
-    
-    <HrAdminDashboard v-if="['HR', 'Admin'].includes(user.role)" />
-    <InterviewerDashboard v-else-if="user.role === 'Interviewer'" />
+  <HrAdminDashboard v-if="user && ['HR', 'Admin'].includes(user.role)" />
+  <InterviewerDashboard v-else-if="user?.role === 'Interviewer'" />
 </template>
+
 <script setup>
-import { useAuth }from '../composables/useAuth';
+import { useAuth } from '../composables/useAuth';
 import HrAdminDashboard from './HrAdminDashboard.vue';
 import InterviewerDashboard from './InterviewerDashboard.vue';
 
-
 const { user } = useAuth();
-
 </script>

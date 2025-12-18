@@ -1,47 +1,43 @@
 <template>
-  <div class="upload-page">
-
-    <div v-if="!hasWriteAccess" class="card">
-      <div class="access-denied">
-        <h2>Access Denied</h2>
-        <p>You don't have permission to upload resumes. Only HR and Admin users can upload resumes.</p>
-        <button @click="$router.push('/job-descriptions')" class="btn btn-primary">Go to Job Descriptions</button>
-      </div>
+  <div class="py-4">
+    <div v-if="!hasWriteAccess" class="ats-card ats-card-xl text-center py-5">
+      <h2 class="text-danger mb-3">Access Denied</h2>
+      <p class="text-secondary fs-5 mb-4">You don't have permission to upload resumes. Only HR and Admin users can upload resumes.</p>
+      <button @click="$router.push('/job-descriptions')" class="btn-ats-primary">Go to Job Descriptions</button>
     </div>
-    <div v-else class="card">
-      <h2>Upload Resumes</h2>
-      <p class="subtitle">Select a job description and upload resume files (PDF, DOC, DOCX, TXT)</p>
+    <div v-else class="ats-card ats-card-xl">
+      <h2 class="page-title-ats mb-2">Upload Resumes</h2>
+      <p class="text-muted mb-4">Select a job description and upload resume files (PDF, DOC, DOCX, TXT)</p>
 
-      <div class="job-description-section">
-        <label for="jobDescription" class="form-label">Select Job Description *</label>
-        <div class="job-select-wrapper">
+      <div class="bg-light p-4 rounded-3 mb-4">
+        <label for="jobDescription" class="form-label fw-medium text-dark">Select Job Description *</label>
+        <div class="d-flex gap-3 align-items-center">
           <select 
             id="jobDescription"
             v-model="selectedJobDescriptionId" 
-            class="job-select"
+            class="form-select-ats flex-grow-1"
             required>
             <option value="">-- Select a job description --</option>
             <option v-for="job in jobDescriptions" :key="job.id" :value="job.id">
               {{ job.title }}
             </option>
           </select>
-          <button @click="$router.push('/job-descriptions')" class="btn-link" type="button">
-            + Create New
-          </button>
+          <button @click="$router.push('/job-descriptions')" class="btn-back" type="button">+ Create New</button>
         </div>
-        <div v-if="selectedJobDescription" class="job-preview">
-          <h4>{{ selectedJobDescription.title }}</h4>
-          <p>{{ truncateText(selectedJobDescription.description, 200) }}</p>
+        <div v-if="selectedJobDescription" class="mt-3 p-3 bg-white rounded-3 border-start border-4 border-primary">
+          <h4 class="fs-6 fw-semibold text-dark mb-2">{{ selectedJobDescription.title }}</h4>
+          <p class="text-secondary mb-0">{{ truncateText(selectedJobDescription.description, 200) }}</p>
         </div>
       </div>
 
-      <div class="upload-section">
-        <div class="upload-area" 
-             :class="{ 'drag-over': isDragOver }"
-             @drop="handleDrop"
-             @dragover.prevent="isDragOver = true"
-             @dragleave="isDragOver = false"
-             @click="triggerFileInput">
+      <div class="mb-4">
+        <div 
+          class="upload-area-ats" 
+          :class="{ 'drag-over': isDragOver }"
+          @drop="handleDrop"
+          @dragover.prevent="isDragOver = true"
+          @dragleave="isDragOver = false"
+          @click="triggerFileInput">
           <input 
             ref="fileInput"
             type="file" 
@@ -50,98 +46,108 @@
             @change="handleFileSelect"
             style="display: none"
           />
-          <div class="upload-icon">📄</div>
-          <p class="upload-text">
-            <strong>Click to upload</strong> or drag and drop
-          </p>
-          <p class="upload-hint">Supports PDF, DOC, DOCX, and TXT files</p>
+          <div class="fs-1 mb-3">📄</div>
+          <p class="fs-5 text-dark mb-2"><strong>Click to upload</strong> or drag and drop</p>
+          <p class="text-muted">Supports PDF, DOC, DOCX, and TXT files</p>
         </div>
 
-        <div v-if="selectedFiles.length > 0" class="selected-files">
-          <h3>Selected Files ({{ selectedFiles.length }})</h3>
-          <div class="file-list">
-            <div v-for="(file, index) in selectedFiles" :key="index" class="file-item">
-              <span class="file-name">{{ file.name }}</span>
-              <span class="file-size">({{ formatFileSize(file.size) }})</span>
-              <button @click="removeFile(index)" class="remove-btn">×</button>
+        <div v-if="selectedFiles.length > 0" class="mt-4">
+          <h3 class="fs-5 fw-semibold mb-3">Selected Files ({{ selectedFiles.length }})</h3>
+          <div class="d-flex flex-column gap-2">
+            <div v-for="(file, index) in selectedFiles" :key="index" class="selected-file-item">
+              <div class="file-icon">📄</div>
+              <div class="file-info">
+                <span class="file-name">{{ file.name }}</span>
+                <span class="file-size">{{ formatFileSize(file.size) }}</span>
+              </div>
+              <button @click="removeFile(index)" class="btn-remove-file">×</button>
             </div>
           </div>
         </div>
 
-        <div class="upload-actions">
+        <div class="d-flex gap-3 mt-4">
           <button 
             @click="uploadFiles" 
             :disabled="selectedFiles.length === 0 || uploading || !selectedJobDescriptionId"
-            class="btn btn-primary">
+            class="btn-ats-primary">
             <span v-if="uploading">Processing...</span>
             <span v-else>Upload & Parse Resumes</span>
           </button>
           <button 
             @click="clearFiles" 
             :disabled="selectedFiles.length === 0 || uploading"
-            class="btn btn-secondary">
+            class="btn-ats-secondary">
             Clear
           </button>
         </div>
       </div>
 
-      <div v-if="uploadResults.length > 0" class="results-section">
-        <h3>Upload Results</h3>
-        <div class="results-summary">
-          <div class="summary-item success">
-            <span class="summary-label">Success:</span>
-            <span class="summary-value">{{ successCount }}</span>
+      <div v-if="uploadResults.length > 0" class="pt-4 border-top">
+        <h3 class="fs-5 fw-semibold mb-3">Upload Results</h3>
+        <div class="d-flex gap-4 mb-4">
+          <div class="px-4 py-2 rounded-3 bg-success bg-opacity-10 text-success">
+            <span class="fw-medium me-2">Success:</span>
+            <span class="fw-bold">{{ successCount }}</span>
           </div>
-          <div class="summary-item error">
-            <span class="summary-label">Failed:</span>
-            <span class="summary-value">{{ errorCount }}</span>
+          <div class="px-4 py-2 rounded-3 bg-danger bg-opacity-10 text-danger">
+            <span class="fw-medium me-2">Failed:</span>
+            <span class="fw-bold">{{ errorCount }}</span>
           </div>
         </div>
-        <div class="results-list">
+        <div class="d-flex flex-column gap-3">
           <div 
             v-for="(result, index) in uploadResults" 
             :key="index" 
-            :class="['result-item', result.success ? 'success' : 'error']">
-            <div class="result-header">
-              <span class="result-file">{{ result.fileName }}</span>
-              <span :class="['result-status', result.success ? 'success' : 'error']">
+            class="p-3 rounded-3"
+            :class="result.success ? 'result-item-success' : 'result-item-error'">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-medium text-dark">{{ result.fileName }}</span>
+              <span :class="result.success ? 'text-success' : 'text-danger'" class="fw-semibold">
                 {{ result.success ? '✓ Success' : '✗ Failed' }}
               </span>
             </div>
-            <div v-if="result.error" class="result-error">{{ result.error }}</div>
-            <div v-if="result.isDuplicate" class="duplicate-warning">
+            <div v-if="result.error" class="text-danger small mt-2">{{ result.error }}</div>
+            <div v-if="result.isDuplicate" class="duplicate-notice-ats mt-2">
               ⚠️ Duplicate detected! Linked to parent resume ID: {{ result.parentId }}
             </div>
-            <div v-if="result.data" class="result-preview">
-              <p><strong>Name:</strong> {{ result.data.name || 'N/A' }}</p>
-              <p><strong>Email:</strong> {{ result.data.email || 'N/A' }}</p>
-              <p><strong>Location:</strong> {{ result.data.location || 'N/A' }}</p>
-              <p v-if="result.data.total_experience !== null && result.data.total_experience !== undefined">
+            <div v-if="result.data" class="mt-3 pt-3 border-top">
+              <p class="mb-1 small text-secondary"><strong>Name:</strong> {{ result.data.name || 'N/A' }}</p>
+              <p class="mb-1 small text-secondary"><strong>Email:</strong> {{ result.data.email || 'N/A' }}</p>
+              <p class="mb-1 small text-secondary"><strong>Location:</strong> {{ result.data.location || 'N/A' }}</p>
+              <p v-if="result.data.total_experience !== null && result.data.total_experience !== undefined" class="mb-1 small text-secondary">
                 <strong>Total Experience:</strong> {{ formatExperience(result.data.total_experience) }}
               </p>
-              <div v-if="result.matchScores" class="match-scores">
-                <h4>Match Scores:</h4>
-                <div class="scores-row">
-                  <div class="score-item">
-                    <span class="score-label">Overall:</span>
-                    <span class="score-value">{{ formatScore(result.matchScores.overall_match) }}%</span>
+              <div v-if="result.matchScores" class="mt-3 pt-3 border-top">
+                <h4 class="small fw-semibold text-dark mb-2">Match Scores:</h4>
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <div class="d-flex justify-content-between p-2 bg-light rounded-2 small">
+                      <span class="text-muted">Overall:</span>
+                      <span class="text-primary fw-semibold">{{ formatScore(result.matchScores.overall_match) }}%</span>
+                    </div>
                   </div>
-                  <div class="score-item">
-                    <span class="score-label">Skills:</span>
-                    <span class="score-value">{{ formatScore(result.matchScores.skills_match) }}%</span>
+                  <div class="col-6">
+                    <div class="d-flex justify-content-between p-2 bg-light rounded-2 small">
+                      <span class="text-muted">Skills:</span>
+                      <span class="text-primary fw-semibold">{{ formatScore(result.matchScores.skills_match) }}%</span>
+                    </div>
                   </div>
-                  <div class="score-item">
-                    <span class="score-label">Experience:</span>
-                    <span class="score-value">{{ formatScore(result.matchScores.experience_match) }}%</span>
+                  <div class="col-6">
+                    <div class="d-flex justify-content-between p-2 bg-light rounded-2 small">
+                      <span class="text-muted">Experience:</span>
+                      <span class="text-primary fw-semibold">{{ formatScore(result.matchScores.experience_match) }}%</span>
+                    </div>
                   </div>
-                  <div class="score-item">
-                    <span class="score-label">Education:</span>
-                    <span class="score-value">{{ formatScore(result.matchScores.education_match) }}%</span>
+                  <div class="col-6">
+                    <div class="d-flex justify-content-between p-2 bg-light rounded-2 small">
+                      <span class="text-muted">Education:</span>
+                      <span class="text-primary fw-semibold">{{ formatScore(result.matchScores.education_match) }}%</span>
+                    </div>
                   </div>
                 </div>
-                <div class="status-badge" :class="result.matchScores.status">
+                <span class="badge-ats" :class="'badge-ats-' + result.matchScores.status">
                   Status: {{ result.matchScores.status }}
-                </div>
+                </span>
               </div>
             </div>
           </div>
@@ -279,7 +285,6 @@ export default {
         return;
       }
 
-      // Set uploading state immediately to show fullscreen loader
       this.uploading = true;
       this.uploadResults = [];
       
@@ -293,7 +298,6 @@ export default {
       
       this.showLoader(message, subMessage);
       
-      // Small delay to ensure the loader is rendered and visible
       await this.$nextTick();
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -302,12 +306,9 @@ export default {
         formData.append('job_description_id', this.selectedJobDescriptionId);
         
         if (this.selectedFiles.length === 1) {
-          // Single file upload
           formData.append('resume', this.selectedFiles[0]);
           const response = await axios.post(`${API_BASE_URL}/upload/single`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
+            headers: { 'Content-Type': 'multipart/form-data' }
           });
 
           if (response.data.success) {
@@ -321,19 +322,15 @@ export default {
             });
           }
         } else {
-          // Bulk upload
           this.selectedFiles.forEach(file => {
             formData.append('resumes', file);
           });
 
           const response = await axios.post(`${API_BASE_URL}/upload/bulk`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
+            headers: { 'Content-Type': 'multipart/form-data' }
           });
 
           if (response.data.success) {
-            // Add successful results
             response.data.results.forEach(result => {
               this.uploadResults.push({
                 fileName: result.fileName,
@@ -345,7 +342,6 @@ export default {
               });
             });
 
-            // Add error results
             response.data.errors.forEach(error => {
               this.uploadResults.push({
                 fileName: error.fileName,
@@ -356,7 +352,6 @@ export default {
           }
         }
 
-        // Clear files after successful upload
         if (this.uploadResults.every(r => r.success)) {
           setTimeout(() => {
             this.clearFiles();
@@ -365,16 +360,13 @@ export default {
       } catch (error) {
         console.error('Upload error:', error);
         
-        // Check for the specific "already applied" error
         const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Upload failed';
         
         if (errorMessage.includes('already applied within the last 6 months')) {
-          // Show alert instead of treating as failure
           alert(errorMessage);
           return;
         }
         
-        // Handle other errors normally
         this.selectedFiles.forEach(file => {
           this.uploadResults.push({
             fileName: file.name,
@@ -390,438 +382,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.upload-page {
-  padding: 2rem 0;
-}
-
-.card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
-  padding: 2.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-h2 {
-  color: #1a202c;
-  margin-bottom: 0.75rem;
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-
-.subtitle {
-  color: #666;
-  margin-bottom: 2rem;
-}
-
-.job-description-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: #f9f9f9;
-  border-radius: 8px;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #333;
-}
-
-.job-select-wrapper {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.job-select {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.job-select:focus {
-  outline: none;
-  border-color: #1976d2;
-}
-
-.btn-link {
-  background: none;
-  border: none;
-  color: #1976d2;
-  font-size: 1rem;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0.5rem;
-}
-
-.btn-link:hover {
-  color: #1565c0;
-}
-
-.job-preview {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 6px;
-  border-left: 4px solid #1976d2;
-}
-
-.job-preview h4 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-}
-
-.job-preview p {
-  margin: 0;
-  color: #666;
-  line-height: 1.6;
-}
-
-.upload-section {
-  margin-bottom: 2rem;
-}
-
-.upload-area {
-  border: 3px dashed #cbd5e0;
-  border-radius: 20px;
-  padding: 4rem 3rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-}
-
-.upload-area:hover {
-  border-color: #4299e1;
-  background: linear-gradient(135deg, #f0f4ff 0%, #e6edff 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.15);
-}
-
-.upload-area.drag-over {
-  border-color: #4299e1;
-  background: linear-gradient(135deg, #e6edff 0%, #d6e2ff 100%);
-  transform: scale(1.02);
-  box-shadow: 0 12px 40px rgba(66, 153, 225, 0.25);
-}
-
-.upload-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.upload-text {
-  font-size: 1.1rem;
-  color: #333;
-  margin-bottom: 0.5rem;
-}
-
-.upload-hint {
-  color: #999;
-  font-size: 0.9rem;
-}
-
-.selected-files {
-  margin-top: 2rem;
-}
-
-.file-list {
-  margin-top: 1rem;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background: #f5f5f5;
-  border-radius: 6px;
-  margin-bottom: 0.5rem;
-}
-
-.file-name {
-  flex: 1;
-  color: #333;
-}
-
-.file-size {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.remove-btn {
-  background: #ff4444;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  line-height: 1;
-  transition: background 0.3s;
-}
-
-.remove-btn:hover {
-  background: #cc0000;
-}
-
-.upload-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.btn {
-  padding: 0.75rem 2rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
-}
-
-.btn-secondary {
-  background: #e0e0e0;
-  color: #333;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #d0d0d0;
-}
-
-.results-section {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #eee;
-}
-
-.results-summary {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
-}
-
-.summary-item {
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-}
-
-.summary-item.success {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.summary-item.error {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.summary-label {
-  font-weight: 500;
-  margin-right: 0.5rem;
-}
-
-.results-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.result-item {
-  padding: 1rem;
-  border-radius: 6px;
-  border-left: 4px solid;
-}
-
-.result-item.success {
-  background: #f1f8f4;
-  border-color: #4caf50;
-}
-
-.result-item.error {
-  background: #fff5f5;
-  border-color: #f44336;
-}
-
-.result-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.result-file {
-  font-weight: 500;
-  color: #333;
-}
-
-.result-status {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.result-status.success {
-  color: #4caf50;
-}
-
-.result-status.error {
-  color: #f44336;
-}
-
-.result-error {
-  color: #c62828;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-}
-
-.result-preview {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #ddd;
-}
-
-.result-preview p {
-  margin: 0.25rem 0;
-  color: #555;
-  font-size: 0.9rem;
-}
-
-.duplicate-warning {
-  background: #fff3e0;
-  border-left: 3px solid #ff9800;
-  padding: 0.75rem;
-  margin-top: 0.5rem;
-  border-radius: 4px;
-  color: #e65100;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.match-scores {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #ddd;
-}
-
-.match-scores h4 {
-  margin: 0 0 0.75rem 0;
-  color: #333;
-  font-size: 1rem;
-}
-
-.scores-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.score-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  background: #f5f5f5;
-  border-radius: 4px;
-}
-
-.score-label {
-  font-weight: 500;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.score-value {
-  font-weight: 600;
-  color: #1976d2;
-  font-size: 1rem;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: capitalize;
-}
-
-.status-badge.accepted {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-badge.pending {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.status-badge.rejected {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.access-denied {
-  text-align: center;
-  padding: 3rem;
-}
-
-.access-denied h2 {
-  color: #f44336;
-  margin-bottom: 1rem;
-}
-
-.access-denied p {
-  color: #666;
-  margin-bottom: 2rem;
-  font-size: 1.1rem;
-}
-
-.button-content {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>
-

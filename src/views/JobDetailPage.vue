@@ -1,67 +1,65 @@
 <template>
-  <div class="job-detail-page" :class="{ 'processing': uploading }">
-    <div class="page-header">
-      <button @click="$router.push('/job-descriptions')" class="btn-back">← Back to Job Descriptions</button>
+  <div class="job-detail-page py-4" :class="{ 'processing': uploading }">
+    <div class="mb-4">
+      <button @click="$router.push('/job-descriptions')" class="btn-back">← Back to Job Descriptions</button>
     </div>
 
-    <div v-if="loading" class="loading">Loading...</div>
-    <div v-else-if="error" class="error-message">{{ error }}</div>
-    <div v-else-if="jobDescription" class="content">
+    <div v-if="loading" class="loading-state-ats">Loading...</div>
+    <div v-else-if="error" class="alert-ats-danger">{{ error }}</div>
+    <div v-else-if="jobDescription" class="d-flex flex-column gap-4">
           <!-- <span data-v-368fdc2f="" class="status-badge ">accepted 5</span> -->
           
                        <!-- <span :class="['status-badge', canditateOnholdCount.key]">{{ canditateOnholdCount.key }} {{ canditateOnholdCount.value }}</span>
                        <span :class="['status-badge', canditateSelectedCount.key]">{{ canditateSelectedCount.key }} {{ canditateSelectedCount.value }}</span> -->
 
       <!-- Job Description Info -->
-      <div class="job-info-card">
-           <div class="mb-3">
-           <span :class="['status-badge', canditateAcceptCount.key]">{{ canditateAcceptCount.key }} {{ canditateAcceptCount.value }}</span>
-               <span :class="['status-badge', canditatePendingCount.key]">{{ canditatePendingCount.key }} {{ canditatePendingCount.value }}</span>
-                   <span :class="['status-badge', canditateRejectedCount.key]">{{ canditateRejectedCount.key }} {{ canditateRejectedCount.value }}</span>
-          </div>  
-        <div class="card-header">
-          <h2>{{ jobDescription.title }}</h2>
-          <div v-if="hasWriteAccess" class="header-actions">
+      <div class="ats-card ats-card-xl">
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <span class="badge-ats badge-ats-success text-uppercase">{{ canditateAcceptCount.key }} {{ canditateAcceptCount.value }}</span>
+          <span class="badge-ats badge-ats-pending text-uppercase">{{ canditatePendingCount.key }} {{ canditatePendingCount.value }}</span>
+          <span class="badge-ats badge-ats-danger text-uppercase">{{ canditateRejectedCount.key }} {{ canditateRejectedCount.value }}</span>
+        </div>  
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 pb-3 mb-3 border-bottom">
+          <h2 class="page-title-ats mb-0">{{ jobDescription.title }}</h2>
+          <div v-if="hasWriteAccess" class="d-flex gap-2 flex-wrap">
             <button
               v-if="!candidateLinkUrl"
               @click="generateCandidateLink"
-              class="btn btn-primary"
-              :disabled="candidateLinkLoading"
-            >
-              <span v-if="candidateLinkLoading">Generating Link...</span>
+              class="btn-copy-link"
+              :disabled="candidateLinkLoading">
+              <span v-if="candidateLinkLoading">Generating...</span>
               <span v-else>Generate Candidate Link</span>
             </button>
             <button
               v-else
               @click="copyCandidateLink"
-              class="btn btn-primary"
-            >
+              class="btn-copy-link">
               Copy Candidate Link
             </button>
-            <button @click="editJob" class="btn btn-secondary">Edit</button>
-            <button @click="deleteJob" class="btn btn-danger">Delete</button>
+            <button @click="editJob" class="btn-edit">Edit</button>
+            <button @click="deleteJob" class="btn-delete">Delete</button>
           </div>
         </div>
-        <div class="card-body">
+        <div class="">
       
-          <div class="info-section">
-            <h3>Job Description</h3>
-            <p class="description-text">{{ jobDescription.description }}</p>
+          <div class="mb-4">
+            <h3 class="section-title-gradient">Job Description</h3>
+            <p class="text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ jobDescription.description }}</p>
           </div>
-          <div v-if="jobDescription.requirements" class="info-section">
-            <h3>Requirements</h3>
-            <p class="description-text">{{ jobDescription.requirements }}</p>
+          <div v-if="jobDescription.requirements" class="mb-4">
+            <h3 class="section-title-gradient">Requirements</h3>
+            <p class="text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ jobDescription.requirements }}</p>
           </div>
-          <div class="info-section">
-            <p class="meta-info">Created: {{ formatDate(jobDescription.created_at) }}</p>
+          <div class="mb-4">
+            <p class="text-muted small">Created: {{ formatDate(jobDescription.created_at) }}</p>
           </div>
         </div>
       </div>
 
       <!-- Upload Resumes Section -->
-      <div v-if="hasWriteAccess" class="upload-section-card">
-        <h3>Upload Resumes</h3>
-        <div class="upload-area" 
+      <div v-if="hasWriteAccess" class="ats-card ats-card-xl">
+        <h3 class="fs-5 fw-bold text-dark mb-4">Upload Resumes</h3>
+        <div class="upload-area-ats" 
              :class="{ 'drag-over': isDragOver }"
              @drop="handleDrop"
              @dragover.prevent="isDragOver = true"
@@ -94,17 +92,17 @@
           </div>
         </div>
 
-        <div class="upload-actions">
+        <div class="d-flex gap-3 mt-4">
           <button 
             @click="uploadFiles" 
             :disabled="selectedFiles.length === 0 || uploading || selectedFiles.length > 5"
-            class="btn btn-primary">
+            class="btn-ats-primary">
             Upload & Parse Resumes
           </button>
           <button 
             @click="clearFiles" 
             :disabled="selectedFiles.length === 0 || uploading"
-            class="btn btn-secondary">
+            class="btn-ats-secondary">
             Clear
           </button>
         </div>
@@ -134,11 +132,11 @@
       </div>
 
       <!-- Candidates List -->
-      <div class="candidates-section-card">
-        <div class="section-header">
-          <h3>Candidates ({{ candidates.length }})</h3>
-          <div class="header-actions">
-            <select v-model="statusFilter" @change="fetchCandidates" class="filter-select">
+      <div class="ats-card ats-card-xl">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+          <h3 class="fs-5 fw-bold text-dark mb-0">Candidates ({{ candidates.length }})</h3>
+          <div class="d-flex gap-2 flex-wrap">
+            <select v-model="statusFilter" @change="fetchCandidates" class="form-select-ats">
               <!-- <option value="">All Status</option>
               <option value="selected">Selected</option>
               <option value="rejected">Rejected</option>
@@ -149,124 +147,137 @@
               <option value="pending">Pending</option>
               <option value="rejected">Rejected</option>
             </select>
-            <select v-model="sortBy" @change="fetchCandidates" class="filter-select">
+            <select v-model="sortBy" @change="fetchCandidates" class="form-select-ats">
               <option value="match">Sort by Match Score</option>
               <option value="date">Sort by Date</option>
             </select>
           </div>
         </div>
 
-        <div v-if="loadingCandidates" class="loading">Loading candidates...</div>
-        <div v-else-if="candidates.length === 0" class="empty-state">
+        <div v-if="loadingCandidates" class="loading-state-ats">Loading candidates...</div>
+        <div v-else-if="candidates.length === 0" class="empty-state-ats">
           <p>No candidates found. Upload resumes to get started!</p>
         </div>
               <!-- v-show="hasRole('Interviewer') ? candidate.interviewer_id === user?.id : true "  -->
+        <!-- New Candidate Cards Grid -->
         <div v-else class="candidates-grid">
           <div 
             v-for="candidate in candidates" 
             :key="candidate.id" 
-            class="candidate-card" 
-            :class="getStatusClass(candidate.status)"
-      
+            class="candidate-card-new" 
+            :class="'status-' + candidate.status"
             v-show="hasRole('Interviewer')
   ? (candidate.interviewer_id === user?.id || candidate.isDuplicate)
   : true"
           >
-            <div class="card-header-section">
-              <div class="candidate-header">
-              <div class="candidate-info">
-                <h4>{{ candidate.candidate_name || 'Unknown' }}</h4>
-                  <!-- <h4>{{ candidate.resume_id || 'Unknown' }}</h4> -->
-                <span class="candidate-email">{{ candidate.email || 'N/A' }}</span>
-                <div v-if="candidate.interviewer" class="interviewer-info">
-                  <span class="interviewer-label">Interviewer:</span>
-                  <span class="interviewer-name">{{ candidate.interviewer.full_name || candidate.interviewer.email || 'N/A' }}</span>
-                </div>
-                <div v-if="candidate.interview_date" class="interview-date">
-                  <span class="date-label">Interview:</span>
-                  <span class="date-value">{{ formatDateTime(candidate.interview_date) }}</span>
-                </div>
-                <div v-if="candidate.interviewer_status && candidate.interviewer_status !== 'pending'" class="interviewer-status">
-                  <span class="status-label">Interviewer Decision:</span>
-                  <span :class="['status-badge-small', 'interviewer-' + candidate.interviewer_status]">
-                    {{ candidate.interviewer_status.replace(/_/g, ' ') }}
+            <!-- Header: Name, Email, Match Score -->
+            <div class="candidate-card-header">
+              <div class="candidate-basic-info">
+                <h4 class="candidate-name">
+                  {{ candidate.candidate_name || 'Unknown' }}
+                  <span v-if="candidate.isVersion || candidate.isDuplicate" class="version-badge-new">
+                    V{{ candidate.versionNumber || 1 }}
                   </span>
-                </div>
-                <div v-if="!['Interviewer'].includes(user.role) && candidate.hr_final_status && candidate.hr_final_status !== 'pending'" class="interviewer-status">
-                  <span class="status-label">HR Final Decision:</span>
-                  <span :class="['status-badge-small', 'interviewer-' + candidate.hr_final_status]">
-                    {{ candidate.hr_final_status.replace(/_/g, ' ') }}
-                  </span>
-                </div>
+                </h4>
+                <p class="candidate-email-new">{{ candidate.email || 'N/A' }}</p>
               </div>
-                <div class="match-score-circle">
-                  <div class="score-value-small">{{ formatScore(candidate.overall_match) }}%</div>
-                  <div class="score-label-small">Match</div>
-                </div>
+              <div class="match-score-badge-new">
+                <span class="match-score-value">{{ formatScore(candidate.overall_match) }}%</span>
+                <span class="match-score-label">MATCH</span>
               </div>
-              <div class="status-badge-top">
-                <span v-if="candidate.isVersion || candidate.isDuplicate" class="version-badge">
-                  Version {{ candidate.versionNumber || 1 }}
-                  <span v-if="candidate.totalVersions > 1" class="version-count">({{ candidate.totalVersions }} total)</span>
+            </div>
+
+            <!-- Interviewer Info Section -->
+            <div class="candidate-interview-info">
+              <div class="interview-info-row">
+                <span class="interview-info-label">Interviewer:</span>
+                <span class="interview-info-value" :class="{ 'na': !getInterviewerName(candidate) }">
+                  {{ getInterviewerName(candidate) || 'N/A' }}
                 </span>
-                <span :class="['status-badge', candidate.status]">{{ candidate.status }}</span>
+              </div>
+              <div v-if="candidate.interview_date" class="interview-info-row">
+                <span class="interview-info-label">Interview:</span>
+                <span class="interview-info-value">{{ formatDateTime(candidate.interview_date) }}</span>
               </div>
             </div>
-            
-            <div class="card-body-section">
-              <div class="match-breakdown">
-                <div class="match-item">
-                  <div class="match-header">
-                    <span class="match-label">Skills</span>
-                    <span class="match-percentage">{{ formatScore(candidate.skills_match) }}%</span>
-                  </div>
-                  <div class="match-bar">
-                    <div class="match-fill" :style="{ width: formatScore(candidate.skills_match) + '%' }"></div>
-                  </div>
+
+            <!-- Decision Badges -->
+            <div class="decision-badges">
+              <div v-if="candidate.interviewer_status && candidate.interviewer_status !== 'pending'" class="decision-badge">
+                <span class="label">Interviewer Decision:</span>
+                <span class="value" :class="candidate.interviewer_status">
+                  {{ candidate.interviewer_status.replace(/_/g, ' ').toUpperCase() }}
+                </span>
+              </div>
+              <div v-if="!['Interviewer'].includes(user.role) && candidate.hr_final_status && candidate.hr_final_status !== 'pending'" class="decision-badge">
+                <span class="label">HR Final Decision:</span>
+                <span class="value" :class="candidate.hr_final_status">
+                  {{ candidate.hr_final_status.replace(/_/g, ' ').toUpperCase() }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Main Status Badge -->
+            <div class="status-badge-main">
+              <span class="status-badge-pill" :class="candidate.status">
+                {{ candidate.status.toUpperCase() }}
+              </span>
+            </div>
+
+            <!-- Match Breakdown Progress Bars -->
+            <div class="match-breakdown-section">
+              <div class="match-progress-item">
+                <div class="match-progress-header">
+                  <span class="match-progress-label">Skills</span>
+                  <span class="match-progress-value">{{ formatScore(candidate.skills_match) }}%</span>
                 </div>
-                <div class="match-item">
-                  <div class="match-header">
-                    <span class="match-label">Experience</span>
-                    <span class="match-percentage">{{ formatScore(candidate.experience_match) }}%</span>
-                  </div>
-                  <div class="match-bar">
-                    <div class="match-fill" :style="{ width: formatScore(candidate.experience_match) + '%' }"></div>
-                  </div>
+                <div class="match-progress-bar">
+                  <div class="match-progress-fill" :style="{ width: formatScore(candidate.skills_match) + '%' }"></div>
                 </div>
-                <div class="match-item">
-                  <div class="match-header">
-                    <span class="match-label">Education</span>
-                    <span class="match-percentage">{{ formatScore(candidate.education_match) }}%</span>
-                  </div>
-                  <div class="match-bar">
-                    <div class="match-fill" :style="{ width: candidate.education_match + '%' }"></div>
-                  </div>
+              </div>
+              <div class="match-progress-item">
+                <div class="match-progress-header">
+                  <span class="match-progress-label">Experience</span>
+                  <span class="match-progress-value">{{ formatScore(candidate.experience_match) }}%</span>
+                </div>
+                <div class="match-progress-bar">
+                  <div class="match-progress-fill" :style="{ width: formatScore(candidate.experience_match) + '%' }"></div>
+                </div>
+              </div>
+              <div class="match-progress-item">
+                <div class="match-progress-header">
+                  <span class="match-progress-label">Education</span>
+                  <span class="match-progress-value">{{ formatScore(candidate.education_match) }}%</span>
+                </div>
+                <div class="match-progress-bar">
+                  <div class="match-progress-fill" :style="{ width: formatScore(candidate.education_match) + '%' }"></div>
                 </div>
               </div>
             </div>
-            
-            <div class="card-footer-section">
-              <span class="date">{{ formatDate(candidate.created_at) }}</span>
-              <div class="footer-actions">
+
+            <!-- Footer: Date and Actions -->
+            <div class="candidate-card-footer">
+              <span class="card-date">{{ formatDate(candidate.created_at) }}</span>
+              <div class="card-actions">
                 <!-- HR/Admin: Assignment buttons -->
-                <button v-if="hasWriteAccess && !candidate.interviewer_id" @click="openAssignModal(candidate)" class="btn btn-assign">
+                <button v-if="hasWriteAccess && !candidate.interviewer_id" @click="openAssignModal(candidate)" class="btn-action-assign">
                   Assign Interviewer
                 </button>
-                <button v-if="hasWriteAccess && candidate.interviewer_id" @click="openAssignModal(candidate)" class="btn btn-assign">
+                <button v-if="hasWriteAccess && candidate.interviewer_id" @click="openAssignModal(candidate)" class="btn-action-assign">
                   Reassign
                 </button>
                 <!-- Interviewer: Feedback button (only for assigned candidates) -->
                 <button 
                   v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status === 'pending'" 
                   @click="openFeedbackModal(candidate)" 
-                  class="btn btn-feedback"
+                  class="btn-action-feedback"
                 >
                   Submit Feedback
                 </button>
                 <button 
                   v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status !== 'pending'" 
                   @click="openFeedbackModal(candidate)" 
-                  class="btn btn-feedback"
+                  class="btn-action-feedback"
                 >
                   View/Edit Feedback
                 </button>
@@ -274,7 +285,7 @@
                 <button 
                   v-if="hasWriteAccess && candidate.interviewer_status && candidate.interviewer_status !== 'pending' && (!candidate.hr_final_status || candidate.hr_final_status === 'pending')" 
                   @click="openHRDecisionModal(candidate)" 
-                  class="btn btn-hr-decision"
+                  class="btn-action-hr-decision"
                 >
                   HR Decision
                 </button>
@@ -282,22 +293,22 @@
                 <button 
                   v-if="candidate.hr_final_status === 'on_hold' || candidate.interviewer_status === 'on_hold'" 
                   @click="viewHoldDetails(candidate)" 
-                  class="btn btn-hold"
+                  class="btn-action-hold"
                 >
                   View Hold Details
                 </button>
-                <button @click="downloadResume(candidate.resume_id, candidate)" class="btn btn-icon" title="Download Resume">
+                <button @click="downloadResume(candidate.resume_id, candidate)" class="btn-action-icon" title="Download Resume">
                   ⬇️
                 </button>
                 <button 
                   v-if="candidate.isVersion || candidate.isDuplicate" 
                   @click="viewVersionHistory(candidate)" 
-                  class="btn btn-version-history"
+                  class="btn-action-version"
                   title="View Version History"
                 >
                   📜 Versions 
                 </button>
-                <button @click="viewResumeDetail(candidate)" class="btn btn-primary-small">View Details</button>
+                <button @click="viewResumeDetail(candidate)" class="btn-action-details">View Details</button>
               </div>
             </div>
           </div>
@@ -306,50 +317,50 @@
     </div>
 
     <!-- Edit Modal -->
-    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
+    <div v-if="showEditModal" class="modal-overlay-ats" @click="closeEditModal">
+      <div class="modal-content-ats" @click.stop>
+        <div class="modal-header-ats">
           <h2>Edit Job Description</h2>
-          <button @click="closeEditModal" class="close-btn">×</button>
+          <button @click="closeEditModal" class="close-btn-ats">×</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body-ats">
           <form @submit.prevent="saveJob">
-            <div class="form-group">
+            <div class="mb-4">
               <label for="title">Job Title *</label>
               <input
                 id="title"
                 v-model="editForm.title"
                 type="text"
                 required
-                class="form-input"
+                class="form-control-ats"
               />
             </div>
-            <div class="form-group">
+            <div class="mb-4">
               <label for="description">Job Description *</label>
               <textarea
                 id="description"
                 v-model="editForm.description"
                 required
                 rows="8"
-                class="form-textarea"
+                class="form-control-ats form-textarea-ats"
               ></textarea>
             </div>
-            <div class="form-group">
+            <div class="mb-4">
               <label for="requirements">Requirements (Optional)</label>
               <textarea
                 id="requirements"
                 v-model="editForm.requirements"
                 rows="6"
-                class="form-textarea"
+                class="form-control-ats form-textarea-ats"
               ></textarea>
             </div>
-            <div class="form-group">
+            <div class="mb-4">
               <label for="interviewers">Assign Interviewers (Optional)</label>
               <select
                 id="interviewers"
                 v-model="editForm.interviewers"
                 multiple
-                class="form-select"
+                class="form-select-ats"
                 style="min-height: 120px;"
               >
                 <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
@@ -358,9 +369,9 @@
               </select>
               <small class="form-hint">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
             </div>
-            <div class="form-actions">
-              <button type="button" @click="closeEditModal" class="btn btn-secondary">Cancel</button>
-              <button type="submit" :disabled="saving" class="btn btn-primary">
+            <div class="d-flex gap-3 justify-content-end mt-4">
+              <button type="button" @click="closeEditModal" class="btn-ats-secondary">Cancel</button>
+              <button type="submit" :disabled="saving" class="btn-ats-primary">
                 <span v-if="saving">Saving...</span>
                 <span v-else>Update</span>
               </button>
@@ -374,7 +385,7 @@
     <div v-if="showResumeModal" class="resume-modal-overlay" @click="closeResumeModal">
       <div class="resume-modal-content" @click.stop>
         <div class="resume-modal-header">
-          <button @click="closeResumeModal" class="close-btn">×</button>
+          <button @click="closeResumeModal" class="close-btn-ats">×</button>
         </div>
         <div class="resume-modal-body">
           <div v-if="loadingResumeDetail" class="loading">Loading resume details...</div>
@@ -389,7 +400,7 @@
                   <span v-if="resumeDetailEvaluation.contact_number"> | 📞 {{ resumeDetailEvaluation.contact_number }}</span>
                 </p>
                 <div class="resume-header-actions">
-                  <button @click="downloadResumeFromModal" class="btn btn-primary">⬇️ Download Resume</button>
+                  <button @click="downloadResumeFromModal" class="btn-ats-primary">⬇️Download Resume</button>
                   <select v-if="hasWriteAccess" v-model="resumeDetailEvaluation.status" @change="updateResumeStatus" class="status-select">
                     <option value="pending">Pending</option>
                     <option value="accepted">Accepted</option>
@@ -461,7 +472,7 @@
               <h2>Resume Information</h2>
               
               <div v-if="errorResumeDetail && resumeDetailEvaluation" class="error-notice">
-                <p>⚠️ {{ errorResumeDetail }}</p>
+                <p>âš ï¸ {{ errorResumeDetail }}</p>
               </div>
               
               <div class="info-grid">
@@ -487,12 +498,12 @@
                 </div>
               </div>
 
-              <div v-if="resumeDetail && resumeDetail.summary" class="info-section">
+              <div v-if="resumeDetail && resumeDetail.summary" class="mb-4">
                 <h3>Summary</h3>
                 <p class="summary-text">{{ resumeDetail.summary }}</p>
               </div>
 
-              <div v-if="resumeDetail && resumeDetail.skills && resumeDetail.skills.length > 0" class="info-section">
+              <div v-if="resumeDetail && resumeDetail.skills && resumeDetail.skills.length > 0" class="mb-4">
                 <h3>Skills</h3>
                 <div class="tags">
                   <span v-for="(skill, index) in resumeDetail.skills" :key="index" class="tag">
@@ -501,7 +512,7 @@
                 </div>
               </div>
 
-              <div v-if="resumeDetail && resumeDetail.experience && resumeDetail.experience.length > 0" class="info-section">
+              <div v-if="resumeDetail && resumeDetail.experience && resumeDetail.experience.length > 0" class="mb-4">
                 <h3>Work Experience</h3>
                 <div class="experience-list">
                   <div v-for="(exp, index) in resumeDetail.experience" :key="index" class="experience-item">
@@ -516,7 +527,7 @@
                 </div>
               </div>
 
-              <div v-if="resumeDetail && resumeDetail.education && resumeDetail.education.length > 0" class="info-section">
+              <div v-if="resumeDetail && resumeDetail.education && resumeDetail.education.length > 0" class="mb-4">
                 <h3>Education</h3>
                 <div class="education-list">
                   <div v-for="(edu, index) in resumeDetail.education" :key="index" class="education-item">
@@ -528,14 +539,14 @@
                 </div>
               </div>
 
-              <div v-if="resumeDetail && resumeDetail.certifications && resumeDetail.certifications.length > 0" class="info-section">
+              <div v-if="resumeDetail && resumeDetail.certifications && resumeDetail.certifications.length > 0" class="mb-4">
                 <h3>Certifications</h3>
                 <ul class="certifications-list">
                   <li v-for="(cert, index) in resumeDetail.certifications" :key="index">{{ cert }}</li>
                 </ul>
               </div>
 
-              <div class="info-section">
+              <div class="mb-4">
                 <h3>Raw Resume Text</h3>
                 <div class="raw-text-container">
                   <pre class="raw-text">{{ resumeDetailEvaluation.resume_text || (resumeDetail && resumeDetail.raw_text) || 'No text available' }}</pre>
@@ -594,7 +605,7 @@
                       <div v-if="(event.type === 'interviewer_assigned' || event.type === 'interviewer_reassigned') && event.details.interviewer" class="detail-box">
                         <div class="detail-row">
                           <span class="detail-label">Interviewer:</span>
-                          <span class="detail-value">{{ event.details.interviewer.full_name || event.details.interviewer.email }}</span>
+                          <span class="detail-value">{{ event.details.interviewer.full_name  || N/A }}</span>
                         </div>
                         <div v-if="event.user" class="detail-row">
                           <span class="detail-label">Assigned by:</span>
@@ -610,7 +621,7 @@
                       <div v-if="event.type === 'interview_scheduled' && event.details.interviewer" class="detail-box">
                         <div class="detail-row">
                           <span class="detail-label">Interviewer:</span>
-                          <span class="detail-value">{{ event.details.interviewer.full_name || event.details.interviewer.email }}</span>
+                          <span class="detail-value">{{ event.details.interviewer.full_name || N/A }}</span>
                         </div>
                       </div>
 
@@ -667,17 +678,17 @@
     </div>
 
     <!-- Assign Interviewer Modal -->
-    <div v-if="showAssignModal" class="modal-overlay" @click="showAssignModal = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
+    <div v-if="showAssignModal" class="modal-overlay-ats assign-modal" @click="showAssignModal = false">
+      <div class="modal-content-ats" @click.stop>
+        <div class="modal-header-ats">
           <h2>Assign Interviewer</h2>
-          <button @click="showAssignModal = false" class="close-btn">×</button>
+          <button @click="showAssignModal = false" class="close-btn-ats">×</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body-ats">
           <form @submit.prevent="assignInterviewer">
             <div class="form-group">
               <label>Interviewer *</label>
-              <select v-model="assignmentData.interviewer_id" @change="fetchAvailableSlots" required class="form-input">
+              <select v-model="assignmentData.interviewer_id" @change="fetchAvailableSlots" required class="form-select-clean">
                 <option value="">Select Interviewer</option>
                 <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
                   {{ interviewer.full_name || interviewer.email }}
@@ -686,10 +697,10 @@
             </div>
             <div class="form-group">
               <label>Available Slots *</label>
-              <select v-model="assignmentData.slot_id" required class="form-input">
+              <select v-model="assignmentData.slot_id" required class="form-select-clean">
                 <option value="">Select Time Slot</option>
                 <option v-for="slot in availableSlots" :key="slot.id" :value="slot.id">
-                  {{ formatDateTime(slot.start_time) }} – {{ formatTime(slot.end_time) }} 
+                  {{ formatDateTime(slot.start_time) }} â€“ {{ formatTime(slot.end_time) }} 
                   ({{ slot.interviewer?.full_name || slot.interviewer?.email || 'Interviewer' }})
                 </option>
               </select>
@@ -697,9 +708,9 @@
                 No available slots found for the selected interviewer. Ask interviewer to add availability.
               </p>
             </div>
-            <div class="form-actions">
-              <button type="button" @click="showAssignModal = false" class="btn btn-secondary">Cancel</button>
-              <button type="submit" class="btn btn-primary">Assign</button>
+            <div class="modal-actions">
+              <button type="button" @click="showAssignModal = false" class="btn-modal-cancel">Cancel</button>
+              <button type="submit" class="btn-modal-primary">Assign</button>
             </div>
           </form>
         </div>
@@ -707,13 +718,13 @@
     </div>
 
     <!-- Interviewer Feedback Modal -->
-    <div v-if="showFeedbackModal && selectedCandidateForFeedback" class="modal-overlay" @click="showFeedbackModal = false">
-      <div class="modal-content large" @click.stop>
-        <div class="modal-header">
+    <div v-if="showFeedbackModal && selectedCandidateForFeedback" class="modal-overlay-ats" @click="showFeedbackModal = false">
+      <div class="modal-content-ats modal-content-lg" @click.stop>
+        <div class="modal-header-ats">
           <h2>Interview Feedback</h2>
-          <button @click="showFeedbackModal = false" class="close-btn">×</button>
+          <button @click="showFeedbackModal = false" class="close-btn-ats">×</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body-ats">
           <form @submit.prevent="submitFeedback">
             <div class="form-section">
               <h3>Candidate Ratings (1-10 scale)</h3>
@@ -789,30 +800,30 @@
 
             <div class="form-section">
               <h3>Final Decision</h3>
-              <div class="form-group">
+              <div class="mb-4">
                 <label>Status *</label>
-                <select v-model="feedbackData.status" required class="form-input" @change="onStatusChange">
+                <select v-model="feedbackData.status" required class="form-control-ats" @change="onStatusChange">
                   <option value="pending">Pending</option>
                   <option value="selected">Selected</option>
                   <option value="rejected">Rejected</option>
                   <option value="on_hold">On Hold</option>
                 </select>
               </div>
-              <div v-if="feedbackData.status === 'on_hold'" class="form-group">
+              <div v-if="feedbackData.status === 'on_hold'" class="mb-4">
                 <label>Hold Reason *</label>
                 <textarea 
                   v-model="feedbackData.hold_reason" 
                   required 
                   rows="4" 
-                  class="form-textarea"
+                  class="form-control-ats form-textarea-ats"
                   placeholder="Please provide a reason for putting this candidate on hold..."
                 ></textarea>
               </div>
             </div>
 
-            <div class="form-actions">
-              <button type="button" @click="showFeedbackModal = false" class="btn btn-secondary">Cancel</button>
-              <button type="submit" :disabled="submittingFeedback" class="btn btn-primary">
+            <div class="d-flex gap-3 justify-content-end mt-4">
+              <button type="button" @click="showFeedbackModal = false" class="btn-ats-secondary">Cancel</button>
+              <button type="submit" :disabled="submittingFeedback" class="btn-ats-primary">
                 <span v-if="submittingFeedback">Submitting...</span>
                 <span v-else>Submit Feedback</span>
               </button>
@@ -823,13 +834,13 @@
     </div>
 
     <!-- HR Decision Modal -->
-    <div v-if="showHRDecisionModal && selectedCandidateForFeedback" class="modal-overlay" @click="showHRDecisionModal = false">
-      <div class="modal-content large" @click.stop>
-        <div class="modal-header">
+    <div v-if="showHRDecisionModal && selectedCandidateForFeedback" class="modal-overlay-ats" @click="showHRDecisionModal = false">
+      <div class="modal-content-ats modal-content-lg" @click.stop>
+        <div class="modal-header-ats">
           <h2>Final HR Decision</h2>
-          <button @click="showHRDecisionModal = false" class="close-btn">×</button>
+          <button @click="showHRDecisionModal = false" class="close-btn-ats">×</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body-ats">
           <!-- Show Interviewer Feedback -->
           <div v-if="selectedCandidateForFeedback.interviewer_feedback" class="interviewer-feedback-section">
             <h3>Interviewer Feedback</h3>
@@ -859,9 +870,9 @@
           <!-- HR Decision Form -->
           <div class="form-section">
             <h3>Your Final Decision</h3>
-            <div class="form-group">
+            <div class="mb-4">
               <label>Final Status *</label>
-              <select v-model="hrDecisionData.status" required class="form-input" @change="onHRStatusChange">
+              <select v-model="hrDecisionData.status" required class="form-control-ats" @change="onHRStatusChange">
                 <option value="pending">Pending</option>
                 <option value="selected">Selected</option>
                 <option value="rejected">Rejected</option>
@@ -871,22 +882,22 @@
             <!-- Show reason field if:
                  1. Status is rejected or on_hold (always required)
                  2. Status is selected AND interviewer didn't select (override case) -->
-            <div v-if="hrDecisionData.status === 'rejected' || hrDecisionData.status === 'on_hold' || (hrDecisionData.status === 'selected' && selectedCandidateForFeedback.interviewer_status && selectedCandidateForFeedback.interviewer_status !== 'selected')" class="form-group">
+            <div v-if="hrDecisionData.status === 'rejected' || hrDecisionData.status === 'on_hold' || (hrDecisionData.status === 'selected' && selectedCandidateForFeedback.interviewer_status && selectedCandidateForFeedback.interviewer_status !== 'selected')" class="mb-4">
               <label>Reason *</label>
               <textarea 
                 v-model="hrDecisionData.reason" 
                 required 
                 rows="4" 
-                class="form-textarea" 
+                class="form-control-ats form-textarea-ats" 
                 :placeholder="getReasonPlaceholder()"
               ></textarea>
               <small v-if="hrDecisionData.status === 'selected' && selectedCandidateForFeedback.interviewer_status && selectedCandidateForFeedback.interviewer_status !== 'selected'" class="reason-hint">
                 Reason is required when overriding interviewer's decision to select this candidate.
               </small>
             </div>
-            <div class="form-actions">
-              <button type="button" @click="showHRDecisionModal = false" class="btn btn-secondary">Cancel</button>
-              <button type="button" @click="submitHRDecision" class="btn btn-primary">Submit Decision</button>
+            <div class="d-flex gap-3 justify-content-end mt-4">
+              <button type="button" @click="showHRDecisionModal = false" class="btn-ats-secondary">Cancel</button>
+              <button type="button" @click="submitHRDecision" class="btn-ats-primary">Submit Decision</button>
             </div>
           </div>
         </div>
@@ -894,13 +905,13 @@
     </div>
 
     <!-- On Hold Details Modal -->
-    <div v-if="showHoldModal && holdCandidate" class="modal-overlay" @click="showHoldModal = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
+    <div v-if="showHoldModal && holdCandidate" class="modal-overlay-ats" @click="showHoldModal = false">
+      <div class="modal-content-ats" @click.stop>
+        <div class="modal-header-ats">
           <h2>On Hold - Candidate Details</h2>
-          <button @click="showHoldModal = false" class="close-btn">×</button>
+          <button @click="showHoldModal = false" class="close-btn-ats">×</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body-ats">
           <div class="detail-section">
             <h3>Candidate Information</h3>
             <div class="detail-grid">
@@ -931,20 +942,20 @@
     </div>
 
     <!-- Version History Modal -->
-    <div v-if="showVersionHistoryModal" class="modal-overlay" @click="closeVersionHistoryModal">
-      <div class="modal-content version-history-modal" @click.stop>
-        <div class="modal-header">
+    <div v-if="showVersionHistoryModal" class="modal-overlay-ats" @click="closeVersionHistoryModal">
+      <div class="modal-content-ats" @click.stop>
+        <div class="modal-header-ats">
           <h2>Resume Version History</h2>
-          <button @click="closeVersionHistoryModal" class="close-btn">×</button>
+          <button @click="closeVersionHistoryModal" class="close-btn-ats">×</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body-ats">
           <div v-if="selectedCandidateForVersions" class="candidate-info-header">
             <h3>{{ selectedCandidateForVersions.candidate_name || selectedCandidateForVersions.resume?.name || 'Unknown Candidate' }}</h3>
             <p class="candidate-email">{{ selectedCandidateForVersions.email || selectedCandidateForVersions.resume?.email || 'N/A' }}</p>
           </div>
           
           <div v-if="loadingVersionHistory" class="loading">Loading version history...</div>
-          <div v-else-if="versionHistory.length === 0" class="empty-state">
+          <div v-else-if="versionHistory.length === 0" class="empty-state-ats">
             <p>No version history found.</p>
           </div>
           <div v-else class="version-list">
@@ -1021,7 +1032,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="closeVersionHistoryModal" class="btn btn-primary">Close</button>
+          <button @click="closeVersionHistoryModal" class="btn-ats-primary">Close</button>
         </div>
       </div>
     </div>
@@ -1159,6 +1170,11 @@ export default {
     }
   },
   methods: {
+    getInterviewerName(candidate) {
+      if (!candidate.interviewer) return null;
+      const name = candidate.interviewer.full_name || candidate.interviewer.email;
+      return name && name.trim() ? name : null;
+    },
     async fetchJobDescription() {
       this.loading = true;
       this.error = null;
@@ -1445,7 +1461,7 @@ export default {
     },
     async downloadResume(resumeId, candidate = null) {
       console.log('\n==========================================');
-      console.log('📥 FRONTEND: Download Resume Request');
+      console.log('ðŸ“¥ FRONTEND: Download Resume Request');
       console.log('==========================================');
       console.log('Resume ID (from parameter):', resumeId);
       console.log('Resume ID Type:', typeof resumeId);
@@ -1465,7 +1481,7 @@ export default {
       }
       
       if (!resumeId) {
-        console.error('❌ Resume ID is missing or undefined');
+        console.error('âŒ Resume ID is missing or undefined');
         console.error('Cannot determine resume ID from:', {
           parameter: resumeId,
           candidate_resume_id: candidate?.resume_id,
@@ -1527,7 +1543,7 @@ export default {
 const proxyPath = externalFileUrl;
     // --- STEP 2: Use the proxy to download the file as a BLOB ---
     const fileResponse = await axios.get(proxyPath, {
-        // 🚨 CRITICAL: Must be 'blob' to handle binary file content
+        // ðŸš¨ CRITICAL: Must be 'blob' to handle binary file content
         responseType: 'blob', 
         headers: {
             // Include your auth token only if the API requires it for this proxy request
@@ -1554,7 +1570,7 @@ const proxyPath = externalFileUrl;
 
 
       } catch (error) {
-        console.error('\n❌ ERROR downloading resume:');
+        console.error('\nâŒ ERROR downloading resume:');
         console.error('   - Error Message:', error.message);
         console.error('   - Error Response:', error.response);
         console.error('   - Error Status:', error.response?.status);
@@ -1584,7 +1600,7 @@ const proxyPath = externalFileUrl;
       }
     },
     async viewVersionHistory(candidate) {
-      this.showVersionHistoryModal = true;
+      this.showLoader('Loading Version History', 'Fetching resume versions...');
       this.selectedCandidateForVersions = candidate;
       this.versionHistory = [];
       this.loadingVersionHistory = true;
@@ -1592,6 +1608,7 @@ const proxyPath = externalFileUrl;
       try {
         const resumeId = candidate.resume_id || candidate.resume?.id;
         if (!resumeId) {
+          this.hideLoader();
           alert('Resume ID not found. Cannot fetch version history.');
           this.loadingVersionHistory = false;
           return;
@@ -1614,6 +1631,8 @@ const proxyPath = externalFileUrl;
         alert(error.response?.data?.error || 'Failed to fetch version history.');
       } finally {
         this.loadingVersionHistory = false;
+        this.showVersionHistoryModal = true;
+        this.hideLoader();
       }
     },
     closeVersionHistoryModal() {
@@ -1622,11 +1641,13 @@ const proxyPath = externalFileUrl;
       this.selectedCandidateForVersions = null;
     },
     async viewResumeDetail(candidate) {
-      this.showResumeModal = true;
+      this.showLoader('Loading Candidate Details', 'Fetching resume and evaluation data...');
       this.resumeDetailEvaluation = null;
       this.resumeDetail = null;
       this.errorResumeDetail = null;
       await this.fetchResumeDetail(candidate.id);
+      this.showResumeModal = true;
+      this.hideLoader();
     },
     async fetchResumeDetail(evaluationId) {
       this.loadingResumeDetail = true;
@@ -1988,6 +2009,7 @@ const proxyPath = externalFileUrl;
       }
 
       this.submittingFeedback = true;
+      this.showLoader('Submitting Feedback', 'Saving your interview feedback...');
       try {
         const response = await axios.post(
           `${API_BASE_URL}/evaluations/${this.selectedCandidateForFeedback.id}/interviewer-feedback`,
@@ -2012,6 +2034,7 @@ const proxyPath = externalFileUrl;
         alert('Failed to submit feedback. Please try again.');
       } finally {
         this.submittingFeedback = false;
+        this.hideLoader();
       }
     },
     openHRDecisionModal(candidate) {
@@ -2046,6 +2069,7 @@ const proxyPath = externalFileUrl;
         return;
       }
 
+      this.showLoader('Submitting Decision', 'Saving HR final decision...');
       try {
         const response = await axios.post(
           `${API_BASE_URL}/evaluations/${this.hrDecisionData.evaluation_id}/hr-decision`,
@@ -2067,6 +2091,8 @@ const proxyPath = externalFileUrl;
       } catch (error) {
         console.error('Error updating HR decision:', error);
         alert('Failed to update decision. Please try again.');
+      } finally {
+        this.hideLoader();
       }
     },
     viewHoldDetails(candidate) {
@@ -2104,1897 +2130,4 @@ const proxyPath = externalFileUrl;
   }
 };
 </script>
-
-<style scoped>
-.job-detail-page {
-  padding: 2rem 0;
-  transition: opacity 0.3s ease;
-}
-
-.job-detail-page.processing {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.btn-back {
-  background: none;
-  border: none;
-  color: #1976d2;
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 0.5rem 0;
-  margin-bottom: 1rem;
-  transition: color 0.3s;
-}
-
-.btn-back:hover {
-  color: #1565c0;
-}
-
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.job-info-card,
-.upload-section-card,
-.candidates-section-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.card-header h2 {
-  color: #333;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.info-section {
-  margin-bottom: 1.5rem;
-}
-
-.info-section h3 {
-  color: #1976d2;
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-}
-
-.description-text {
-  color: #555;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-.meta-info {
-  color: #999;
-  font-size: 0.9rem;
-}
-
-.upload-section-card h3,
-.candidates-section-card h3 {
-  color: #333;
-  margin-bottom: 1.5rem;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.section-header h3 {
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.filter-select {
-  padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.upload-area {
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  padding: 3rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  background: #fafafa;
-  margin-bottom: 1.5rem;
-}
-
-.upload-area:hover {
-  border-color: #1976d2;
-  background: #f0f0ff;
-}
-
-.upload-area.drag-over {
-  border-color: #1976d2;
-  background: #e8e8ff;
-}
-
-.upload-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.upload-text {
-  font-size: 1.1rem;
-  color: #333;
-  margin-bottom: 0.5rem;
-}
-
-.upload-hint {
-  color: #999;
-  font-size: 0.9rem;
-}
-
-.upload-limit {
-  color: #ff9800;
-  font-size: 0.9rem;
-  font-weight: 500;
-  margin-top: 0.5rem;
-}
-
-.selected-files {
-  margin-bottom: 1.5rem;
-}
-
-.selected-files h4 {
-  margin-bottom: 1rem;
-  color: #333;
-}
-
-.file-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background: #f5f5f5;
-  border-radius: 6px;
-}
-
-.file-name {
-  flex: 1;
-  color: #333;
-}
-
-.file-size {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.remove-btn {
-  background: #ff4444;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
-.upload-actions {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.upload-results {
-  padding-top: 1.5rem;
-  border-top: 1px solid #eee;
-}
-
-.upload-results h4 {
-  margin-bottom: 1rem;
-  color: #333;
-}
-
-.results-summary {
-  display: flex;
-  gap: 2rem;
-}
-
-.summary-item {
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-}
-
-.summary-item.success {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.summary-item.error {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.summary-label {
-  font-weight: 500;
-  margin-right: 0.5rem;
-}
-
-.candidates-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-}
-
-.candidate-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s;
-  border-top: 4px solid #ddd;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-}
-
-.candidate-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.candidate-card.status-accepted {
-  border-top-color: #4caf50;
-}
-
-.candidate-card.status-pending {
-  border-top-color: #ff9800;
-}
-
-.candidate-card.status-rejected {
-  border-top-color: #f44336;
-}
-
-.candidate-card.status-selected {
-  border-top-color: #4caf50;
-}
-
-.candidate-card.status-on-hold {
-  border-top-color: #ff9800;
-}
-
-.interviewer-info,
-.interview-date {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.interviewer-label,
-.date-label {
-  font-weight: 500;
-  margin-right: 0.5rem;
-}
-
-.interviewer-name,
-.date-value {
-  color: #1976d2;
-}
-
-.btn-assign {
-  background: #2196f3;
-  color: white;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-assign:hover {
-  background: #1976d2;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
-}
-
-.btn-feedback {
-  background: #4caf50;
-  color: white;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-feedback:hover {
-  background: #45a049;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-}
-
-.modal-content.large {
-  max-width: 900px;
-}
-
-.form-section {
-  margin-bottom: 2rem;
-}
-
-.form-section h3 {
-  color: #1976d2;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-}
-
-.ratings-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.rating-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.rating-group label {
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #333;
-}
-
-.rating-input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-  width: 100%;
-}
-
-.rating-input:focus {
-  outline: none;
-  border-color: #1976d2;
-}
-
-.btn-hr-decision {
-  background: #ff9800;
-  color: white;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-hr-decision:hover {
-  background: #f57c00;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
-}
-
-.btn-hold {
-  background: #ff9800;
-  color: white;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-hold:hover {
-  background: #f57c00;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
-}
-
-.interviewer-status {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.status-label {
-  font-weight: 500;
-  margin-right: 0.5rem;
-}
-
-.status-badge-small {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  display: inline-block;
-}
-
-.status-badge-small.interviewer-selected {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-badge-small.interviewer-rejected {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.status-badge-small.interviewer-on_hold {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.interviewer-feedback-section {
-  background: #f5f5f5;
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-}
-
-.interviewer-feedback-section h3 {
-  color: #1976d2;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-}
-
-.feedback-display {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.feedback-ratings h4,
-.feedback-status h4,
-.feedback-hold-reason h4 {
-  color: #333;
-  margin-bottom: 0.5rem;
-  font-size: 0.95rem;
-}
-
-.ratings-display-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-}
-
-.rating-display-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem;
-  background: white;
-  border-radius: 6px;
-}
-
-.rating-display-label {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.rating-display-value {
-  font-weight: 600;
-  color: #1976d2;
-}
-
-.feedback-status {
-  padding-top: 1rem;
-  border-top: 1px solid #ddd;
-}
-
-.feedback-hold-reason {
-  padding-top: 1rem;
-  border-top: 1px solid #ddd;
-}
-
-.feedback-hold-reason p {
-  color: #555;
-  line-height: 1.6;
-  margin: 0;
-  padding: 0.75rem;
-  background: white;
-  border-radius: 6px;
-}
-
-.detail-section {
-  margin-bottom: 2rem;
-}
-
-.detail-section h3 {
-  color: #1976d2;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.detail-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.detail-label {
-  font-weight: 500;
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-}
-
-.detail-value {
-  color: #333;
-}
-
-.detail-text.hold {
-  background: #fff3e0;
-  color: #e65100;
-  padding: 1rem;
-  border-radius: 6px;
-  line-height: 1.6;
-  margin: 0;
-}
-
-.reason-hint {
-  display: block;
-  margin-top: 0.5rem;
-  color: #ff9800;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-/* Timeline Styles */
-.timeline-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.timeline-card h2 {
-  color: #333;
-  margin: 0 0 1.5rem 0;
-  font-size: 1.5rem;
-}
-
-.empty-timeline {
-  text-align: center;
-  padding: 2rem;
-  color: #666;
-}
-
-.timeline-container {
-  position: relative;
-  padding-left: 2rem;
-}
-
-.timeline-item {
-  position: relative;
-  padding-bottom: 2rem;
-  padding-left: 2rem;
-}
-
-.timeline-item:not(:last-child)::before {
-  content: '';
-  position: absolute;
-  left: 0.25rem;
-  top: 2rem;
-  bottom: -2rem;
-  width: 2px;
-  background: #e0e0e0;
-}
-
-.timeline-marker {
-  position: absolute;
-  left: 0;
-  top: 0.5rem;
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  border: 3px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  z-index: 1;
-}
-
-.timeline-marker.marker-upload {
-  background: #2196f3;
-}
-
-.timeline-marker.marker-assign {
-  background: #9c27b0;
-}
-
-.timeline-marker.marker-schedule {
-  background: #ff9800;
-}
-
-.timeline-marker.marker-feedback {
-  background: #4caf50;
-}
-
-.timeline-marker.marker-decision {
-  background: #f44336;
-}
-
-.timeline-content {
-  background: #f9f9f9;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  border-left: 3px solid #e0e0e0;
-}
-
-.timeline-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.timeline-title {
-  margin: 0;
-  color: #333;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.timeline-date {
-  color: #666;
-  font-size: 0.85rem;
-}
-
-.timeline-description {
-  color: #555;
-  margin: 0.5rem 0;
-  line-height: 1.6;
-}
-
-.timeline-details {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e0e0e0;
-}
-
-.detail-box {
-  background: white;
-  padding: 1rem;
-  border-radius: 6px;
-  margin-top: 0.5rem;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.detail-row:last-child {
-  margin-bottom: 0;
-}
-
-.detail-label {
-  font-weight: 500;
-  color: #666;
-}
-
-.detail-value {
-  color: #333;
-}
-
-.ratings-detail,
-.hold-reason-detail,
-.decision-reason-detail {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #f0f0f0;
-}
-
-.ratings-detail strong,
-.hold-reason-detail strong,
-.decision-reason-detail strong {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #333;
-}
-
-.ratings-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.rating-detail-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem;
-  background: #f5f5f5;
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
-
-.rating-key {
-  color: #666;
-}
-
-.rating-value {
-  font-weight: 600;
-  color: #1976d2;
-}
-
-.hold-reason-detail p,
-.decision-reason-detail p {
-  margin: 0.5rem 0 0 0;
-  color: #555;
-  line-height: 1.6;
-  padding: 0.75rem;
-  background: #fff3e0;
-  border-radius: 4px;
-}
-
-.timeline-user {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #f0f0f0;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.user-label {
-  font-weight: 500;
-  margin-right: 0.5rem;
-}
-
-.user-name {
-  color: #1976d2;
-}
-
-.status-badge.timeline-status {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-badge.timeline-status.interviewer-selected {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-badge.timeline-status.interviewer-rejected {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.status-badge.timeline-status.interviewer-on_hold {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.status-badge.timeline-status.hr-selected {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-badge.timeline-status.hr-rejected {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.status-badge.timeline-status.hr-on_hold {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.card-header-section {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.candidate-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
-}
-
-.candidate-info {
-  flex: 1;
-}
-
-.candidate-info h4 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.candidate-email {
-  color: #666;
-  font-size: 0.85rem;
-  display: block;
-}
-
-.match-score-circle {
-  text-align: center;
-  padding: 0.75rem;
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  border-radius: 12px;
-  color: white;
-  min-width: 70px;
-  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
-}
-
-.score-value-large {
-  font-size: 2rem;
-    font-weight: 600;
-    line-height: 1;
-    margin-bottom: 0.5rem;
-}
-
-.score-label-small {
-  font-size: 0.7rem;
-  opacity: 0.9;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.status-badge-top {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.card-body-section {
-  flex: 1;
-  margin-bottom: 1rem;
-}
-
-.match-breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.match-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.match-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.match-label {
-  font-size: 0.85rem;
-  color: #666;
-  font-weight: 500;
-}
-
-.match-percentage {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.match-bar {
-  width: 100%;
-  height: 8px;
-  background: #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-}
-
-.match-fill {
-  height: 100%;
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-badge.accepted {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-badge.pending {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.status-badge.rejected {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.duplicate-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: #fff3e0;
-  color: #e65100;
-  margin-right: 0.5rem;
-}
-
-.version-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: #e3f2fd;
-  color: #1976d2;
-  margin-right: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.version-count {
-  font-size: 0.7rem;
-  opacity: 0.8;
-  font-weight: 500;
-}
-
-.btn-version-history {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.8rem;
-  background: #e3f2fd;
-  color: #1976d2;
-  border: 1px solid #90caf9;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-version-history:hover {
-  background: #bbdefb;
-  border-color: #64b5f6;
-}
-
-.version-history-modal {
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.candidate-info-header {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e0e0e0;
-}
-
-.candidate-info-header h3 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-}
-
-.candidate-info-header .candidate-email {
-  margin: 0;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.version-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.version-item {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 1rem;
-  background: #fff;
-  transition: all 0.2s;
-}
-
-.version-item.current-version {
-  border-color: #1976d2;
-  background: #e3f2fd;
-  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.1);
-}
-
-.version-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.version-number-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #1976d2;
-  color: white;
-  border-radius: 20px;
-  font-weight: 600;
-}
-
-.version-label {
-  font-size: 0.75rem;
-  opacity: 0.9;
-}
-
-.version-number {
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.version-date {
-  color: #666;
-  font-size: 0.85rem;
-}
-
-.version-details {
-  margin-top: 1rem;
-}
-
-.version-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.info-row {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.info-label {
-  font-weight: 600;
-  color: #666;
-  min-width: 80px;
-}
-
-.info-value {
-  color: #333;
-}
-
-.version-results {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e0e0e0;
-}
-
-.results-section h4 {
-  margin: 0 0 0.75rem 0;
-  color: #333;
-  font-size: 1rem;
-}
-
-.result-item {
-  margin-bottom: 0.75rem;
-  color: #555;
-}
-
-.result-item strong {
-  color: #333;
-  margin-right: 0.5rem;
-}
-
-.skills-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.skill-tag {
-  padding: 0.25rem 0.75rem;
-  background: #e3f2fd;
-  color: #1976d2;
-  border-radius: 12px;
-  font-size: 0.8rem;
-}
-
-.experience-list,
-.education-list {
-  margin: 0.5rem 0 0 1.5rem;
-  padding: 0;
-  list-style-type: disc;
-}
-
-.experience-list li,
-.education-list li {
-  margin-bottom: 0.25rem;
-  color: #555;
-}
-
-.card-footer-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: auto;
-}
-
-.date {
-  color: #999;
-  font-size: 0.8rem;
-}
-
-.footer-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.btn-primary-small {
-  padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-primary-small:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
-}
-
-.btn-secondary {
-  background: #1976d2;
-  color: white;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #1565c0;
-}
-
-.btn-danger {
-  background: #f44336;
-  color: white;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: #d32f2f;
-}
-
-.btn-icon {
-  background: #e0e0e0;
-  color: #333;
-}
-
-.btn-icon:hover:not(:disabled) {
-  background: #d0d0d0;
-}
-
-.loading, .error-message, .empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
-}
-
-.error-message {
-  color: #f44336;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 700px;
-  max-height: 90vh;
-  overflow-y: auto;
-  width: 100%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h2 {
-  margin: 0;
-  color: #333;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  cursor: pointer;
-  color: #999;
-  line-height: 1;
-  transition: color 0.3s;
-}
-
-.close-btn:hover {
-  color: #333;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #333;
-}
-
-.form-input,
-.form-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-family: inherit;
-}
-
-.form-input:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: #1976d2;
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 120px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-
-/* Resume Detail Modal Styles */
-.resume-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-.resume-modal-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 1200px;
-  width: 100%;
-  max-height: calc(100vh - 2rem);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  margin: auto;
-  overflow: hidden;
-  position: relative;
-}
-
-.resume-modal-header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #eee;
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 10;
-  border-radius: 12px 12px 0 0;
-  flex-shrink: 0;
-}
-
-.resume-modal-header .close-btn {
-  padding: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
-
-.resume-modal-body {
-  padding: 2rem;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-  background: transparent;
-}
-
-.resume-detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.resume-header-card {
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  color: white;
-  border-radius: 12px;
-  padding: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2rem;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.resume-header-content {
-  flex: 1;
-  min-width: 250px;
-}
-
-.resume-header-content h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 2rem;
-  word-wrap: break-word;
-  font-weight: 600;
-}
-
-.candidate-contact {
-  margin: 0 0 1.5rem 0;
-  opacity: 0.9;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-.resume-header-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.resume-header-actions .btn {
-  white-space: nowrap;
-}
-
-.resume-header-actions .btn-primary {
-  background: white;
-  color: #1976d2;
-  border: none;
-}
-
-.resume-header-actions .btn-primary:hover {
-  background: #f5f5f5;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.match-score-large {
-  text-align: center;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  min-width: 150px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.score-value-large {
-  font-size: 4rem;
-  font-weight: 700;
-  line-height: 1;
-  margin-bottom: 0.5rem;
-}
-
-.score-label-large {
-  font-size: 1.1rem;
-  opacity: 0.9;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.resume-scores-card,
-.resume-analysis-card,
-.resume-info-card,
-.job-description-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.resume-scores-card h2,
-.resume-analysis-card h2,
-.resume-info-card h2,
-.job-description-card h2 {
-  color: #333;
-  margin: 0 0 1.5rem 0;
-  font-size: 1.5rem;
-}
-
-.scores-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-}
-
-.score-card {
-  text-align: center;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #1976d2 0%, #455a64 100%);
-  border-radius: 8px;
-  color: white;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-.score-value {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  line-height: 1;
-}
-
-.score-label {
-  font-size: 0.9rem;
-  opacity: 0.9;
-}
-
-.analysis-section {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #eee;
-}
-
-.analysis-section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.analysis-section.rejection {
-  background: #ffebee;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: none;
-}
-
-.analysis-section h3 {
-  color: #1976d2;
-  margin: 0 0 1rem 0;
-  font-size: 1.2rem;
-}
-
-.analysis-content {
-  color: #555;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.info-label {
-  font-weight: 500;
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-}
-
-.info-value {
-  color: #333;
-}
-
-.info-section {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #eee;
-}
-
-.info-section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.info-section h3 {
-  color: #1976d2;
-  margin: 0 0 1rem 0;
-  font-size: 1.2rem;
-}
-
-.summary-text {
-  color: #555;
-  line-height: 1.8;
-  white-space: pre-wrap;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.tag {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-}
-
-.experience-list,
-.education-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.experience-item,
-.education-item {
-  padding: 1.5rem;
-  background: #f9f9f9;
-  border-radius: 8px;
-}
-
-.experience-item h4,
-.education-item h4 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-  font-size: 1.1rem;
-}
-
-.company {
-  color: #666;
-  margin: 0.25rem 0;
-  font-weight: 500;
-}
-
-.duration,
-.dates {
-  color: #999;
-  font-size: 0.9rem;
-  margin: 0.25rem 0;
-}
-
-.description {
-  color: #555;
-  margin-top: 0.75rem;
-  line-height: 1.6;
-}
-
-.certifications-list {
-  list-style: none;
-  padding: 0;
-}
-
-.certifications-list li {
-  padding: 0.75rem;
-  border-bottom: 1px solid #eee;
-  color: #555;
-}
-
-.certifications-list li:last-child {
-  border-bottom: none;
-}
-
-.raw-text-container {
-  max-height: 400px;
-  overflow-y: auto;
-  background: #f5f5f5;
-  padding: 1rem;
-  border-radius: 6px;
-}
-
-.raw-text {
-  margin: 0;
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: #333;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.job-description-content {
-  background: #f9f9f9;
-  padding: 1.5rem;
-  border-radius: 8px;
-}
-
-.job-description-text {
-  margin: 0;
-  color: #555;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  font-family: inherit;
-}
-
-.status-select {
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  font-weight: 500;
-  transition: all 0.3s;
-}
-
-.status-select:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.status-select option {
-  background: white;
-  color: #333;
-}
-
-.status-display {
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
-  font-size: 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  text-transform: capitalize;
-  font-weight: 500;
-}
-
-.error-notice {
-  background: #fff3e0;
-  border-left: 4px solid #ff9800;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  border-radius: 6px;
-  color: #e65100;
-}
-
-.error-notice p {
-  margin: 0;
-  font-weight: 500;
-}
-
-/* Responsive Styles for Resume Modal */
-@media (max-width: 768px) {
-  .resume-modal-overlay {
-    padding: 0.5rem;
-  }
-
-  .resume-modal-content {
-    max-height: calc(100vh - 1rem);
-    border-radius: 8px;
-  }
-
-  .resume-modal-body {
-    padding: 1rem;
-  }
-
-  .resume-header-card {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 1.5rem;
-  }
-
-  .resume-header-content h1 {
-    font-size: 1.5rem;
-  }
-
-  .match-score-large {
-    width: 100%;
-    min-width: auto;
-  }
-
-  .score-value-large {
-    font-size: 2.5rem;
-  }
-
-  .scores-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .score-card {
-    padding: 1.25rem;
-  }
-
-  .score-value {
-    font-size: 2.25rem;
-  }
-
-  .resume-header-actions {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .resume-header-actions button,
-  .resume-header-actions select,
-  .resume-header-actions span {
-    width: 100%;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .resume-scores-card,
-  .resume-analysis-card,
-  .resume-info-card,
-  .job-description-card {
-    padding: 1.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .resume-modal-overlay {
-    padding: 0;
-    align-items: flex-start;
-  }
-
-  .resume-modal-content {
-    max-height: 100vh;
-    border-radius: 0;
-    max-width: 100%;
-  }
-
-  .resume-header-content h1 {
-    font-size: 1.25rem;
-  }
-
-  .score-value-large {
-    font-size: 2rem;
-  }
-
-  .score-value {
-    font-size: 1.75rem;
-  }
-
-  .resume-scores-card h2,
-  .resume-analysis-card h2,
-  .resume-info-card h2,
-  .job-description-card h2 {
-    font-size: 1.25rem;
-  }
-
-  .resume-header-card {
-    padding: 1.25rem;
-  }
-
-  .match-score-large {
-    padding: 1.25rem;
-  }
-}
-</style>
 

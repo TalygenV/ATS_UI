@@ -1,134 +1,134 @@
 <template>
-  <div class="job-descriptions-page">
-    <div class="page-header">
-      <h2>Job Descriptions</h2>
-      <button v-if="hasWriteAccess" @click="showCreateModal = true" class="btn btn-primary">+ Add Job Description</button>
+  <div class="py-4">
+    <div class="page-header-ats">
+      <h2 class="page-title-ats">Job Descriptions</h2>
+      <button v-if="hasWriteAccess" @click="showCreateModal = true" class="btn-ats-primary">+ Add Job Description</button>
     </div>
 
-    <div class="search-section">
+    <div class="mb-4">
       <input 
         v-model="searchQuery" 
         @input="filterJobs"
         type="text" 
         placeholder="Search by job title..." 
-        class="search-input"
+        class="search-input-ats"
       />
     </div>
 
-    <div v-if="loading" class="loading">Loading job descriptions...</div>
-    <div v-else-if="error" class="error-message">{{ error }}</div>
-    <div v-else-if="filteredJobs.length === 0" class="empty-state">
+    <div v-if="loading" class="loading-state-ats">Loading job descriptions...</div>
+    <div v-else-if="error" class="alert-ats-danger">{{ error }}</div>
+    <div v-else-if="filteredJobs.length === 0" class="empty-state-ats">
       <p>{{ searchQuery ? 'No job descriptions found matching your search.' : 'No job descriptions found. Create one to get started!' }}</p>
     </div>
-    <div v-else class="job-descriptions-grid">
-      <div v-for="job in filteredJobs" :key="job.id" class="job-card">
-        <div class="card-header">
-          <h3>{{ job.title }}</h3>
-          <div v-if="hasWriteAccess" class="card-actions">
-            <button @click="editJob(job)" class="btn-icon" title="Edit">✏️</button>
-            <button @click="deleteJob(job.id)" class="btn-icon" title="Delete">🗑️</button>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="description-preview">
-            <p>{{ truncateText(job.description, 200) }}</p>
-          </div>
-          <div v-if="job.requirements" class="requirements-preview">
-            <strong>Requirements:</strong>
-            <p>{{ truncateText(job.requirements, 150) }}</p>
-          </div>
-          <div v-if="job.interviewers && job.interviewers.length > 0" class="interviewers-preview">
-            <strong>Assigned Interviewers:</strong>
-            <span class="interviewer-count">{{ job.interviewers.length }} interviewer(s)</span>
-          </div>
-          <div class="resume-count-preview">
-            <strong>Parsed Resumes:</strong>
-            <span class="resume-count">{{ job.resume_count || 0 }} resume(s)</span>
-               <span style="font-weight:bold">Parse Status :</span>
-              <span data-v-368fdc2f="" class="status-badge accepted">accepted {{job.accepted || 0}}</span>
-            <span data-v-368fdc2f="" class="status-badge pending">pending {{job.pending || 0}}</span>
-            <span data-v-368fdc2f="" class="status-badge rejected">rejected {{job.rejected || 0}}</span>
-          </div >
-          
-          <div v-if="hasWriteAccess" class="resume-count-preview"> 
-                <strong style="font-weight:bold"> Application Status :</strong>
-                <div class="application-count-wrapper">
-                  <span data-v-368fdc2f="" class="status-badge accepted"> Scheduled Interview {{job.scheduledInterview || 0}}</span>
-                 <span data-v-368fdc2f="" class="status-badge pending"> Total Pending {{job.totalPending || 0}}</span>
-                
-            <span data-v-368fdc2f="" class="status-badge on_hold">On Hold {{job.onhold || 0}}</span>
-              <span data-v-368fdc2f="" class="status-badge pending">Decision Pending {{job.totalDecisionPending || 0}}</span>
-            <span data-v-368fdc2f="" class="status-badge rejected">Rejected {{job.finalRejected || 0}}</span>
-            <span data-v-368fdc2f="" class="status-badge accepted">Final Accepted {{job.finalSelected || 0}}</span>
+    <div v-else class="row g-4">
+      <div v-for="job in filteredJobs" :key="job.id" class="col-12 col-md-6 col-xl-4">
+        <div class="ats-card h-100 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom">
+            <h3 class="fs-5 fw-semibold text-dark mb-0 flex-grow-1">{{ job.title }}</h3>
+            <div v-if="hasWriteAccess" class="d-flex gap-2">
+              <button @click="editJob(job)" class="btn-icon" title="Edit">✏️</button>
+              <button @click="deleteJob(job.id)" class="btn-icon" title="Delete">🗑️</button>
             </div>
           </div>
-        </div>
-        <div class="card-footer">
-          <span class="date">{{ formatDate(job.created_at) }}</span>
-          <button @click="viewJobDetail(job.id)" class="btn btn-secondary">View Details</button>
+          <div class="flex-grow-1">
+            <p class="text-secondary mb-3">{{ truncateText(job.description, 200) }}</p>
+            <div v-if="job.requirements" class="pt-3 border-top mb-3">
+              <strong class="text-dark d-block mb-2">Requirements:</strong>
+              <p class="text-secondary small mb-0">{{ truncateText(job.requirements, 150) }}</p>
+            </div>
+            <div v-if="job.interviewers && job.interviewers.length > 0" class="pt-3 border-top mb-3">
+              <strong class="text-dark d-block mb-2">Assigned Interviewers:</strong>
+              <span class="badge-ats badge-ats-primary">{{ job.interviewers.length }} interviewer(s)</span>
+            </div>
+            <div class="pt-3 border-top mb-3">
+              <strong class="text-dark d-block mb-2">Parsed Resumes:</strong>
+              <span class="badge bg-success text-white me-1">{{ job.resume_count || 0 }} resume(s)</span>
+              <div class="mt-2">
+                <span class="fw-bold small">Parse Status:</span>
+                <span class="badge-ats badge-ats-success ms-1">accepted {{job.accepted || 0}}</span>
+                <span class="badge-ats badge-ats-pending ms-1">pending {{job.pending || 0}}</span>
+                <span class="badge-ats badge-ats-danger ms-1">rejected {{job.rejected || 0}}</span>
+              </div>
+            </div>
+            <div v-if="hasWriteAccess" class="pt-3 border-top">
+              <strong class="text-dark d-block mb-2">Application Status:</strong>
+              <div class="d-flex flex-wrap gap-1">
+                <span class="badge-ats badge-ats-success">Scheduled {{job.scheduledInterview || 0}}</span>
+                <span class="badge-ats badge-ats-pending">Pending {{job.totalPending || 0}}</span>
+                <span class="badge-ats badge-ats-warning">On Hold {{job.onhold || 0}}</span>
+                <span class="badge-ats badge-ats-pending">Decision Pending {{job.totalDecisionPending || 0}}</span>
+                <span class="badge-ats badge-ats-danger">Rejected {{job.finalRejected || 0}}</span>
+                <span class="badge-ats badge-ats-success">Accepted {{job.finalSelected || 0}}</span>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center pt-3 mt-3 border-top">
+            <span class="text-muted small">{{ formatDate(job.created_at) }}</span>
+            <button @click="viewJobDetail(job.id)" class="btn-ats-secondary btn-ats-sm">View Details</button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal || showEditModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h2>{{ showEditModal ? 'Edit Job Description' : 'Create Job Description' }}</h2>
-          <button @click="closeModal" class="close-btn">×</button>
+    <div v-if="showCreateModal || showEditModal" class="modal-overlay-ats" @click="closeModal">
+      <div class="modal-content-ats" @click.stop>
+        <div class="modal-header-ats">
+          <h2 class="fs-4 fw-semibold">{{ showEditModal ? 'Edit Job Description' : 'Create Job Description' }}</h2>
+          <button @click="closeModal" class="close-btn-ats">×</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body-ats">
           <form @submit.prevent="saveJob">
-            <div class="form-group">
-              <label for="title">Job Title *</label>
+            <div class="mb-4">
+              <label for="title" class="form-label fw-medium text-dark">Job Title *</label>
               <input
                 id="title"
                 v-model="currentJob.title"
                 type="text"
                 required
                 placeholder="e.g., Senior Software Engineer"
-                class="form-input"
+                class="form-control-ats"
               />
             </div>
-            <div class="form-group">
-              <label for="description">Job Description *</label>
+            <div class="mb-4">
+              <label for="description" class="form-label fw-medium text-dark">Job Description *</label>
               <textarea
                 id="description"
                 v-model="currentJob.description"
                 required
                 rows="8"
                 placeholder="Enter the full job description..."
-                class="form-textarea"
+                class="form-control-ats form-textarea-ats"
               ></textarea>
             </div>
-            <div class="form-group">
-              <label for="requirements">Requirements (Optional)</label>
+            <div class="mb-4">
+              <label for="requirements" class="form-label fw-medium text-dark">Requirements (Optional)</label>
               <textarea
                 id="requirements"
                 v-model="currentJob.requirements"
                 rows="6"
                 placeholder="Enter specific requirements, qualifications, etc..."
-                class="form-textarea"
+                class="form-control-ats form-textarea-ats"
               ></textarea>
             </div>
-            <div class="form-group">
-              <label for="interviewers">Assign Interviewers (Optional)</label>
+            <div class="mb-4">
+              <label for="interviewers" class="form-label fw-medium text-dark">Assign Interviewers (Optional)</label>
               <select
                 id="interviewers"
                 v-model="currentJob.interviewers"
                 multiple
-                class="form-select"
+                class="form-select-ats"
                 style="min-height: 120px;"
               >
                 <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
                   {{ interviewer.full_name || interviewer.email }}
                 </option>
               </select>
-              <small class="form-hint">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
+              <small class="text-muted">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
             </div>
-            <div class="form-actions">
-              <button type="button" @click="closeModal" class="btn btn-secondary">Cancel</button>
-              <button type="submit" :disabled="saving" class="btn btn-primary">
+            <div class="d-flex gap-3 justify-content-end mt-4">
+              <button type="button" @click="closeModal" class="btn-ats-secondary">Cancel</button>
+              <button type="submit" :disabled="saving" class="btn-ats-primary">
                 <span v-if="saving">Saving...</span>
                 <span v-else>{{ showEditModal ? 'Update' : 'Create' }}</span>
               </button>
@@ -206,7 +206,6 @@ export default {
       this.showLoader(`${action} Job Description`, 'Saving job details...');
       try {
         if (this.showEditModal) {
-          // Update existing job
           const response = await axios.put(
             `${API_BASE_URL}/job-descriptions/${this.currentJob.id}`,
             this.currentJob
@@ -216,7 +215,6 @@ export default {
             this.closeModal();
           }
         } else {
-          // Create new job
           const response = await axios.post(
             `${API_BASE_URL}/job-descriptions`,
             this.currentJob
@@ -303,390 +301,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.job-descriptions-page {
-  padding: 2rem 0;
-}
-
-.application-count-wrapper {
-     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-}
-
-.page-header h2 {
-  color: #1a202c;
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  margin: 0;
-}
-
-.search-section {
-  margin-bottom: 2.5rem;
-}
-
-.search-input {
-  width: 100%;
-  padding: 1rem 1.25rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 1rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
-}
-
-.on_hold {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #4299e1;
-  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
-}
-
-.loading, .error-message, .empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: #718096;
-  font-size: 1.1rem;
-}
-
-.error-message {
-  color: #e53e3e;
-  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
-  border-radius: 12px;
-  border-left: 4px solid #e53e3e;
-  font-weight: 500;
-}
-
-.job-descriptions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 2rem;
-}
-
-@media (max-width: 768px) {
-  .job-descriptions-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.job-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.job-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.card-header h3 {
-  color: #333;
-  font-size: 1.25rem;
-  margin: 0;
-  flex: 1;
-}
-
-.card-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-icon {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0.25rem;
-  transition: transform 0.2s;
-}
-
-.btn-icon:hover {
-  transform: scale(1.1);
-}
-
-.card-body {
-  margin-bottom: 1rem;
-}
-
-.description-preview {
-  color: #555;
-  line-height: 1.6;
-  margin-bottom: 1rem;
-}
-
-.requirements-preview {
-  padding-top: 1rem;
-  border-top: 1px solid #f0f0f0;
-  color: #555;
-  font-size: 0.9rem;
-}
-
-.requirements-preview strong {
-  color: #333;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.interviewers-preview {
-  padding-top: 1rem;
-  border-top: 1px solid #f0f0f0;
-  color: #555;
-  font-size: 0.9rem;
-}
-
-.interviewers-preview strong {
-  color: #333;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.interviewer-count {
-  display: inline-block;
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.resume-count-preview {
-  padding-top: 1rem;
-  border-top: 1px solid #f0f0f0;
-  color: #555;
-  font-size: 0.9rem;
-}
-
-.resume-count-preview strong {
-  color: #333;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.resume-count {
-  display: inline-block;
-  background: #f0fdf4;
-  color: #16a34a;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.date {
-  color: #999;
-  font-size: 0.85rem;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
-}
-
-.btn-secondary {
-  background: #e0e0e0;
-  color: #333;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #d0d0d0;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal-content {
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  max-width: 750px;
-  max-height: 90vh;
-  overflow-y: auto;
-  width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
-  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h2 {
-  margin: 0;
-  color: #333;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  cursor: pointer;
-  color: #999;
-  line-height: 1;
-  transition: color 0.3s;
-}
-
-.close-btn:hover {
-  color: #333;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #333;
-}
-
-.form-input,
-.form-textarea {
-  width: 100%;
-  padding: 0.875rem 1.25rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-family: inherit;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
-}
-
-.form-input:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: #4299e1;
-  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.1);
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 120px;
-}
-
-.form-select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-family: inherit;
-  background: white;
-}
-
-.form-select:focus {
-  outline: none;
-  border-color: #1976d2;
-}
-
-.form-hint {
-  display: block;
-  margin-top: 0.5rem;
-  color: #666;
-  font-size: 0.85rem;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-</style>
-

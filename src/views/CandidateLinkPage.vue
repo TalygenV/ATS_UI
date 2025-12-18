@@ -1,92 +1,85 @@
 <template>
-  <div class="candidate-link-page">
-    <div class="card" v-if="loading">
+  <div class="py-4 d-flex justify-content-center">
+    <div class="ats-card ats-card-xl" style="max-width: 850px; width: 100%;" v-if="loading">
       <p>Loading interview information...</p>
     </div>
 
-    <div class="card error" v-else-if="error">
-      <h2>Link Error</h2>
-      <p>{{ error }}</p>
+    <div class="ats-card ats-card-xl ats-card-border-danger" style="max-width: 850px; width: 100%;" v-else-if="error">
+      <h2 class="text-dark fs-4 fw-bold mb-3">Link Error</h2>
+      <p class="text-danger">{{ error }}</p>
     </div>
 
-    <div class="card" v-else-if="link && job">
-      <h2> {{ job.title }}</h2>
-      <p class="subtitle">
+    <div class="ats-card ats-card-xl" style="max-width: 850px; width: 100%;" v-else-if="link && job">
+      <h2 class="text-dark fs-3 fw-bold mb-2">{{ job.title }}</h2>
+      <p class="text-muted mb-4">
         Please upload your resume and answer the questions below to continue the interview process.
       </p>
 
-      <div class="section">
-        <h3>Job Summary</h3>
-        <p class="job-text">{{ job.description }}</p>
-        <p v-if="job.requirements" class="job-text"><strong>Requirements:</strong> {{ job.requirements }}</p>
+      <div class="mt-4">
+        <h3 class="section-title-gradient">Job Summary</h3>
+        <p class="text-secondary" style="white-space: pre-line;">{{ job.description }}</p>
+        <p v-if="job.requirements" class="text-secondary"><strong>Requirements:</strong> {{ job.requirements }}</p>
       </div>
 
-      <form v-if="!submitted" @submit.prevent="submitApplication" class="form">
-        <div class="form-group">
-          <label>Resume *</label>
-          <input type="file" accept=".pdf,.doc,.docx,.txt" @change="onFileChange" required />
+      <form v-if="!submitted" @submit.prevent="submitApplication" class="mt-4">
+        <div class="mb-3">
+          <label class="form-label fw-medium text-dark">Resume *</label>
+          <input type="file" accept=".pdf,.doc,.docx,.txt" @change="onFileChange" required class="form-control" />
         </div>
 
-        <div class="section" v-if="questions && questions.length">
-          <h3>Questions</h3>
+        <div v-if="questions && questions.length" class="mt-4">
+          <h3 class="section-title-gradient">Questions</h3>
           <div
             v-for="(q, index) in questions"
             :key="index"
-            class="form-group"
+            class="mb-3"
           >
-            <label>{{ q.question || q }}</label>
+            <label class="form-label fw-medium text-dark">{{ q.question || q }}</label>
             <textarea
               v-model="answers[index]"
               rows="3"
-              class="textarea"
+              class="form-control-ats form-textarea-ats"
               required
             ></textarea>
           </div>
         </div>
 
-        <div class="actions">
-          <button type="submit" class="btn btn-primary" :disabled="submitting || !resumeFile">
+        <div class="d-flex justify-content-end mt-4">
+          <button type="submit" class="btn-ats-primary" :disabled="submitting || !resumeFile">
             <span v-if="submitting">Submitting...</span>
             <span v-else>Submit</span>
           </button>
         </div>
       </form>
 
-      <div v-else class="section">
-        <!-- <h3>Evaluation Result</h3>
-        <p>Your profile has been evaluated for this position.</p>
-        <p><strong>Overall Match:</strong> {{ formatScore(result.overall_match) }}%</p> -->
-
-        <div v-if="result.status === 'rejected'" class="alert alert-warning">
-          <p>
+      <div v-else class="mt-4">
+        <div v-if="result.status === 'rejected'" class="alert-ats-warning">
+          <p class="mb-0">
             Based on the current information, this position may not be the best fit.
           </p>
         </div>
 
-        <div v-if="result.can_select_slot && result.available_slots.length" class="section">
-          <h3>Select Interview Slot</h3>
-          <p>Please choose one of the available time slots below:</p>
+        <div v-if="result.can_select_slot && result.available_slots.length" class="mt-4">
+          <h3 class="section-title-gradient">Select Interview Slot</h3>
+          <p class="text-secondary">Please choose one of the available time slots below:</p>
 
-          <div class="slots-list">
+          <div class="d-flex flex-column gap-2 mt-3">
             <button
               v-for="slot in result.available_slots"
               :key="slot.id"
-              class="slot-btn"
+              class="slot-btn-ats"
               :class="{ selected: selectedSlotId === slot.id }"
               @click="selectedSlotId = slot.id"
             >
-              <div class="slot-time">
+              <div class="fw-medium text-dark">
                 {{ formatDateTime(slot.start_time) }} – {{ formatTime(slot.end_time) }}
               </div>
-              <!-- <div class="slot-interviewer" v-if="slot.interviewer">
-                Interviewer: {{ slot.interviewer.full_name || slot.interviewer.email }}
-              </div> -->
             </button>
           </div>
 
-          <div class="actions">
+          <div class="d-flex justify-content-end mt-4">
             <button
-              class="btn btn-primary"
+              class="btn-ats-primary"
               :disabled="booking || !selectedSlotId"
               @click="bookSlot"
             >
@@ -96,8 +89,8 @@
           </div>
         </div>
 
-        <div v-else class="section">
-          <p>
+        <div v-else class="mt-4">
+          <p class="text-secondary">
             Our HR team will review your profile and contact you regarding next steps.
           </p>
         </div>
@@ -200,28 +193,11 @@ export default {
           this.submitted = true;
         } else {
           const errorMsg = response.data.error || 'Submission failed.';
-           alert(errorMsg);
-          // Check for the specific "already applied" error
-          // if (errorMsg.includes('already applied within the last 6 months')) {
-           
-          //   return;
-          // }
-          // this.error = errorMsg;
+          alert(errorMsg);
         }
       } catch (err) {
-        // console.error('Error submitting application:', err);
-        // const errorMessage =
-        //   err.response?.data?.message ||
-        //   err.response?.data?.error ||
-        //   'Failed to submit application.';
-         const errorMessage =  'Failed to submit application.';
-        // Check for the specific "already applied" error
-         alert(errorMessage);
-        // if (errorMessage.includes('already applied within the last 6 months')) {
-         
-        //   return;
-        // }
-        
+        const errorMessage = 'Failed to submit application.';
+        alert(errorMessage);
         this.error = errorMessage;
       } finally {
         this.submitting = false;
@@ -242,10 +218,8 @@ export default {
         });
 
         if (response.data.success) {
-          // Get the selected slot details
           const selectedSlot = this.result.available_slots.find(s => s.id === this.selectedSlotId);
           
-          // Redirect to success screen with booking details
           this.$router.push({
             name: 'InterviewBookingSuccess',
             query: {
@@ -269,143 +243,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.candidate-link-page {
-  padding: 2rem 0;
-  display: flex;
-  justify-content: center;
-}
-
-.card {
-  max-width: 850px;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
-  padding: 2.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.card.error {
-  border-left: 4px solid #e53e3e;
-  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
-}
-
-h2 {
-  margin: 0 0 0.75rem 0;
-  color: #1a202c;
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-
-.subtitle {
-  color: #666;
-  margin-bottom: 1.5rem;
-}
-
-.section {
-  margin-top: 1.5rem;
-}
-
-.job-text {
-  white-space: pre-line;
-  color: #555;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.4rem;
-  font-weight: 500;
-  color: #333;
-}
-
-input[type='file'] {
-  display: block;
-}
-
-.textarea {
-  width: 100%;
-  min-height: 80px;
-  padding: 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  resize: vertical;
-}
-
-.actions {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn {
-  padding: 0.75rem 1.75rem;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.slots-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-}
-
-.slot-btn {
-  text-align: left;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  background: #fafafa;
-  cursor: pointer;
-}
-
-.slot-btn.selected {
-  border-color: #1976d2;
-  background: #e3f2fd;
-}
-
-.slot-time {
-  font-weight: 500;
-  color: #333;
-}
-
-.slot-interviewer {
-  font-size: 0.9rem;
-  color: #555;
-  margin-top: 0.25rem;
-}
-
-.alert {
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  margin-top: 0.75rem;
-}
-
-.alert-warning {
-  background: #fff3e0;
-  border-left: 4px solid #ff9800;
-}
-</style>
-
-
