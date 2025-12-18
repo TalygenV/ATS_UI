@@ -1523,8 +1523,8 @@ export default {
         return;
     }
     // The path the proxy needs to see is '/files/DocStorage//...'
-    const proxyPath = `/talygen${urlParts[1]}`; 
-
+   // const proxyPath = `/talygen${urlParts[1]}`; 
+const proxyPath = externalFileUrl;
     // --- STEP 2: Use the proxy to download the file as a BLOB ---
     const fileResponse = await axios.get(proxyPath, {
         // 🚨 CRITICAL: Must be 'blob' to handle binary file content

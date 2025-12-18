@@ -104,7 +104,7 @@
    color: white;
    padding: 1.25rem 0;
    box-shadow: 0 4px 20px rgba(66, 153, 225, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-   position: fixed;
+   position: sticky;
    top: 0;
    left: 0;
    width: 100%;

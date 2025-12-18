@@ -283,7 +283,8 @@ export default {
           return;
         }
 
-        const proxyPath = `/talygen${urlParts[1]}`;
+       // const proxyPath = `/talygen${urlParts[1]}`;
+       const proxyPath = externalFileUrl;
 
         // Step 2: Use proxy to download the file as BLOB
         const fileResponse = await axios.get(proxyPath, {
