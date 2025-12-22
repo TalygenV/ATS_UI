@@ -850,7 +850,7 @@ body {
   flex-direction: column;
 }
 
-.modal-body-ats .mb-4,
+.modal-body-ats ,
 .modal-body-ats .form-group {
   margin-bottom: 1.25rem;
   display: flex;
