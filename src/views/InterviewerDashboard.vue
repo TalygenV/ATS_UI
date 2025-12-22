@@ -10,29 +10,29 @@
       <div class="my-availability col-md-12 col-lg-6 col-xxl-5">
         <h3 class="fs-5 fw-bold mb-3">My Availability</h3>
         <form @submit.prevent="generateSlots">
-          <div class="form-group-inline d-flex flex-wrap flex-xxl-nowrap gap-2 mb-3 align-items-end">
-            <div class="form-group">
+          <div class="form-group-inline row  mb-3 ">
+            <div class="form-group col-12 col-md-6 col-xl-3 px-2">
               <label class="form-label fw-medium text-dark small">Date *</label>
               <input v-model="slotForm.date" type="date" :min="minDate" required class="form-control-ats" />
             </div>
-            <div class="form-group">
+            <div class="form-group col-12 col-md-6 col-xl-3 px-2">
               <label class="form-label fw-medium text-dark small">From</label>
               <input v-model="slotForm.start_time" type="time" class="form-control-ats" />
             </div>
-            <div class="form-group">
+            <div class="form-group col-12 col-md-6 col-xl-3 px-2">
               <label class="form-label fw-medium text-dark small">To</label>
               <input v-model="slotForm.end_time" type="time" class="form-control-ats" />
             </div>
-            <div class="form-group">
+            <div class="form-group col-12 col-md-6 col-xl-3 px-2">
               <label class="form-label fw-medium text-dark small">Max Slots</label>
-              <input v-model.number="slotForm.max_slots" type="number" min="1" class="form-control-ats" placeholder="No limit" style="width: 100px;" />
+              <input v-model.number="slotForm.max_slots" type="number" min="1" class="form-control-ats" placeholder="No limit"  />
             </div>
           </div>
           <div class="row">
-            <div class="col-12 col-md-8">
-              <p class="text-muted small mb-2">System will generate 45-minute slots between the selected times (default 9:00–18:00). You can select which slots to make available.</p>
+            <div class="col-12 col-md-8 px-2">
+              <p class="text-muted small mb-2">System will generate 30-minute slots between the selected times (default 9:00–18:00). You can select which slots to make available.</p>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4 px-2">
               <button type="submit" class="btn-ats-primary w-100" :disabled="generatingSlots">
                 <span v-if="generatingSlots">Generating...</span>
                 <span v-else>Generate Slots</span>
@@ -191,7 +191,7 @@
           <div class="bg-light p-3 rounded-3 mb-4">
             <p class="mb-1"><strong>Date:</strong> {{ formatDate(slotForm.date) }}</p>
             <p class="mb-1"><strong>Time Range:</strong> {{ slotForm.start_time || '09:00' }} – {{ slotForm.end_time || '18:00' }}</p>
-            <p v-if="slotForm.max_slots" class="mb-0 fw-medium">
+            <p v-if="slotForm.max_slots > 0" class="mb-0 fw-medium">
               <strong>Max Slots:</strong> {{ slotForm.max_slots }} 
               <span v-if="selectedSlotsCount > slotForm.max_slots" class="text-danger">({{ selectedSlotsCount }} selected - exceeds limit!)</span>
               <span v-else class="text-success">({{ selectedSlotsCount }} selected)</span>
@@ -200,15 +200,15 @@
           </div>
           <div class="row g-3 mb-4" style="max-height: 400px; overflow-y: auto;">
             <div v-for="(slot, index) in generatedSlots" :key="index" class="col-12 col-md-6 col-lg-4">
-              <label class="slot-checkbox-ats w-100" :class="{ disabled: slotForm.max_slots && selectedSlotsCount >= slotForm.max_slots && !slot.selected }">
-                <input type="checkbox" v-model="slot.selected" :disabled="slotForm.max_slots && selectedSlotsCount >= slotForm.max_slots && !slot.selected" @change="onSlotToggle" />
+              <label class="slot-checkbox-ats w-100" :class="{ disabled: slotForm.max_slots > 0 && selectedSlotsCount >= slotForm.max_slots && !slot.selected }">
+                <input type="checkbox" v-model="slot.selected" :disabled="slotForm.max_slots > 0 && selectedSlotsCount >= slotForm.max_slots && !slot.selected" @change="onSlotToggle" />
                 <span>{{ formatSlotTime(slot.start_time) }} – {{ formatSlotTime(slot.end_time) }}</span>
               </label>
             </div>
           </div>
           <div class="d-flex gap-3 justify-content-end">
             <button type="button" @click="showSlotSelectionModal = false" class="btn-ats-secondary">Cancel</button>
-            <button type="button" @click="confirmSlotSelection" :disabled="selectedSlotsCount === 0 || (slotForm.max_slots && selectedSlotsCount > slotForm.max_slots)" class="btn-ats-primary">
+            <button type="button" @click="confirmSlotSelection" :disabled="selectedSlotsCount === 0 || (slotForm.max_slots > 0 && selectedSlotsCount > slotForm.max_slots)" class="btn-ats-primary">
               Create Selected Slots ({{ selectedSlotsCount }})
             </button>
           </div>
@@ -344,7 +344,7 @@ export default {
       const startDateTime = new Date(year, month - 1, day, startHour, startMin, 0);
       const endDateTime = new Date(year, month - 1, day, endHour, endMin, 0);
       if (endDateTime <= startDateTime) { alert('End time must be after start time'); return; }
-      const slotMinutes = 45;
+      const slotMinutes = 30;
       const now = new Date();
       const selectedDate = new Date(year, month - 1, day);
       const isToday = selectedDate.toDateString() === new Date().toDateString();
@@ -361,14 +361,14 @@ export default {
         }
         currentStart = currentEnd;
       }
-      if (!slots.length) { alert('No available 45-minute slots (all clash with existing ones).'); return; }
+      if (!slots.length) { alert('No available 30-minute slots (all clash with existing ones).'); return; }
       this.generatedSlots = slots;
       this.showSlotSelectionModal = true;
     },
     onSlotToggle() {},
     async confirmSlotSelection() {
       if (this.selectedSlotsCount === 0) { alert('Please select at least one slot'); return; }
-      if (this.slotForm.max_slots && this.selectedSlotsCount > this.slotForm.max_slots) { alert(`You can only select up to ${this.slotForm.max_slots} slots`); return; }
+      if (this.slotForm.max_slots > 0 && this.selectedSlotsCount > this.slotForm.max_slots) { alert(`You can only select up to ${this.slotForm.max_slots} slots`); return; }
       this.generatingSlots = true;
       this.showLoader('Creating Availability Slots', `Setting up ${this.selectedSlotsCount} time slot(s)...`);
       try {

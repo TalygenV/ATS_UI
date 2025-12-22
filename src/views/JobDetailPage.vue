@@ -1,7 +1,7 @@
 <template>
   <div class="job-detail-page py-4" :class="{ 'processing': uploading }">
     <div class="mb-4">
-      <button @click="$router.push('/job-descriptions')" class="btn-back">← Back to Job Descriptions</button>
+      <button @click="$router.push('/job-descriptions')" class="btn-back">← Back to Job Descriptions</button>
     </div>
 
     <div v-if="loading" class="loading-state-ats">Loading...</div>
@@ -472,7 +472,7 @@
               <h2>Resume Information</h2>
               
               <div v-if="errorResumeDetail && resumeDetailEvaluation" class="error-notice">
-                <p>âš ï¸ {{ errorResumeDetail }}</p>
+                <p>{{ errorResumeDetail }}</p>
               </div>
               
               <div class="info-grid">
@@ -700,7 +700,7 @@
               <select v-model="assignmentData.slot_id" required class="form-select-clean">
                 <option value="">Select Time Slot</option>
                 <option v-for="slot in availableSlots" :key="slot.id" :value="slot.id">
-                  {{ formatDateTime(slot.start_time) }} â€“ {{ formatTime(slot.end_time) }} 
+                  {{ formatDateTime(slot.start_time) }} - {{ formatTime(slot.end_time) }} 
                   ({{ slot.interviewer?.full_name || slot.interviewer?.email || 'Interviewer' }})
                 </option>
               </select>
@@ -1492,7 +1492,7 @@ export default {
       }
       
       console.log('Full URL:', `${API_BASE_URL}/resumes/${resumeId}/download`);
-      
+      this.showLoader('', 'Downloading Resume...');
       try {
         // console.log('Making axios GET request...');
         // const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
@@ -1501,7 +1501,7 @@ export default {
         //     'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         //   }
         // });
-        debugger;
+        
         // const fileUrl = response.data.file_path;
         // const fileName = response.data.file_name || 'download.pdf';
 
@@ -1597,6 +1597,8 @@ const proxyPath = externalFileUrl;
         }
         
         alert(errorMessage);
+      } finally {
+          this.hideLoader()
       }
     },
     async viewVersionHistory(candidate) {
@@ -1735,52 +1737,13 @@ const proxyPath = externalFileUrl;
       }
     },
     async downloadResumeFromModal() {
-      try {
         if (!this.resumeDetail || !this.resumeDetail.id) {
           alert('Resume file not available for download.');
           return;
         }
         const resumeId = this.resumeDetail.id;
-        const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
-          responseType: 'blob'
-        });
-        
-        const contentDisposition = response.headers['content-disposition'];
-        const contentType = response.headers['content-type'] || 'application/octet-stream';
-        let filename = this.resumeDetail.file_name || `resume-${resumeId}`;
-        
-        if (contentDisposition) {
-          let filenameMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
-          if (filenameMatch) {
-            try {
-              filename = decodeURIComponent(filenameMatch[1]);
-            } catch (e) {
-              filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
-              if (filenameMatch) {
-                filename = filenameMatch[1];
-              }
-            }
-          } else {
-            filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
-            if (filenameMatch) {
-              filename = filenameMatch[1].replace(/['"]/g, '');
-            }
-          }
-        }
-        
-        const blob = new Blob([response.data], { type: contentType });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error('Error downloading resume:', error);
-        alert('Failed to download resume. Please try again.');
-      }
+        this.downloadResume(resumeId)
+         
     },
     closeResumeModal() {
       this.showResumeModal = false;
