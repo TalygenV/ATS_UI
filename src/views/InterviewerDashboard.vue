@@ -327,14 +327,28 @@ export default {
       const now = new Date();
       return this.assignments.filter(slot => new Date(slot.interview_date) > now);
     },
-    pastDecissionPendingSlots() {
-      const now = new Date();
-      return this.assignments.filter(slot => new Date(slot.interview_date) <= now && slot.interviewer_feedback === null);
-    },
-    pastDecissionDoneSlots() {
-      const now = new Date();
-      return this.assignments.filter(slot => new Date(slot.interview_date) <= now && slot.interviewer_feedback !== null);
-    }
+  pastDecissionPendingSlots() {
+  const now = new Date();
+
+  return this.assignments
+    .filter(slot =>
+      new Date(slot.interview_date) <= now &&
+      slot.interviewer_feedback === null
+    )
+    .sort((a, b) => new Date(b.interview_date) - new Date(a.interview_date));
+},
+
+pastDecissionDoneSlots() {
+  const now = new Date();
+
+  return this.assignments
+    .filter(slot =>
+      new Date(slot.interview_date) <= now &&
+      slot.interviewer_feedback !== null
+    )
+    .sort((a, b) => new Date(b.interview_date) - new Date(a.interview_date));
+}
+
   },
   methods: {
       getInterviewButtonText(assignment) {
