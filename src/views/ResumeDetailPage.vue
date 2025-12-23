@@ -313,57 +313,158 @@ export default {
         this.hideLoader();
       }
     },
-    async downloadResume() {
-      this.showLoader('Downloading Resume', 'Preparing file download...');
+        async downloadcandidateResume(resumeId, candidate = null) {
+      console.log('\n==========================================');
+      console.log('ðŸ“¥ FRONTEND: Download Resume Request');
+      console.log('==========================================');
+      console.log('Resume ID (from parameter):', resumeId);
+      console.log('Resume ID Type:', typeof resumeId);
+      console.log('Candidate Object:', candidate);
+      if (candidate) {
+        console.log('Candidate Keys:', Object.keys(candidate));
+        console.log('Candidate.resume_id:', candidate.resume_id);
+        console.log('Candidate.resume:', candidate.resume);
+        console.log('Candidate.resume?.id:', candidate.resume?.id);
+      }
+      console.log('API Base URL:', API_BASE_URL);
+      
+      // If resumeId is not provided, try to get it from candidate object
+      if (!resumeId && candidate) {
+        resumeId = candidate.resume_id || candidate.resume?.id;
+        console.log('Resume ID (after fallback):', resumeId);
+      }
+      
+      if (!resumeId) {
+        console.error('âŒ Resume ID is missing or undefined');
+        console.error('Cannot determine resume ID from:', {
+          parameter: resumeId,
+          candidate_resume_id: candidate?.resume_id,
+          candidate_resume_id_nested: candidate?.resume?.id
+        });
+        alert('Resume ID is missing. Cannot download resume.');
+        return;
+      }
+      
+      console.log('Full URL:', `${API_BASE_URL}/resumes/${resumeId}/download`);
+      this.showLoader('', 'Downloading Resume...');
       try {
+        // console.log('Making axios GET request...');
+        // const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
+        //   responseType: 'json',
+        //   headers: {
+        //     'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        //   }
+        // });
+        
+        // const fileUrl = response.data.file_path;
+        // const fileName = response.data.file_name || 'download.pdf';
+
+        // const link = document.createElement('a');
+        // link.href = fileUrl;
+        // link.download = fileUrl; // browser will try to download if allowed
+        // link.target = '_blank';   // avoid replacing current tab
+        // document.body.appendChild(link);
+        // link.click();
+        // document.body.removeChild(link);
+        const BEARER_TOKEN = localStorage.getItem('auth_token');
+
+    // --- STEP 1: Get the external file path from your local API ---
+    const apiResponse = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
+        // We still expect JSON from your local API
+        responseType: 'json', 
+        headers: {
+            'Authorization': `Bearer ${BEARER_TOKEN}`
+        }
+    });
+
+    const externalFileUrl = apiResponse.data.file_path;
+    const fileName = apiResponse.data.file_name || 'download.pdf';
+
+    // Validate that we have a valid file path
+    if (!externalFileUrl) {
+        console.error("No file path returned from API:", apiResponse.data);
+        throw new Error('Resume file path not found in API response');
+    }
+
+    // Extract the path *after* the domain (e.g., /files/DocStorage//...)
+    const urlParts = externalFileUrl.split('https://appfilemedia.talygen.com');
+    if (urlParts.length !== 2) {
+        console.error("Invalid external file path format:", externalFileUrl);
+        return;
+    }
+    // The path the proxy needs to see is '/files/DocStorage//...'
+   // const proxyPath = `/talygen${urlParts[1]}`; 
+const proxyPath = externalFileUrl;
+    // --- STEP 2: Use the proxy to download the file as a BLOB ---
+    const fileResponse = await axios.get(proxyPath, {
+        // ðŸš¨ CRITICAL: Must be 'blob' to handle binary file content
+        responseType: 'blob', 
+        headers: {
+            // Include your auth token only if the API requires it for this proxy request
+            // In most cases, external file hosts don't need this, but we'll include it defensively.
+            'Authorization': `Bearer ${BEARER_TOKEN}` 
+        }
+    });
+
+    // --- STEP 3: Trigger the download using the BLOB ---
+    const url = window.URL.createObjectURL(new Blob([fileResponse.data]));
+    const link = document.createElement('a');
+    
+    // Set up the download
+    link.href = url;
+    link.download = fileName; // Use the file name retrieved from the API
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the object URL to free up memory
+    window.URL.revokeObjectURL(url);
+
+
+
+      } catch (error) {
+        console.error('\nâŒ ERROR downloading resume:');
+        console.error('   - Error Message:', error.message);
+        console.error('   - Error Response:', error.response);
+        console.error('   - Error Status:', error.response?.status);
+        console.error('   - Error Status Text:', error.response?.statusText);
+        console.error('   - Error Data:', error.response?.data);
+        console.error('   - Error Config:', error.config);
+        console.error('==========================================\n');
+        
+        let errorMessage = 'Failed to download resume. ';
+        if (error.response) {
+          if (error.response.status === 404) {
+            errorMessage += 'Resume not found.';
+          } else if (error.response.status === 401) {
+            errorMessage += 'Authentication failed. Please login again.';
+          } else if (error.response.status === 403) {
+            errorMessage += 'You do not have permission to download this resume.';
+          } else {
+            errorMessage += `Server error (${error.response.status}).`;
+          }
+        } else if (error.request) {
+          errorMessage += 'No response from server. Please check your connection.';
+        } else {
+          errorMessage += error.message || 'Unknown error occurred.';
+        }
+        
+        alert(errorMessage);
+      } finally {
+          this.hideLoader()
+      }
+    },
+    async downloadResume() {
+ 
         if (!this.resume || !this.resume.id) {
           alert('Resume file not available for download.');
-          this.hideLoader();
           return;
         }
         const resumeId = this.resume.id;
-        const response = await axios.get(`${API_BASE_URL}/resumes/${resumeId}/download`, {
-          responseType: 'blob'
-        });
-        
-        const contentDisposition = response.headers['content-disposition'];
-        const contentType = response.headers['content-type'] || 'application/octet-stream';
-        let filename = this.resume.file_name || `resume-${resumeId}`;
-        
-        if (contentDisposition) {
-          let filenameMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
-          if (filenameMatch) {
-            try {
-              filename = decodeURIComponent(filenameMatch[1]);
-            } catch (e) {
-              filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
-              if (filenameMatch) {
-                filename = filenameMatch[1];
-              }
-            }
-          } else {
-            filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
-            if (filenameMatch) {
-              filename = filenameMatch[1].replace(/['"]/g, '');
-            }
-          }
-        }
-        
-        const blob = new Blob([response.data], { type: contentType });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error('Error downloading resume:', error);
-        alert('Failed to download resume. Please try again.');
-      } finally {
-        this.hideLoader();
-      }
+                
+       this.downloadcandidateResume(resumeId)
+      
     },
     goBack() {
       const jobId = this.$route.params.jobId || this.$route.params.id;

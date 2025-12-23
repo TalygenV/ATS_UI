@@ -58,11 +58,21 @@
                     <div class="info-row-ats"><span class="info-label-ats">Candidate:</span><span class="info-value-ats">{{ interview.name || 'N/A' }}</span></div>
                     <div class="info-row-ats"><span class="info-label-ats">Job Discription:</span><span class="info-value-ats">{{ interview.position || 'N/A' }}</span></div>
                     <div class="info-row-ats"><span class="info-label-ats">Interviewer:</span><span class="info-value-ats">{{ interview.interviewer || 'N/A' }}</span></div>
+                                <a
+                                v-if="!hideJoinButton(interview)"
+    :href="interview.interview_start_url"
+    target="_blank"
+  >
+    <button class="btn-ats-primary btn-ats-sm">
+      {{ getInterviewButtonText(interview) }}
+    </button>
+  </a>
                   </div>
                   <div class="interview-time-badge-inline">
                     <span class="time">{{ interview.time }}</span>
                     <span class="status">{{ interview.status === 'ongoing' ? 'In Progress' : 'Scheduled' }}</span>
                   </div>
+        
                 </div>
               </div>
             </template>
@@ -95,11 +105,20 @@
                     <div class="info-row-ats"><span class="info-label-ats">Candidate:</span><span class="info-value-ats">{{ interview.name || 'N/A' }}</span></div>
                     <div class="info-row-ats"><span class="info-label-ats">Job Discription:</span><span class="info-value-ats">{{ interview.position || 'N/A' }}</span></div>
                     <div class="info-row-ats"><span class="info-label-ats">Interviewer:</span><span class="info-value-ats">{{ interview.interviewer || 'N/A' }}</span></div>
+                                              <a
+    :href="interview.interview_start_url"
+    target="_blank"
+  >
+    <button class="btn-ats-primary btn-ats-sm">
+      {{ getInterviewButtonText(interview) }}
+    </button>
+  </a>
                   </div>
                   <div class="interview-time-badge-inline in-progress">
                     <span class="time">{{ interview.time }}</span>
                     <span class="status">In Progress</span>
                   </div>
+      
                 </div>
               </div>
             </template>
@@ -173,6 +192,34 @@ function formatDate(isoString) {
   if (!isoString) return '';
   return moment(isoString).format('MMMM D, YYYY');
 }
+ 
+ function hideJoinButton(assignment){
+         const nowUtc = new Date(); // current UTC
+    const interviewendUtc = new Date(assignment.end_time);
+
+     if(nowUtc > interviewendUtc)
+       {
+          return true
+       }
+       return false
+ }
+  function  getInterviewButtonText(assignment) {
+    if (!assignment.start_time) {
+      return 'Start Interview';
+    }
+
+    const nowUtc = new Date(); // current UTC
+    const interviewUtc = new Date(assignment.start_time);
+    console.log(assignment.start_time , "assignment.interview_date")
+    console.log(interviewUtc , "interviewUtc")
+    console.log(nowUtc , "nowUtc")
+    // Before interview time
+    if (nowUtc < interviewUtc) {
+      return 'Start Interview';
+    }
+    // At or after interview time
+    return 'Join Interview';
+  }
 
 function computeStatusFromISOWithMoment(start_time, end_time) {
   const start = moment(start_time);
@@ -206,7 +253,8 @@ const getTodayInterview = async () => {
           type: item.type || '',
           status,
           start_time: item.start_time,
-          end_time: item.end_time
+          end_time: item.end_time,
+          interview_start_url : item.interview_start_url
         };
       });
       totalInterviews.value = response?.data?.count || 0;

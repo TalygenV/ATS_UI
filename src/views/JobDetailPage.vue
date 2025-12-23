@@ -260,6 +260,7 @@
               <span class="card-date">{{ formatDate(candidate.created_at) }}</span>
               <div class="card-actions">
                 <!-- HR/Admin: Assignment buttons -->
+                 
                 <button v-if="hasWriteAccess && !candidate.interviewer_id" @click="openAssignModal(candidate)" class="btn-action-assign">
                   Assign Interviewer
                 </button>

@@ -107,7 +107,19 @@
             <div class="info-row-ats"><span class="info-label-ats">Contact:</span><span class="info-value-ats">{{ assignment.resume?.phone || assignment.contact_number || 'N/A' }}</span></div>
             <div v-if="assignment.interview_date" class="info-row-ats"><span class="info-label-ats">Interview:</span><span class="info-value-ats">{{ formatDateTime(assignment.interview_date) }}</span></div>
             <div class="d-flex gap-2 mt-3 pt-3 border-top">
+          
+ 
+  <a
+    :href="assignment.interview_start_url"
+    target="_blank"
+  >
+    <button class="btn-ats-primary btn-ats-sm">
+      {{ getInterviewButtonText(assignment) }}
+    </button>
+  </a>
+
               <button @click="viewCandidateDetails(assignment)" class="btn-ats-secondary btn-ats-sm">View Resume</button>
+            
             </div>
           </div>
           <div v-if="upcomingSlots.length === 0" class="ats-card text-center py-4 text-muted">No upcoming interviews found.</div>
@@ -325,6 +337,22 @@ export default {
     }
   },
   methods: {
+      getInterviewButtonText(assignment) {
+    if (!assignment.interview_date) {
+      return 'Start Interview';
+    }
+
+    const nowUtc = new Date(); // current UTC
+    const interviewUtc = new Date(assignment.interview_date);
+    
+    // Before interview time
+    if (nowUtc < interviewUtc) {
+      return 'Start Interview';
+    }
+
+    // At or after interview time
+    return 'Join Interview';
+  },
     async fetchSlots() {
       this.loadingSlots = true;
       try {
