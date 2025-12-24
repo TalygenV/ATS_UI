@@ -269,14 +269,14 @@
                 </button>
                 <!-- Interviewer: Feedback button (only for assigned candidates) -->
                 <button 
-                  v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status === 'pending'" 
+                  v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status === 'pending' && candidate.interview_date && new Date() > new Date(candidate.interview_date)" 
                   @click="openFeedbackModal(candidate)" 
                   class="btn-action-feedback"
                 >
                   Submit Feedback
                 </button>
                 <button 
-                  v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status !== 'pending'" 
+                  v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status !== 'pending' && candidate.interview_date && new Date() > new Date(candidate.interview_date)" 
                   @click="openFeedbackModal(candidate)" 
                   class="btn-action-feedback"
                 >
@@ -691,7 +691,7 @@
               <label>Interviewer *</label>
               <select v-model="assignmentData.interviewer_id" @change="fetchAvailableSlots" required class="form-select-clean">
                 <option value="">Select Interviewer</option>
-                <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
+                <option v-for="interviewer in assignInterviewers" :key="interviewer.id" :value="interviewer.id">
                   {{ interviewer.full_name || interviewer.email }}
                 </option>
               </select>
@@ -1085,6 +1085,7 @@ export default {
       showAssignModal: false,
       showFeedbackModal: false,
       interviewers: [],
+      assignInterviewers : [],
       assignmentData: {
         evaluation_id: null,
         interviewer_id: null,
@@ -1168,6 +1169,7 @@ export default {
     this.fetchCandidates();
     if (this.hasWriteAccess) {
       this.fetchInterviewers();
+      this.fetchAssignInterviewers()
     }
   },
   methods: {
@@ -1785,6 +1787,7 @@ const proxyPath = externalFileUrl;
         );
         if (response.data.success) {
           await this.fetchJobDescription();
+          await this.fetchAssignInterviewers()
           this.closeEditModal();
         }
       } catch (error) {
@@ -1836,6 +1839,17 @@ const proxyPath = externalFileUrl;
         console.error('Error fetching interviewers:', error);
       }
     },
+       async fetchAssignInterviewers() {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/auth/already-assigned-interviewer-list/${this.$route.params.id}`);
+        if (response.data.success) {
+          this.assignInterviewers = response.data.data;
+        }
+      } catch (error) {
+        console.error('Error fetching interviewers:', error);
+      }
+    },
+    
     openAssignModal(candidate) {
       this.assignmentData = {
         evaluation_id: candidate.id,
