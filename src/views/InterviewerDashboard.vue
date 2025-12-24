@@ -264,6 +264,10 @@
                 <label class="form-label fw-medium small">Hold Reason *</label>
                 <textarea v-model="feedbackData.hold_reason" required rows="4" class="form-control-ats form-textarea-ats" placeholder="Please provide a reason..."></textarea>
               </div>
+              <div class="mb-3">
+                <label class="form-label fw-medium small">Remarks</label>
+                <textarea v-model="feedbackData.remarks" rows="4" class="form-control-ats form-textarea-ats" placeholder="Additional remarks (optional)"></textarea>
+              </div>
             </div>
 
             <div class="d-flex gap-3 justify-content-end">
@@ -310,7 +314,8 @@ export default {
       feedbackData: {
         ratings: { technical_skills: null, communication: null, problem_solving: null, cultural_fit: null, experience_relevance: null, overall: null },
         status: 'pending',
-        hold_reason: ''
+        hold_reason: '',
+        remarks: ''
       }
     };
   },
@@ -454,22 +459,31 @@ pastDecissionDoneSlots() {
     openFeedbackModal(assignment) {
       this.selectedAssignment = assignment;
       if (assignment.interviewer_feedback) {
-        this.feedbackData = { ratings: { ...assignment.interviewer_feedback }, status: assignment.interviewer_status || 'pending', hold_reason: assignment.interviewer_hold_reason || '' };
+        this.feedbackData = { ratings: { ...assignment.interviewer_feedback }, status: assignment.interviewer_status || 'pending', hold_reason: assignment.interviewer_hold_reason || '', remarks: assignment.interviewer_feedback.interviewer_remarks || '' };
       } else {
-        this.feedbackData = { ratings: { technical_skills: null, communication: null, problem_solving: null, cultural_fit: null, experience_relevance: null, overall: null }, status: 'pending', hold_reason: '' };
+        this.feedbackData = { ratings: { technical_skills: null, communication: null, problem_solving: null, cultural_fit: null, experience_relevance: null, overall: null }, status: 'pending', hold_reason: '', remarks: '' };
       }
       this.showFeedbackModal = true;
     },
     onStatusChange() { if (this.feedbackData.status !== 'on_hold') this.feedbackData.hold_reason = ''; },
     async submitFeedback() {
-      for (const [key, value] of Object.entries(this.feedbackData.ratings)) {
-        if (value === null || value < 1 || value > 10) { alert(`Please provide a valid rating (1-10) for ${key.replace('_', ' ')}`); return; }
-      }
+      // for (const [key, value] of Object.entries(this.feedbackData.ratings)) {
+      //   if (value === null || value < 1 || value > 10) { alert(`Please provide a valid rating (1-10) for ${key.replace('_', ' ')}`); return; }
+      // }
       if (this.feedbackData.status === 'on_hold' && !this.feedbackData.hold_reason.trim()) { alert('Please provide a reason for putting the candidate on hold'); return; }
       this.submitting = true;
+    //        let ratingData  = {
+          
+    //     technical_skills: this.feedbackData.ratings.technical_skills ?? 1 ,
+    //     communication:  this.feedbackData.ratings.communication ?? 1 ,
+    //             problem_solving: this.feedbackData.ratings.problem_solving ?? 1 ,
+    //     cultural_fit:  this.feedbackData.ratings.cultural_fit ?? 1 ,
+    //     experience_relevance: this.feedbackData.ratings.experience_relevance ?? 1 ,
+    //     overall: this.feedbackData.ratings.overall ?? 1 ,
+    // };
       this.showLoader('Submitting Feedback', 'Saving interview evaluation...');
       try {
-        const response = await axios.post(`${API_BASE_URL}/evaluations/${this.selectedAssignment.id}/interviewer-feedback`, { ratings: this.feedbackData.ratings, status: this.feedbackData.status, hold_reason: this.feedbackData.status === 'on_hold' ? this.feedbackData.hold_reason : null });
+        const response = await axios.post(`${API_BASE_URL}/evaluations/${this.selectedAssignment.id}/interviewer-feedback`, { ratings: { ...this.feedbackData.ratings, interviewer_remarks: this.feedbackData.remarks }, status: this.feedbackData.status, hold_reason: this.feedbackData.status === 'on_hold' ? this.feedbackData.hold_reason : null });
         if (response.data.success) { await this.fetchAssignments(); this.showFeedbackModal = false; alert('Feedback submitted successfully!'); }
       } catch (error) {
         console.error('Error submitting feedback:', error);

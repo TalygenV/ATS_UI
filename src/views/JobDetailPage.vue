@@ -268,6 +268,7 @@
                   Reassign
                 </button>
                 <!-- Interviewer: Feedback button (only for assigned candidates) -->
+                 <!--  -->
                 <button 
                   v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status === 'pending' && candidate.interview_date && new Date() > new Date(candidate.interview_date)" 
                   @click="openFeedbackModal(candidate)" 
@@ -275,6 +276,7 @@
                 >
                   Submit Feedback
                 </button>
+                 <!-- && candidate.interview_date && new Date() > new Date(candidate.interview_date) -->
                 <button 
                   v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status !== 'pending' && candidate.interview_date && new Date() > new Date(candidate.interview_date)" 
                   @click="openFeedbackModal(candidate)" 
@@ -634,14 +636,18 @@
                             {{ event.details.status }}
                           </span>
                         </div>
-                        <div v-if="event.details.ratings" class="ratings-detail">
+                        <div v-if="event.details.ratings && typeof event.details.ratings === 'object' && Object.keys(event.details.ratings).filter(key => key !== 'interviewer_remarks' && event.details.ratings[key]).length > 0" class="ratings-detail">
                           <strong>Ratings:</strong>
                           <div class="ratings-list">
-                            <div v-for="(rating, key) in event.details.ratings" :key="key" class="rating-detail-item">
+                            <div v-for="(rating, key) in event.details.ratings" :key="key" class="rating-detail-item" v-if="key !== 'interviewer_remarks'">
                               <span class="rating-key">{{ key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
                               <span class="rating-value">{{ rating }}/10</span>
                             </div>
                           </div>
+                        </div>
+                        <div v-if="event.details.ratings && event.details.ratings.interviewer_remarks" class="remarks-detail">
+                          <strong>Remarks:</strong>
+                          <p>{{ event.details.ratings.interviewer_remarks }}</p>
                         </div>
                         <div v-if="event.details.hold_reason" class="hold-reason-detail">
                           <strong>Hold Reason:</strong>
@@ -660,6 +666,10 @@
                         <div v-if="event.details.reason" class="decision-reason-detail">
                           <strong>Reason:</strong>
                           <p>{{ event.details.reason }}</p>
+                        </div>
+                        <div v-if="event.details.hr_remarks" class="hr-remarks-detail">
+                          <strong>HR Remarks:</strong>
+                          <p>{{ event.details.hr_remarks }}</p>
                         </div>
                       </div>
                     </div>
@@ -738,7 +748,7 @@
                     min="1" 
                     max="10" 
                     class="rating-input"
-                    required
+                    
                   />
                 </div>
                 <div class="rating-group">
@@ -749,7 +759,7 @@
                     min="1" 
                     max="10" 
                     class="rating-input"
-                    required
+                    
                   />
                 </div>
                 <div class="rating-group">
@@ -760,7 +770,7 @@
                     min="1" 
                     max="10" 
                     class="rating-input"
-                    required
+                    
                   />
                 </div>
                 <div class="rating-group">
@@ -771,7 +781,7 @@
                     min="1" 
                     max="10" 
                     class="rating-input"
-                    required
+                    
                   />
                 </div>
                 <div class="rating-group">
@@ -782,7 +792,7 @@
                     min="1" 
                     max="10" 
                     class="rating-input"
-                    required
+                    
                   />
                 </div>
                 <div class="rating-group">
@@ -793,9 +803,16 @@
                     min="1" 
                     max="10" 
                     class="rating-input"
-                    required
+                  
                   />
                 </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3>Remarks</h3>
+              <div class="mb-4">
+                <textarea v-model="feedbackData.remarks" rows="4" class="form-control-ats form-textarea-ats" placeholder="Additional remarks (optional)"></textarea>
               </div>
             </div>
 
@@ -895,6 +912,15 @@
               <small v-if="hrDecisionData.status === 'selected' && selectedCandidateForFeedback.interviewer_status && selectedCandidateForFeedback.interviewer_status !== 'selected'" class="reason-hint">
                 Reason is required when overriding interviewer's decision to select this candidate.
               </small>
+            </div>
+            <div class="mb-4">
+              <label>Remarks</label>
+              <textarea 
+                v-model="hrDecisionData.hrRemarks" 
+                rows="4" 
+                class="form-control-ats form-textarea-ats" 
+                placeholder="Additional remarks (optional)"
+              ></textarea>
             </div>
             <div class="d-flex gap-3 justify-content-end mt-4">
               <button type="button" @click="showHRDecisionModal = false" class="btn-ats-secondary">Cancel</button>
@@ -1103,7 +1129,8 @@ export default {
           overall: null
         },
         status: 'pending',
-        hold_reason: ''
+        hold_reason: '',
+        remarks: ''
       },
       submittingFeedback: false,
       showHRDecisionModal: false,
@@ -1112,7 +1139,8 @@ export default {
       hrDecisionData: {
         evaluation_id: null,
         status: '',
-        reason: ''
+        reason: '',
+        hrRemarks: ''
       },
       candidateLinkUrl: '',
       candidateLinkLoading: false,
@@ -1944,7 +1972,8 @@ const proxyPath = externalFileUrl;
         this.feedbackData = {
           ratings: { ...candidate.interviewer_feedback },
           status: candidate.interviewer_status || 'pending',
-          hold_reason: candidate.interviewer_hold_reason || ''
+          hold_reason: candidate.interviewer_hold_reason || '',
+          remarks: candidate.interviewer_feedback.interviewer_remarks || ''
         };
       } else {
         this.feedbackData = {
@@ -1957,7 +1986,8 @@ const proxyPath = externalFileUrl;
             overall: null
           },
           status: 'pending',
-          hold_reason: ''
+          hold_reason: '',
+          remarks: ''
         };
       }
       this.showFeedbackModal = true;
@@ -1969,12 +1999,12 @@ const proxyPath = externalFileUrl;
     },
     async submitFeedback() {
       // Validate ratings
-      for (const [key, value] of Object.entries(this.feedbackData.ratings)) {
-        if (value === null || value < 1 || value > 10) {
-          alert(`Please provide a valid rating (1-10) for ${key.replace('_', ' ')}`);
-          return;
-        }
-      }
+      // for (const [key, value] of Object.entries(this.feedbackData.ratings)) {
+      //   if (value === null || value < 0 || value > 10) {
+      //     alert(`Please provide a valid rating (1-10) for ${key.replace('_', ' ')}`);
+      //     return;
+      //   }
+      // }
 
       if (this.feedbackData.status === 'on_hold' && !this.feedbackData.hold_reason.trim()) {
         alert('Please provide a reason for putting the candidate on hold');
@@ -1988,11 +2018,22 @@ const proxyPath = externalFileUrl;
 
       this.submittingFeedback = true;
       this.showLoader('Submitting Feedback', 'Saving your interview feedback...');
+
+    //   let ratingData  = {
+          
+    //     technical_skills: this.feedbackData.ratings.technical_skills ?? 1 ,
+    //     communication:  this.feedbackData.ratings.communication ?? 1 ,
+    //             problem_solving: this.feedbackData.ratings.problem_solving ?? 1 ,
+    //     cultural_fit:  this.feedbackData.ratings.cultural_fit ?? 1 ,
+    //     experience_relevance: this.feedbackData.ratings.experience_relevance ?? 1 ,
+    //     overall: this.feedbackData.ratings.overall ?? 1 ,
+    // };
+      
       try {
         const response = await axios.post(
           `${API_BASE_URL}/evaluations/${this.selectedCandidateForFeedback.id}/interviewer-feedback`,
           {
-            ratings: this.feedbackData.ratings,
+            ratings: { ...this.feedbackData.ratings, interviewer_remarks: this.feedbackData.remarks },
             status: this.feedbackData.status,
             hold_reason: this.feedbackData.status === 'on_hold' ? this.feedbackData.hold_reason : null
           }
@@ -2019,7 +2060,8 @@ const proxyPath = externalFileUrl;
       this.hrDecisionData = {
         evaluation_id: candidate.id,
         status: candidate.hr_final_status || 'pending',
-        reason: candidate.hr_final_reason || ''
+        reason: candidate.hr_final_reason || '',
+        hrRemarks: candidate.hr_remarks || ''
       };
       this.selectedCandidateForFeedback = candidate; // Reuse this to show interviewer feedback
       this.showHRDecisionModal = true;
@@ -2053,7 +2095,8 @@ const proxyPath = externalFileUrl;
           `${API_BASE_URL}/evaluations/${this.hrDecisionData.evaluation_id}/hr-decision`,
           {
             status: this.hrDecisionData.status,
-            reason: this.hrDecisionData.reason
+            reason: this.hrDecisionData.reason,
+            hrRemarks: this.hrDecisionData.hrRemarks
           }
         );
 
