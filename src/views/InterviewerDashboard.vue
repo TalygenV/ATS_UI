@@ -416,7 +416,7 @@ pastDecissionDoneSlots() {
         }
         currentStart = currentEnd;
       }
-      if (!slots.length) { alert('No available 30-minute slots or slots clash with existing ones.'); return; }
+      if (!slots.length) { alert('No available slots as per time or slots clash with existing ones.'); return; }
       this.generatedSlots = slots;
       this.showSlotSelectionModal = true;
     },
