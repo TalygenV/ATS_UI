@@ -468,11 +468,14 @@ const proxyPath = externalFileUrl;
     },
     goBack() {
       const jobId = this.$route.params.jobId || this.$route.params.id;
-      if (jobId) {
-        this.$router.push({ name: 'JobDetail', params: { id: jobId } });
-      } else {
-        this.$router.push('/job-descriptions');
-      }
+
+      // if (jobId) {
+      //   this.$router.push({ name: 'JobDetail', params: { id: jobId } });
+      // } else {
+      //   this.$router.push('/job-descriptions');
+      //   this.$router.back()
+      // }
+       this.$router.back()
     },
     formatScore(score) {
       if (score === null || score === undefined) return '0';

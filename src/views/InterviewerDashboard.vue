@@ -128,8 +128,9 @@
 
       <!-- Decision Pending -->
       <div class="col-xl-4">
-        <div class="ats-card mb-3">
+        <div class="d-flex justify-content-between align-items-center ats-card mb-3">
           <h3 class="fs-5 fw-bold mb-3">Decision Pending</h3>
+          <button class="btn-back small" @click="viewAllPending">View All</button>
         </div>
         <div class="d-flex flex-column gap-3">
           <div v-for="assignment in pastDecissionPendingSlots" :key="assignment.id" class="ats-card ats-card-top-warning">
@@ -155,8 +156,9 @@
 
       <!-- Decision Done -->
       <div class="col-xl-4">
-        <div class="ats-card mb-3">
+        <div class="d-flex justify-content-between align-items-center ats-card mb-3">
           <h3 class="fs-5 fw-bold mb-3">Decision Done</h3>
+           <button class="btn-back small" @click="viewAllComplete">View All</button>
         </div>
         <div class="d-flex flex-column gap-3">
           <div v-for="assignment in pastDecissionDoneSlots" :key="assignment.id" class="ats-card ats-card-top-success">
@@ -173,12 +175,18 @@
             <div v-if="assignment.interviewer_feedback" class="mt-3 pt-3 border-top">
               <strong class="small text-dark">Feedback Submitted</strong>
               <div class="row g-2 mt-2">
-                <div v-for="(rating, key) in assignment.interviewer_feedback" :key="key" class="col-6">
+                <div class="row g-2 mt-2">
+                <div v-for="([key, rating]) in Object.entries(assignment.interviewer_feedback).filter(([k, v]) => k !== 'interviewer_remarks' && typeof v === 'number')" :key="key" class="col-6">
                   <div class="d-flex justify-content-between small p-2 bg-light rounded-2">
-                    <span class="text-muted">{{ key }}:</span>
+                    <span class="text-muted">{{ key.replace(/_/g, ' ') }}:</span>
                     <span class="text-primary fw-semibold">{{ rating }}/10</span>
                   </div>
                 </div>
+              </div>
+              </div>
+                 <div v-if="assignment.interviewer_feedback.interviewer_remarks" class="mt-3">
+                <strong class="small text-dark">Remarks:</strong>
+                <p class="small text-muted mt-1 mb-0">{{ assignment.interviewer_feedback.interviewer_remarks }}</p>
               </div>
             </div>
             <div class="d-flex gap-2 mt-3 pt-3 border-top">
@@ -340,7 +348,7 @@ export default {
       new Date(slot.interview_date) <= now &&
       slot.interviewer_feedback === null
     )
-    .sort((a, b) => new Date(b.interview_date) - new Date(a.interview_date));
+    .sort((a, b) => new Date(b.interview_date) - new Date(a.interview_date)).splice(0,7);
 },
 
 pastDecissionDoneSlots() {
@@ -351,7 +359,7 @@ pastDecissionDoneSlots() {
       new Date(slot.interview_date) <= now &&
       slot.interviewer_feedback !== null
     )
-    .sort((a, b) => new Date(b.interview_date) - new Date(a.interview_date));
+    .sort((a, b) => new Date(b.interview_date) - new Date(a.interview_date)).splice(0,7);
 }
 
   },
@@ -494,6 +502,12 @@ pastDecissionDoneSlots() {
       if (assignment.resume_id) {
         this.$router.push({ name: 'ResumeDetail', params: { jobId: assignment.job_description_id, evaluationId: assignment.id } });
       }
+    },
+    viewAllPending() {
+      this.$router.push({ name: 'InterviewerCandidateList', query: { decision: 'pending' } });
+    },
+    viewAllComplete() {
+      this.$router.push({ name: 'InterviewerCandidateList', query: { decision: 'complete' } });
     },
     formatDateTime, formatTime
   },

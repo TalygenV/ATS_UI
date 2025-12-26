@@ -471,7 +471,7 @@
             </div>
 
             <!-- Resume Information Section -->
-            <div class="resume-info-card">
+            <!-- <div class="resume-info-card">
               <h2>Resume Information</h2>
               
               <div v-if="errorResumeDetail && resumeDetailEvaluation" class="error-notice">
@@ -555,15 +555,15 @@
                   <pre class="raw-text">{{ resumeDetailEvaluation.resume_text || (resumeDetail && resumeDetail.raw_text) || 'No text available' }}</pre>
                 </div>
               </div>
-            </div>
+            </div> -->
 
             <!-- Job Description Section -->
-            <div class="job-description-card">
+            <!-- <div class="job-description-card">
               <h2>Job Description</h2>
               <div class="job-description-content">
                 <pre class="job-description-text">{{ resumeDetailEvaluation.job_description.description || 'No job description available' }}</pre>
               </div>
-            </div>
+            </div> -->
 
             <!-- Process Timeline Section -->
             <div class="timeline-card">
@@ -639,7 +639,7 @@
                         <div v-if="event.details.ratings && typeof event.details.ratings === 'object' && Object.keys(event.details.ratings).filter(key => key !== 'interviewer_remarks' && event.details.ratings[key]).length > 0" class="ratings-detail">
                           <strong>Ratings:</strong>
                           <div class="ratings-list">
-                            <div v-for="(rating, key) in event.details.ratings" :key="key" class="rating-detail-item" v-if="key !== 'interviewer_remarks'">
+                            <div v-for="(rating, key) in getFilteredRatings(event.details.ratings)" :key="key" class="rating-detail-item">
                               <span class="rating-key">{{ key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
                               <span class="rating-value">{{ rating }}/10</span>
                             </div>
@@ -2138,6 +2138,16 @@ const proxyPath = externalFileUrl;
         return 'Enter hold reason...';
       }
       return 'Enter reason...';
+    },
+    getFilteredRatings(ratings) {
+      if (!ratings || typeof ratings !== 'object') return {};
+      const filtered = {};
+      for (const [key, value] of Object.entries(ratings)) {
+        if (key !== 'interviewer_remarks') {
+          filtered[key] = value;
+        }
+      }
+      return filtered;
     },
     getTimelineMarkerClass(eventType) {
       return {
