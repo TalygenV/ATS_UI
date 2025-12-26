@@ -10,6 +10,7 @@ import RegisterPage from '../views/RegisterPage.vue';
 import TalygenFilesPage from '../views/TalygenFilesPage.vue';
 import CandidateLinkPage from '../views/CandidateLinkPage.vue';
 import InterviewBookingSuccess from '../views/InterviewBookingSuccess.vue';
+import InterviewerAllCandidateList from "../views/InterviewerAllCandidateList.vue"
 import { useAuth } from '../composables/useAuth';
 
 const routes = [
@@ -90,6 +91,12 @@ const routes = [
     name: 'InterviewBookingSuccess',
     component: InterviewBookingSuccess,
     meta: { requiresAuth: false }
+  },
+    {
+    path: '/interviewer-candidate-list',
+    name: 'InterviewerCandidateList',
+    component: InterviewerAllCandidateList,
+    meta: { requiresAuth: true }
   },
   // {
   //   path: '/interviewer-dashboard',
