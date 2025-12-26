@@ -12,6 +12,7 @@
             : "Decision Done Assignments"
         }}
       </h3>
+      <div class="d-flex gap-4">
       <select
         v-model="statusFilter"
         @change="onStatusFilterChange"
@@ -24,6 +25,19 @@
         <option value="rejected">Rejected</option>
         <option value="on_hold">On Hold</option>
       </select>
+
+      <select
+  v-model.number="limit"
+  @change="onLimitChange"
+  class="form-select-ats"
+  style="width: auto"
+>
+  <option :value="5">5 / page</option>
+  <option :value="10">10 / page</option>
+  <option :value="20">20 / page</option>
+  <option :value="50">50 / page</option>
+</select>
+</div>
     </div>
   </div>
 
@@ -511,6 +525,18 @@ const onStatusFilterChange = () => {
       page: 1,
       limit: limit.value,
       status: statusFilter.value || ''
+    }
+  });
+};
+
+const onLimitChange = () => {
+  page.value = 1; // reset to first page
+
+  router.push({
+    query: {
+      ...route.query,
+      page: 1,
+      limit: limit.value
     }
   });
 };
