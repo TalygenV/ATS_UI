@@ -404,7 +404,7 @@
                 </p>
                 <div class="resume-header-actions">
                   <button @click="downloadResumeFromModal" class="btn-ats-primary">⬇️Download Resume</button>
-                  <select v-if="hasWriteAccess" v-model="resumeDetailEvaluation.status" @change="updateResumeStatus" class="status-select">
+                  <select v-if="hasWriteAccess && !showVersionHistoryModal" v-model="resumeDetailEvaluation.status" @change="updateResumeStatus" class="status-select">
                     <option value="pending">Pending</option>
                     <option value="accepted">Accepted</option>
                     <option value="rejected">Rejected</option>
@@ -977,6 +977,7 @@
         </div>
         <div class="modal-body-ats">
           <div v-if="selectedCandidateForVersions" class="candidate-info-header">
+      
             <h3>{{ selectedCandidateForVersions.candidate_name || selectedCandidateForVersions.resume?.name || 'Unknown Candidate' }}</h3>
             <p class="candidate-email">{{ selectedCandidateForVersions.email || selectedCandidateForVersions.resume?.email || 'N/A' }}</p>
           </div>
@@ -993,6 +994,7 @@
               :class="{ 'current-version': version.version === (selectedCandidateForVersions?.versionNumber || 1) }"
             >
               <div class="version-header">
+                      
                 <div class="version-number-badge">
                   <span class="version-label">Version</span>
                   <span class="version-number">{{ version.version }}</span>
@@ -1000,6 +1002,8 @@
                 <span class="version-date">{{ formatDateTime(version.uploaded_on) }}</span>
               </div>
               
+              <button v-if="!hasRole('Interviewer')" @click="viewResumeDetail(version)" 
+              class="btn-action-details mb-4"> Check Interview Record For this Version </button>
               <div class="version-details">
                 <div class="version-info">
                   <div class="info-row">
@@ -1673,12 +1677,16 @@ const proxyPath = externalFileUrl;
       this.versionHistory = [];
       this.selectedCandidateForVersions = null;
     },
+
+   
     async viewResumeDetail(candidate) {
       this.showLoader('Loading Candidate Details', 'Fetching resume and evaluation data...');
       this.resumeDetailEvaluation = null;
       this.resumeDetail = null;
       this.errorResumeDetail = null;
-      await this.fetchResumeDetail(candidate.id);
+
+      //change evaluationId id into resume_id
+      await this.fetchResumeDetail(candidate.resume_id);
       this.showResumeModal = true;
       this.hideLoader();
     },
