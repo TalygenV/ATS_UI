@@ -695,7 +695,35 @@
           <h2>Assign Interviewer</h2>
           <button @click="showAssignModal = false" class="close-btn-ats">×</button>
         </div>
-        <div class="modal-body-ats">
+
+  <div class="d-flex gap-2 justify-content-end me-4">
+    <input
+      type="radio"
+      class="btn-check"
+      name="assignType"
+      id="opt1"
+      :value="true"
+      v-model="assignMultipleInterviwer"
+    />
+    <label class="btn btn-outline-success" for="opt1">
+      Panel Assign
+    </label>
+
+    <input
+      type="radio"
+      class="btn-check"
+      name="assignType"
+      id="opt2"
+      :value="false"
+      v-model="assignMultipleInterviwer"
+    />
+    <label class="btn btn-outline-success" for="opt2">
+      Single Assign
+    </label>
+  </div>
+
+        <!-- // Single Assign //  -->
+        <div v-if="!assignMultipleInterviwer" class="modal-body-ats">
           <form @submit.prevent="assignInterviewer">
             <div class="form-group">
               <label>Interviewer *</label>
@@ -725,6 +753,59 @@
             </div>
           </form>
         </div>
+         
+
+         <!-- // Bulk Assign // -->
+        <div v-if="assignMultipleInterviwer" class="modal-body-ats">
+  <form @submit.prevent="assignInterviewerGroup">
+
+    <!-- SECTION 1: Interviewer -->
+ 
+
+      <div class="form-group">
+        <label>Interviewer *</label>
+       
+         <select v-model="selectedInterviewersforAssign" multiple class="form-select-ats" @change="fetchAvailableSlotsByGroup" style="min-height: 120px;">
+                <option value="">Select Interviewer</option>
+                <option v-for="interviewer in assignInterviewers" :key="interviewer.id" :value="interviewer.id">
+                  {{ interviewer.full_name || interviewer.email }}
+                </option>
+              </select>
+      
+      </div>
+
+
+    <!-- SECTION 2: Available Slots -->
+
+
+       <div class="form-group">
+              <label>Available Slots *</label>
+              <select v-model="selectedTimeSlotforBulkAssign"  required class="form-select-clean">
+                <option value="">Select Time Slot</option>
+                <option v-for="slot in availableSlots" :key="slot.id" :value="slot.slot_ids">
+                  {{ formatDateTime(slot.start_time) }} - {{ formatTime(slot.end_time) }} 
+                  ({{ slot.interviewer?.full_name || slot.interviewer?.email || 'Interviewer' }})
+                </option>
+              </select>
+              <p v-if="availableSlots.length === 0" class="hint-text">
+                No available slots found for the selected interviewer. Ask interviewer to add availability.
+              </p>
+            </div>
+
+
+    <!-- SECTION 3: Actions -->
+    <section class="modal-actions">
+      <button type="button" class="btn-modal-cancel">
+        Cancel
+      </button>
+      <button type="submit" class="btn-modal-primary">
+        Assign
+      </button>
+    </section>
+
+  </form>
+</div>
+
       </div>
     </div>
 
@@ -1086,6 +1167,9 @@ export default {
   },
   data() {
     return {
+      selectedInterviewersforAssign: [],
+      selectedTimeSlotforBulkAssign :'',
+      assignMultipleInterviwer : false,
       jobDescription: null,
       candidates: [],
       loading: false,
@@ -1898,6 +1982,8 @@ const proxyPath = externalFileUrl;
       }
       this.showAssignModal = true;
     },
+
+
     async fetchAvailableSlots() {
       if (!this.assignmentData.interviewer_id) {
         this.availableSlots = [];
@@ -1922,6 +2008,39 @@ const proxyPath = externalFileUrl;
         this.availableSlots = [];
       }
     },
+
+        async fetchAvailableSlotsByGroup() {
+      // if (!this.assignmentData.interviewer_id) {
+      //   this.availableSlots = [];
+      //   return;
+      // }
+
+
+
+         if (!this.selectedInterviewersforAssign.length) {
+             this.availableSlots = [];
+              return;
+         } 
+      const mappedInterviewers = this.selectedInterviewersforAssign
+
+      try {
+        const jobId = this.$route.params.id;
+        const response = await axios.post(
+          `${API_BASE_URL}/interviews/available-slots/group?job_description_id=${jobId}` , {
+            mappedInterviewers
+          },
+        
+        );
+        if (response.data.success) {
+          this.availableSlots = response.data.data || [];
+        }
+      } catch (error) {
+        console.error('Error fetching available slots:', error);
+        this.availableSlots = [];
+      }
+    },
+
+
     async assignInterviewer() {
       if (!this.assignmentData.interviewer_id || !this.assignmentData.slot_id) {
         alert('Please fill in all required fields');
@@ -1973,6 +2092,45 @@ const proxyPath = externalFileUrl;
         this.hideLoader();
       
       }
+    },
+    async assignInterviewerGroup () {
+      //       this.loading = true;
+      // this.showLoader('Assigning to interviewer...');
+
+        
+
+        let findselectedInterviwersIdfromTimeSlot = this.availableSlots.find((item)=> item.slot_ids = this.selectedTimeSlotforBulkAssign )
+
+        try {
+             let response;
+                  
+                  response = await axios.post(
+            `${API_BASE_URL}/interviews/assign/bulk/`,
+            {
+               evaluation_id: this.assignmentData.evaluation_id,
+              interviewer_ids: JSON.parse(findselectedInterviwersIdfromTimeSlot.interviewer_ids) || [],
+              interview_date: findselectedInterviwersIdfromTimeSlot.start_time,
+              slot_ids : JSON.parse(this.selectedTimeSlotforBulkAssign) || []
+            }
+          );
+             
+                if (response.data.success) {
+          await this.fetchCandidates();
+          // Refresh timeline if resume detail modal is open
+          if (this.showResumeModal && this.resumeDetailEvaluation) {
+            await this.fetchTimeline(this.resumeDetailEvaluation.id);
+          }
+          this.showAssignModal = false;
+          alert('Interview assigned successfully!');
+        }
+
+        } catch (error) {
+             console.error('Error assigning interviewer:', error);
+        alert('Failed to assign interviewer. Please try again.');
+        } finally {
+              this.loading = false;
+        this.hideLoader();
+        }
     },
     openFeedbackModal(candidate) {
       this.selectedCandidateForFeedback = candidate;
