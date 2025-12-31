@@ -167,7 +167,7 @@
             class="candidate-card-new" 
             :class="'status-' + candidate.status"
             v-show="hasRole('Interviewer')
-  ? (candidate.interviewer_id === user?.id || candidate.isDuplicate)
+  ? ((candidate.interview_details && candidate.interview_details.some(id => id.interviewer_id === user?.id)) || candidate.isDuplicate)
   : true"
           >
             <!-- Header: Name, Email, Match Score -->
@@ -190,23 +190,46 @@
             <!-- Interviewer Info Section -->
             <div class="candidate-interview-info">
               <div class="interview-info-row">
-                <span class="interview-info-label">Interviewer:</span>
+                <span class="interview-info-label">Interviewer{{ candidate.interview_details && candidate.interview_details.length > 1 ? 's' : '' }}:</span>
                 <span class="interview-info-value" :class="{ 'na': !getInterviewerName(candidate) }">
-                  {{ getInterviewerName(candidate) || 'N/A' }}
+                  <template v-if="candidate.interview_details && candidate.interview_details.length > 0">
+                    <template v-if="candidate.interview_details.length === 1">
+                      {{ candidate.interview_details[0].interviewer?.full_name || candidate.interview_details[0].interviewer?.email || 'N/A' }}
+                    </template>
+                    <template v-else>
+                      {{ candidate.interview_details.length }} Interviewer(s)
+                      <button @click="openInterviewerDetailsModal(candidate)" class="btn-action-details" style="margin-left: 8px; padding: 4px 8px; font-size: 0.85em;" title="View Interviewer Details">
+                        View Details
+                      </button>
+                    </template>
+                  </template>
+                  <template v-else>
+                    {{ getInterviewerName(candidate) || 'N/A' }}
+                  </template>
                 </span>
               </div>
-              <div v-if="candidate.interview_date" class="interview-info-row">
+              <div v-if="candidate.interview_date || (candidate.interview_details && candidate.interview_details.length > 0)" class="interview-info-row">
                 <span class="interview-info-label">Interview:</span>
-                <span class="interview-info-value">{{ formatDateTime(candidate.interview_date) }}</span>
+                <span class="interview-info-value">
+                  <template v-if="candidate.interview_details && candidate.interview_details.length > 0">
+                    {{ formatDateTime(candidate.interview_details[0].interview_date) }}
+                    <template v-if="candidate.interview_details.length > 1">
+                      <span class="text-muted"> (+{{ candidate.interview_details.length - 1 }} more)</span>
+                    </template>
+                  </template>
+                  <template v-else>
+                    {{ formatDateTime(candidate.interview_date) }}
+                  </template>
+                </span>
               </div>
             </div>
 
             <!-- Decision Badges -->
             <div class="decision-badges">
-              <div v-if="candidate.interviewer_status && candidate.interviewer_status !== 'pending'" class="decision-badge">
+              <div v-if="(candidate.interviewer_status && candidate.interviewer_status !== 'pending') || (candidate.interview_details && candidate.interview_details.length > 0)" class="decision-badge">
                 <span class="label">Interviewer Decision:</span>
-                <span class="value" :class="candidate.interviewer_status">
-                  {{ candidate.interviewer_status.replace(/_/g, ' ').toUpperCase() }}
+                <span class="value" :class="getInterviewerDecisionClass(candidate)">
+                  {{ getInterviewerDecisionText(candidate) }}
                 </span>
               </div>
               <div v-if="!['Interviewer'].includes(user.role) && candidate.hr_final_status && candidate.hr_final_status !== 'pending'" class="decision-badge">
@@ -261,24 +284,23 @@
               <div class="card-actions">
                 <!-- HR/Admin: Assignment buttons -->
                  
-                <button v-if="hasWriteAccess && !candidate.interviewer_id" @click="openAssignModal(candidate)" class="btn-action-assign">
+                <button v-if="hasWriteAccess && (!candidate.interview_details || candidate.interview_details.length === 0)" @click="openAssignModal(candidate)" class="btn-action-assign">
                   Assign Interviewer
                 </button>
-                <button v-if="hasWriteAccess && candidate.interviewer_id" @click="openAssignModal(candidate)" class="btn-action-assign">
+                <button v-if="hasWriteAccess && candidate.interview_details && candidate.interview_details.length > 0" @click="openAssignModal(candidate)" class="btn-action-assign">
                   Reassign
                 </button>
                 <!-- Interviewer: Feedback button (only for assigned candidates) -->
                  <!--  -->
                 <button 
-                  v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status === 'pending' && candidate.interview_date && new Date() > new Date(candidate.interview_date)" 
+                  v-if="hasRole('Interviewer') && candidate.interview_details && candidate.interview_details.some(id => id.interviewer_id === user?.id && id.interviewer_status === 'pending' && id.interview_date && new Date() > new Date(id.interview_date))" 
                   @click="openFeedbackModal(candidate)" 
                   class="btn-action-feedback"
                 >
                   Submit Feedback
                 </button>
-                 <!-- && candidate.interview_date && new Date() > new Date(candidate.interview_date) -->
                 <button 
-                  v-if="hasRole('Interviewer') && candidate.interviewer_id === user?.id && candidate.interviewer_status !== 'pending' && candidate.interview_date && new Date() > new Date(candidate.interview_date)" 
+                  v-if="hasRole('Interviewer') && candidate.interview_details && candidate.interview_details.some(id => id.interviewer_id === user?.id && id.interviewer_status !== 'pending' && id.interview_date && new Date() > new Date(id.interview_date))" 
                   @click="openFeedbackModal(candidate)" 
                   class="btn-action-feedback"
                 >
@@ -286,7 +308,7 @@
                 </button>
                 <!-- HR/Admin: Final Decision button (after interviewer feedback) -->
                 <button 
-                  v-if="hasWriteAccess && candidate.interviewer_status && candidate.interviewer_status !== 'pending' && (!candidate.hr_final_status || candidate.hr_final_status === 'pending')" 
+                  v-if="hasWriteAccess && ((candidate.interviewer_status && candidate.interviewer_status !== 'pending') || (candidate.interview_details && candidate.interview_details.some(id => id.interviewer_status && id.interviewer_status !== 'pending'))) && (!candidate.hr_final_status || candidate.hr_final_status === 'pending')" 
                   @click="openHRDecisionModal(candidate)" 
                   class="btn-action-hr-decision"
                 >
@@ -294,7 +316,7 @@
                 </button>
                 <!-- On Hold Details button -->
                 <button 
-                  v-if="candidate.hr_final_status === 'on_hold' || candidate.interviewer_status === 'on_hold'" 
+                  v-if="candidate.hr_final_status === 'on_hold' || candidate.interviewer_status === 'on_hold' || (candidate.interview_details && candidate.interview_details.some(id => id.interviewer_status === 'on_hold'))" 
                   @click="viewHoldDetails(candidate)" 
                   class="btn-action-hold"
                 >
@@ -782,9 +804,9 @@
               <label>Available Slots *</label>
               <select v-model="selectedTimeSlotforBulkAssign"  required class="form-select-clean">
                 <option value="">Select Time Slot</option>
-                <option v-for="slot in availableSlots" :key="slot.id" :value="slot.slot_ids">
+                <option v-for="(slot, index) in availableSlots" :key="index" :value="JSON.stringify(slot.slot_ids)">
                   {{ formatDateTime(slot.start_time) }} - {{ formatTime(slot.end_time) }} 
-                  ({{ slot.interviewer?.full_name || slot.interviewer?.email || 'Interviewer' }})
+                  ({{ slot.interviewer_ids?.length || 0 }} interviewer(s))
                 </option>
               </select>
               <p v-if="availableSlots.length === 0" class="hint-text">
@@ -940,18 +962,63 @@
           <button @click="showHRDecisionModal = false" class="close-btn-ats">×</button>
         </div>
         <div class="modal-body-ats">
-          <!-- Show Interviewer Feedback -->
-          <div v-if="selectedCandidateForFeedback.interviewer_feedback" class="interviewer-feedback-section">
+          <!-- Show All Interviewers Feedback -->
+          <div v-if="selectedCandidateForFeedback.interview_details && selectedCandidateForFeedback.interview_details.length > 0" class="interviewer-feedback-section">
+            <h3>Interviewer Feedback</h3>
+            <div v-for="(interviewDetail, index) in selectedCandidateForFeedback.interview_details" :key="interviewDetail.id || index" class="feedback-display mb-4" style="border-bottom: 1px solid #e0e0e0; padding-bottom: 1.5rem;">
+              <div class="feedback-interviewer-header mb-3">
+                <h4>
+                  Interviewer {{ index + 1 }}: 
+                  {{ interviewDetail.interviewer?.full_name || interviewDetail.interviewer?.email || 'N/A' }}
+                </h4>
+              </div>
+              
+              <div v-if="interviewDetail.interviewer_feedback || interviewDetail.interviewer_status !== 'pending'">
+                <div v-if="interviewDetail.interviewer_feedback" class="feedback-ratings mb-3">
+                  <h5>Ratings (1-10 scale):</h5>
+                  <div class="ratings-display-grid">
+                    <div v-for="(rating, key) in getFilteredRatings(interviewDetail.interviewer_feedback)" :key="key" class="rating-display-item">
+                      <span class="rating-display-label">{{ key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
+                      <span class="rating-display-value">{{ rating }}/10</span>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="interviewDetail.interviewer_feedback && interviewDetail.interviewer_feedback.interviewer_remarks" class="feedback-remarks mb-3">
+                  <h5>Interviewer Remarks:</h5>
+                  <p>{{ interviewDetail.interviewer_feedback.interviewer_remarks }}</p>
+                </div>
+                <div class="feedback-status mb-3">
+                  <h5>Interviewer's Decision:</h5>
+                  <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
+                    {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
+                  </span>
+                </div>
+                <div v-if="interviewDetail.interviewer_hold_reason" class="feedback-hold-reason mb-3">
+                  <h5>Hold Reason:</h5>
+                  <p>{{ interviewDetail.interviewer_hold_reason }}</p>
+                </div>
+              </div>
+              <div v-else class="feedback-pending">
+                <p class="text-muted">Feedback not yet submitted</p>
+              </div>
+            </div>
+          </div>
+          <!-- Fallback for backward compatibility (single interviewer) -->
+          <div v-else-if="selectedCandidateForFeedback.interviewer_feedback" class="interviewer-feedback-section">
             <h3>Interviewer Feedback</h3>
             <div class="feedback-display">
               <div class="feedback-ratings">
                 <h4>Ratings (1-10 scale):</h4>
                 <div class="ratings-display-grid">
-                  <div v-for="(rating, key) in selectedCandidateForFeedback.interviewer_feedback" :key="key" class="rating-display-item">
+                  <div v-for="(rating, key) in getFilteredRatings(selectedCandidateForFeedback.interviewer_feedback)" :key="key" class="rating-display-item">
                     <span class="rating-display-label">{{ key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
                     <span class="rating-display-value">{{ rating }}/10</span>
                   </div>
                 </div>
+              </div>
+              <div v-if="selectedCandidateForFeedback.interviewer_feedback && selectedCandidateForFeedback.interviewer_feedback.interviewer_remarks" class="feedback-remarks">
+                <h4>Interviewer Remarks:</h4>
+                <p>{{ selectedCandidateForFeedback.interviewer_feedback.interviewer_remarks }}</p>
               </div>
               <div class="feedback-status">
                 <h4>Interviewer's Decision:</h4>
@@ -980,8 +1047,8 @@
             </div>
             <!-- Show reason field if:
                  1. Status is rejected or on_hold (always required)
-                 2. Status is selected AND interviewer didn't select (override case) -->
-            <div v-if="hrDecisionData.status === 'rejected' || hrDecisionData.status === 'on_hold' || (hrDecisionData.status === 'selected' && selectedCandidateForFeedback.interviewer_status && selectedCandidateForFeedback.interviewer_status !== 'selected')" class="mb-4">
+                 2. Status is selected AND no interviewer selected (override case) -->
+            <div v-if="hrDecisionData.status === 'rejected' || hrDecisionData.status === 'on_hold' || (hrDecisionData.status === 'selected' && !hasAnyInterviewerSelected(selectedCandidateForFeedback))" class="mb-4">
               <label>Reason *</label>
               <textarea 
                 v-model="hrDecisionData.reason" 
@@ -990,7 +1057,7 @@
                 class="form-control-ats form-textarea-ats" 
                 :placeholder="getReasonPlaceholder()"
               ></textarea>
-              <small v-if="hrDecisionData.status === 'selected' && selectedCandidateForFeedback.interviewer_status && selectedCandidateForFeedback.interviewer_status !== 'selected'" class="reason-hint">
+              <small v-if="hrDecisionData.status === 'selected' && !hasAnyInterviewerSelected(selectedCandidateForFeedback)" class="reason-hint">
                 Reason is required when overriding interviewer's decision to select this candidate.
               </small>
             </div>
@@ -1008,6 +1075,85 @@
               <button type="button" @click="submitHRDecision" class="btn-ats-primary">Submit Decision</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interviewer Details Modal -->
+    <div v-if="showInterviewerDetailsModal && selectedCandidateForInterviewerDetails" class="modal-overlay-ats" @click="showInterviewerDetailsModal = false">
+      <div class="modal-content-ats modal-content-lg" @click.stop>
+        <div class="modal-header-ats">
+          <h2>Interviewer Details</h2>
+          <button @click="showInterviewerDetailsModal = false" class="close-btn-ats">×</button>
+        </div>
+        <div class="modal-body-ats">
+          <div v-if="selectedCandidateForInterviewerDetails.interview_details && selectedCandidateForInterviewerDetails.interview_details.length > 0" class="interviewer-details-list">
+            <div 
+              v-for="(interviewDetail, index) in selectedCandidateForInterviewerDetails.interview_details" 
+              :key="interviewDetail.id || index"
+              class="interviewer-detail-item"
+            >
+              <div class="interviewer-detail-header">
+                <h3>
+                  Interviewer {{ index + 1 }}: 
+                  {{ interviewDetail.interviewer?.full_name || interviewDetail.interviewer?.email || 'N/A' }}
+                </h3>
+                <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
+                  {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
+                </span>
+              </div>
+
+              <div class="interviewer-detail-info">
+                <div class="detail-row">
+                  <span class="detail-label">Interview Date:</span>
+                  <span class="detail-value">{{ formatDateTime(interviewDetail.interview_date) }}</span>
+                </div>
+                <div v-if="interviewDetail.interview_end_time" class="detail-row">
+                  <span class="detail-label">End Time:</span>
+                  <span class="detail-value">{{ formatDateTime(interviewDetail.interview_end_time) }}</span>
+                </div>
+                <div v-if="interviewDetail.interviewer?.email" class="detail-row">
+                  <span class="detail-label">Email:</span>
+                  <span class="detail-value">{{ interviewDetail.interviewer.email }}</span>
+                </div>
+              </div>
+
+              <!-- Interviewer Feedback Section -->
+              <div v-if="interviewDetail.interviewer_feedback || interviewDetail.interviewer_status !== 'pending'" class="interviewer-feedback-section">
+                <h4>Interviewer Feedback</h4>
+                <div class="feedback-display">
+                  <div v-if="interviewDetail.interviewer_feedback" class="feedback-ratings">
+                    <h5>Ratings (1-10 scale):</h5>
+                    <div class="ratings-display-grid">
+                      <div v-for="(rating, key) in interviewDetail.interviewer_feedback" :key="key" class="rating-display-item">
+                        <span class="rating-display-label">{{ key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
+                        <span class="rating-display-value">{{ rating }}/10</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="feedback-status">
+                    <h5>Interviewer's Decision:</h5>
+                    <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
+                      {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
+                    </span>
+                  </div>
+                  <div v-if="interviewDetail.interviewer_hold_reason" class="feedback-hold-reason">
+                    <h5>Hold Reason:</h5>
+                    <p>{{ interviewDetail.interviewer_hold_reason }}</p>
+                  </div>
+                  <div v-if="!interviewDetail.interviewer_feedback && interviewDetail.interviewer_status === 'pending'" class="feedback-pending">
+                    <p class="text-muted">Feedback not yet submitted</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="no-interviewers">
+            <p>No interviewers assigned yet.</p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" @click="showInterviewerDetailsModal = false" class="btn-ats-secondary">Close</button>
         </div>
       </div>
     </div>
@@ -1222,6 +1368,8 @@ export default {
       },
       submittingFeedback: false,
       showHRDecisionModal: false,
+      showInterviewerDetailsModal: false,
+      selectedCandidateForInterviewerDetails: null,
       showHoldModal: false,
       holdCandidate: null,
       hrDecisionData: {
@@ -1970,16 +2118,106 @@ const proxyPath = externalFileUrl;
       }
     },
     
-    openAssignModal(candidate) {
+    async openAssignModal(candidate) {
       this.assignmentData = {
         evaluation_id: candidate.id,
-        interviewer_id: candidate.interviewer_id || null,
+        interviewer_id: null,
         slot_id: ''
       };
+      this.selectedInterviewersforAssign = [];
+      this.selectedTimeSlotforBulkAssign = '';
       this.availableSlots = [];
-      if (candidate.interviewer_id) {
-        this.fetchAvailableSlots();
+      
+      // Check if candidate has existing interview_details
+      if (candidate.interview_details && candidate.interview_details.length > 0) {
+        // Determine if it's bulk (multiple interviewers) or single
+        if (candidate.interview_details.length > 1) {
+          // Bulk assignment - pre-select all interviewers
+          this.assignMultipleInterviwer = true;
+          this.selectedInterviewersforAssign = candidate.interview_details.map(id => id.interviewer_id).filter(Boolean);
+          
+          // Fetch available slots for the selected interviewers
+          if (this.selectedInterviewersforAssign.length > 0) {
+            await this.fetchAvailableSlotsByGroup();
+            
+            // Collect all slot_ids from interview_details
+            const existingSlotIds = candidate.interview_details
+              .map(id => id.interviewer_time_slots_id)
+              .filter(Boolean)
+              .sort((a, b) => a - b);
+            
+            if (existingSlotIds.length > 0) {
+              // Find the matching slot by comparing slot_ids arrays
+              const matchingSlot = this.availableSlots.find(slot => {
+                const slotIds = Array.isArray(slot.slot_ids) 
+                  ? slot.slot_ids.map(id => Number(id)).sort((a, b) => a - b)
+                  : (typeof slot.slot_ids === 'string' ? JSON.parse(slot.slot_ids) : []).map(id => Number(id)).sort((a, b) => a - b);
+                
+                // Compare arrays
+                if (slotIds.length !== existingSlotIds.length) return false;
+                return slotIds.every((id, index) => id === existingSlotIds[index]);
+              });
+              
+              if (matchingSlot) {
+                this.selectedTimeSlotforBulkAssign = JSON.stringify(matchingSlot.slot_ids);
+              } else {
+                // Fallback: match by interview_date and interviewer_ids
+                const firstInterviewDate = candidate.interview_details[0].interview_date;
+                if (firstInterviewDate) {
+                  const interviewDate = new Date(firstInterviewDate).getTime();
+                  const fallbackSlot = this.availableSlots.find(slot => {
+                    const slotDate = new Date(slot.start_time).getTime();
+                    const slotInterviewerIds = Array.isArray(slot.interviewer_ids) 
+                      ? slot.interviewer_ids.map(id => String(id))
+                      : (typeof slot.interviewer_ids === 'string' ? JSON.parse(slot.interviewer_ids) : []).map(id => String(id));
+                    const selectedIds = this.selectedInterviewersforAssign.map(id => String(id));
+                    
+                    return Math.abs(slotDate - interviewDate) < 60000 && // Within 1 minute
+                           selectedIds.every(id => slotInterviewerIds.includes(id)) &&
+                           slotInterviewerIds.length === selectedIds.length;
+                  });
+                  
+                  if (fallbackSlot) {
+                    this.selectedTimeSlotforBulkAssign = JSON.stringify(fallbackSlot.slot_ids);
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          // Single assignment - pre-select the interviewer and slot
+          this.assignMultipleInterviwer = false;
+          const firstDetail = candidate.interview_details[0];
+          this.assignmentData.interviewer_id = firstDetail.interviewer_id;
+          
+          // Fetch available slots for the selected interviewer
+          if (this.assignmentData.interviewer_id) {
+            await this.fetchAvailableSlots();
+            
+            // Find the matching slot based on interviewer_time_slots_id or interview_date
+            if (firstDetail.interviewer_time_slots_id) {
+              const matchingSlot = this.availableSlots.find(slot => slot.id === firstDetail.interviewer_time_slots_id);
+              if (matchingSlot) {
+                this.assignmentData.slot_id = matchingSlot.id;
+              }
+            } else if (firstDetail.interview_date) {
+              // Fallback: match by interview_date
+              const interviewDate = new Date(firstDetail.interview_date).getTime();
+              const matchingSlot = this.availableSlots.find(slot => {
+                const slotDate = new Date(slot.start_time).getTime();
+                return Math.abs(slotDate - interviewDate) < 60000; // Within 1 minute
+              });
+              if (matchingSlot) {
+                this.assignmentData.slot_id = matchingSlot.id;
+              }
+            }
+          }
+        }
+      } else {
+        // No existing assignments - default to single assign
+        this.assignMultipleInterviwer = false;
       }
+      
       this.showAssignModal = true;
     },
 
@@ -2093,53 +2331,121 @@ const proxyPath = externalFileUrl;
       
       }
     },
-    async assignInterviewerGroup () {
-      //       this.loading = true;
-      // this.showLoader('Assigning to interviewer...');
+    async assignInterviewerGroup() {
+      if (!this.selectedTimeSlotforBulkAssign || !this.selectedInterviewersforAssign.length) {
+        alert('Please select interviewers and a time slot');
+        return;
+      }
 
-        
+      this.loading = true;
+      this.showLoader('Assigning to interviewers...');
 
-        let findselectedInterviwersIdfromTimeSlot = this.availableSlots.find((item)=> item.slot_ids = this.selectedTimeSlotforBulkAssign )
-
+      try {
+        // Parse the selected slot_ids from the dropdown value
+        let selectedSlotIds;
         try {
-             let response;
-                  
-                  response = await axios.post(
-            `${API_BASE_URL}/interviews/assign/bulk/`,
-            {
-               evaluation_id: this.assignmentData.evaluation_id,
-              interviewer_ids: JSON.parse(findselectedInterviwersIdfromTimeSlot.interviewer_ids) || [],
-              interview_date: findselectedInterviwersIdfromTimeSlot.start_time,
-              slot_ids : JSON.parse(this.selectedTimeSlotforBulkAssign) || []
-            }
-          );
-             
-                if (response.data.success) {
+          selectedSlotIds = JSON.parse(this.selectedTimeSlotforBulkAssign);
+        } catch (e) {
+          console.error('Error parsing selected slot:', e);
+          alert('Invalid time slot selection. Please try again.');
+          return;
+        }
+
+        if (!Array.isArray(selectedSlotIds) || selectedSlotIds.length === 0) {
+          alert('Invalid slot selection. Please select a valid time slot.');
+          return;
+        }
+
+        // Find the selected slot from available slots by comparing slot_ids arrays
+        const selectedSlot = this.availableSlots.find(item => {
+          const itemSlotIds = Array.isArray(item.slot_ids) 
+            ? item.slot_ids 
+            : (typeof item.slot_ids === 'string' ? JSON.parse(item.slot_ids) : []);
+          
+          if (!Array.isArray(itemSlotIds) || itemSlotIds.length !== selectedSlotIds.length) {
+            return false;
+          }
+          
+          // Compare arrays - sort and compare to handle different orders
+          const sortedSelected = [...selectedSlotIds].sort().join(',');
+          const sortedItem = [...itemSlotIds].sort().join(',');
+          return sortedSelected === sortedItem;
+        });
+
+        if (!selectedSlot) {
+          console.error('Selected slot not found.');
+          console.error('Selected slot_ids:', selectedSlotIds);
+          console.error('Available slots:', this.availableSlots.map(s => ({
+            start_time: s.start_time,
+            slot_ids: s.slot_ids,
+            interviewer_ids: s.interviewer_ids
+          })));
+          alert('Selected time slot not found. Please try selecting again.');
+          return;
+        }
+
+        // Ensure slot_ids and interviewer_ids are arrays
+        const slotIds = Array.isArray(selectedSlot.slot_ids) 
+          ? selectedSlot.slot_ids 
+          : (typeof selectedSlot.slot_ids === 'string' ? JSON.parse(selectedSlot.slot_ids) : []);
+        
+        const interviewerIds = Array.isArray(selectedSlot.interviewer_ids)
+          ? selectedSlot.interviewer_ids
+          : (typeof selectedSlot.interviewer_ids === 'string' ? JSON.parse(selectedSlot.interviewer_ids) : []);
+
+        if (!Array.isArray(slotIds) || slotIds.length === 0) {
+          alert('Invalid slot data. Please try again.');
+          return;
+        }
+
+        if (!Array.isArray(interviewerIds) || interviewerIds.length === 0) {
+          alert('Invalid interviewer data. Please try again.');
+          return;
+        }
+
+        // Use interviewer_ids from the selected slot (they should match the selected interviewers)
+        // The slot already contains the correct interviewer_ids for that time slot
+        const response = await axios.post(
+          `${API_BASE_URL}/interviews/assign/bulk`,
+          {
+            evaluation_id: this.assignmentData.evaluation_id,
+            interviewer_ids: interviewerIds,
+            interview_date: selectedSlot.start_time,
+            slot_ids: slotIds
+          }
+        );
+
+        if (response.data.success) {
           await this.fetchCandidates();
           // Refresh timeline if resume detail modal is open
           if (this.showResumeModal && this.resumeDetailEvaluation) {
             await this.fetchTimeline(this.resumeDetailEvaluation.id);
           }
           this.showAssignModal = false;
-          alert('Interview assigned successfully!');
+          this.selectedInterviewersforAssign = [];
+          this.selectedTimeSlotforBulkAssign = '';
+          alert(`Successfully assigned ${interviewerIds.length} interviewer(s)!`);
         }
-
-        } catch (error) {
-             console.error('Error assigning interviewer:', error);
-        alert('Failed to assign interviewer. Please try again.');
-        } finally {
-              this.loading = false;
+      } catch (error) {
+        console.error('Error assigning interviewers:', error);
+        alert(error.response?.data?.error || 'Failed to assign interviewers. Please try again.');
+      } finally {
+        this.loading = false;
         this.hideLoader();
-        }
+      }
     },
     openFeedbackModal(candidate) {
       this.selectedCandidateForFeedback = candidate;
-      if (candidate.interviewer_feedback) {
+      // Get the current user's interview detail if exists
+      const userInterviewDetail = candidate.interview_details && candidate.interview_details.find(id => id.interviewer_id === this.user?.id);
+      const feedbackSource = userInterviewDetail || candidate;
+      
+      if (feedbackSource.interviewer_feedback) {
         this.feedbackData = {
-          ratings: { ...candidate.interviewer_feedback },
-          status: candidate.interviewer_status || 'pending',
-          hold_reason: candidate.interviewer_hold_reason || '',
-          remarks: candidate.interviewer_feedback.interviewer_remarks || ''
+          ratings: { ...feedbackSource.interviewer_feedback },
+          status: feedbackSource.interviewer_status || 'pending',
+          hold_reason: feedbackSource.interviewer_hold_reason || '',
+          remarks: feedbackSource.interviewer_feedback.interviewer_remarks || ''
         };
       } else {
         this.feedbackData = {
@@ -2243,8 +2549,7 @@ const proxyPath = externalFileUrl;
         this.hrDecisionData.status === 'rejected' || 
         this.hrDecisionData.status === 'on_hold' ||
         (this.hrDecisionData.status === 'selected' && 
-         this.selectedCandidateForFeedback.interviewer_status && 
-         this.selectedCandidateForFeedback.interviewer_status !== 'selected');
+         !this.hasAnyInterviewerSelected(this.selectedCandidateForFeedback));
 
       if (requiresReason && !this.hrDecisionData.reason.trim()) {
         if (this.hrDecisionData.status === 'selected') {
@@ -2282,21 +2587,24 @@ const proxyPath = externalFileUrl;
         this.hideLoader();
       }
     },
+    openInterviewerDetailsModal(candidate) {
+      this.selectedCandidateForInterviewerDetails = candidate;
+      this.showInterviewerDetailsModal = true;
+    },
     viewHoldDetails(candidate) {
       this.holdCandidate = candidate;
       this.showHoldModal = true;
     },
     onHRStatusChange() {
-      // Clear reason if status changes to selected and interviewer also selected
+      // Clear reason if status changes to selected and any interviewer also selected
       if (this.hrDecisionData.status === 'selected' && 
-          this.selectedCandidateForFeedback.interviewer_status === 'selected') {
+          this.hasAnyInterviewerSelected(this.selectedCandidateForFeedback)) {
         this.hrDecisionData.reason = '';
       }
     },
     getReasonPlaceholder() {
       if (this.hrDecisionData.status === 'selected' && 
-          this.selectedCandidateForFeedback.interviewer_status && 
-          this.selectedCandidateForFeedback.interviewer_status !== 'selected') {
+          !this.hasAnyInterviewerSelected(this.selectedCandidateForFeedback)) {
         return 'Please provide a reason for selecting this candidate (overriding interviewer\'s decision)...';
       } else if (this.hrDecisionData.status === 'rejected') {
         return 'Enter rejection reason...';
@@ -2304,6 +2612,76 @@ const proxyPath = externalFileUrl;
         return 'Enter hold reason...';
       }
       return 'Enter reason...';
+    },
+    hasAnyInterviewerSelected(candidate) {
+      // Check if any interviewer selected the candidate
+      if (candidate.interview_details && candidate.interview_details.length > 0) {
+        return candidate.interview_details.some(id => id.interviewer_status === 'selected');
+      }
+      // Fallback for backward compatibility
+      return candidate.interviewer_status === 'selected';
+    },
+    getInterviewerDecisionText(candidate) {
+      // Handle multiple interviewers
+      if (candidate.interview_details && candidate.interview_details.length > 0) {
+        const submittedFeedbacks = candidate.interview_details.filter(id => id.interviewer_status && id.interviewer_status !== 'pending');
+        const totalInterviewers = candidate.interview_details.length;
+        
+        // If multiple interviewers assigned
+        if (totalInterviewers > 1) {
+          // Check if all have submitted feedback
+          if (submittedFeedbacks.length === totalInterviewers) {
+            // All feedback submitted - show comma-separated statuses
+            const statuses = submittedFeedbacks.map(id => id.interviewer_status.replace(/_/g, ' ').toUpperCase());
+            return statuses.join(', ');
+          } else {
+            // Not all feedback submitted - show awaited
+            return `AWAITED (${submittedFeedbacks.length}/${totalInterviewers})`;
+          }
+        } else {
+          // Single interviewer - show their status
+          const status = candidate.interview_details[0].interviewer_status || 'pending';
+          return status.replace(/_/g, ' ').toUpperCase();
+        }
+      }
+      
+      // Fallback for backward compatibility (old single interviewer field)
+      if (candidate.interviewer_status && candidate.interviewer_status !== 'pending') {
+        return candidate.interviewer_status.replace(/_/g, ' ').toUpperCase();
+      }
+      
+      return 'PENDING';
+    },
+    getInterviewerDecisionClass(candidate) {
+      // Handle multiple interviewers
+      if (candidate.interview_details && candidate.interview_details.length > 0) {
+        const submittedFeedbacks = candidate.interview_details.filter(id => id.interviewer_status && id.interviewer_status !== 'pending');
+        const totalInterviewers = candidate.interview_details.length;
+        
+        // If multiple interviewers assigned
+        if (totalInterviewers > 1) {
+          // Check if all have submitted feedback
+          if (submittedFeedbacks.length === totalInterviewers) {
+            // All feedback submitted - use first status for class (or create a combined class)
+            const firstStatus = submittedFeedbacks[0]?.interviewer_status || 'pending';
+            return `interviewer-${firstStatus}`;
+          } else {
+            // Not all feedback submitted - use 'pending' or 'awaited' class
+            return 'interviewer-pending';
+          }
+        } else {
+          // Single interviewer - use their status
+          const status = candidate.interview_details[0].interviewer_status || 'pending';
+          return `interviewer-${status}`;
+        }
+      }
+      
+      // Fallback for backward compatibility
+      if (candidate.interviewer_status && candidate.interviewer_status !== 'pending') {
+        return `interviewer-${candidate.interviewer_status}`;
+      }
+      
+      return 'interviewer-pending';
     },
     getFilteredRatings(ratings) {
       if (!ratings || typeof ratings !== 'object') return {};
