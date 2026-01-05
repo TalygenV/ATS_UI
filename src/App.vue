@@ -19,6 +19,7 @@
           <router-link v-if="user?.role !== 'Interviewer'" to="/resumes" class="nav-link-ats">All Resumes</router-link>
           <router-link to="/" class="nav-link-ats">Dashboard</router-link>
           <router-link v-if="isAdmin" to="/register" class="nav-link-ats">Create User</router-link>
+          <router-link v-if="isAdmin" to="/config" class="nav-link-ats">Config</router-link>
           <div class="d-flex align-items-center gap-3 ms-auto ps-4 border-start border-light border-opacity-25">
             <span class="text-white fw-medium">{{ user?.full_name || user?.email }}</span>
             <span class="user-role-badge">{{ user?.role }}</span>
