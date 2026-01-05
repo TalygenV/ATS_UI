@@ -175,9 +175,122 @@
     <!-- Zoom Creds Tab -->
     <div v-show="activeTab === 'zoom'" class="ats-card">
       <h3 class="fs-5 fw-semibold mb-4">Zoom Credentials</h3>
-      <div class="alert-ats-info">
-        <p class="mb-0">Zoom credentials configuration will be available soon.</p>
-      </div>
+      
+      <div v-if="zoomError" class="alert-ats-danger mb-3">{{ zoomError }}</div>
+      <div v-if="zoomSuccess" class="alert-ats-success mb-3">{{ zoomSuccess }}</div>
+
+      <form @submit.prevent="handleZoomSubmit" class="d-flex flex-column gap-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label for="ZOOM_ACCOUNT_ID" class="fw-semibold text-dark small">
+                Zoom Account ID <span class="text-danger">*</span>
+              </label>
+              <input
+                id="ZOOM_ACCOUNT_ID"
+                v-model="zoomForm.ZOOM_ACCOUNT_ID"
+                type="text"
+                required
+                placeholder="Enter Zoom Account ID"
+                class="form-control-ats"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label for="ZOOM_CLIENT_ID" class="fw-semibold text-dark small">
+                Zoom Client ID <span class="text-danger">*</span>
+              </label>
+              <input
+                id="ZOOM_CLIENT_ID"
+                v-model="zoomForm.ZOOM_CLIENT_ID"
+                type="text"
+                required
+                placeholder="Enter Zoom Client ID"
+                class="form-control-ats"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label for="ZOOM_CLIENT_SECRET" class="fw-semibold text-dark small">
+                Zoom Client Secret <span class="text-danger">*</span>
+              </label>
+              <input
+                id="ZOOM_CLIENT_SECRET"
+                v-model="zoomForm.ZOOM_CLIENT_SECRET"
+                type="password"
+                required
+                placeholder="Enter Zoom Client Secret"
+                class="form-control-ats"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label for="Zoom_Email" class="fw-semibold text-dark small">
+                Zoom Email
+              </label>
+              <input
+                id="Zoom_Email"
+                v-model="zoomForm.Zoom_Email"
+                type="email"
+                placeholder="Enter Zoom Email (optional)"
+                class="form-control-ats"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label class="fw-semibold text-dark small">Join Before Host</label>
+              <div class="form-check form-switch">
+                <input
+                  id="Zoom_join_before_host"
+                  v-model="zoomForm.Zoom_join_before_host"
+                  type="checkbox"
+                  class="form-check-input"
+                  style="cursor: pointer;"
+                />
+                <label for="Zoom_join_before_host" class="form-check-label" style="cursor: pointer;">
+                  Allow participants to join before host
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label class="fw-semibold text-dark small">Waiting Room</label>
+              <div class="form-check form-switch">
+                <input
+                  id="Zoom_waiting_room"
+                  v-model="zoomForm.Zoom_waiting_room"
+                  type="checkbox"
+                  class="form-check-input"
+                  style="cursor: pointer;"
+                />
+                <label for="Zoom_waiting_room" class="form-check-label" style="cursor: pointer;">
+                  Enable waiting room for participants
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" :disabled="zoomLoading" class="btn-ats-primary">
+            <span v-if="zoomLoading">Saving...</span>
+            <span v-else>Save Zoom Settings</span>
+          </button>
+          <button type="button" @click="fetchZoomSettings" :disabled="zoomLoading" class="btn-ats-secondary">
+            Reset
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
@@ -211,6 +324,20 @@ export default {
     const smtpLoading = ref(false);
     const smtpError = ref('');
     const smtpSuccess = ref('');
+    
+    // Zoom form state
+    const zoomForm = ref({
+      ZOOM_ACCOUNT_ID: '',
+      ZOOM_CLIENT_ID: '',
+      ZOOM_CLIENT_SECRET: '',
+      Zoom_Email: '',
+      Zoom_join_before_host: false,
+      Zoom_waiting_room: false
+    });
+    
+    const zoomLoading = ref(false);
+    const zoomError = ref('');
+    const zoomSuccess = ref('');
     
     const fetchSmtpSettings = async () => {
       smtpLoading.value = true;
@@ -293,9 +420,81 @@ export default {
         return;
       }
       
-      // Fetch existing SMTP settings
+      // Fetch existing settings
       await fetchSmtpSettings();
+      await fetchZoomSettings();
     });
+    
+    const fetchZoomSettings = async () => {
+      zoomLoading.value = true;
+      zoomError.value = '';
+      zoomSuccess.value = '';
+      
+      try {
+        const token = localStorage.getItem('auth_token');
+        const response = await axios.get(`${API_BASE_URL}/config/zoom`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.data.success) {
+          if (response.data.data) {
+            zoomForm.value = {
+              ZOOM_ACCOUNT_ID: response.data.data.ZOOM_ACCOUNT_ID || '',
+              ZOOM_CLIENT_ID: response.data.data.ZOOM_CLIENT_ID || '',
+              ZOOM_CLIENT_SECRET: response.data.data.ZOOM_CLIENT_SECRET || '',
+              Zoom_Email: response.data.data.Zoom_Email || '',
+              Zoom_join_before_host: Boolean(response.data.data.Zoom_join_before_host),
+              Zoom_waiting_room: Boolean(response.data.data.Zoom_waiting_room)
+            };
+          }
+        } else {
+          zoomError.value = response.data.error || 'Failed to fetch Zoom settings';
+        }
+      } catch (err) {
+        zoomError.value = err.response?.data?.error || err.message || 'Failed to fetch Zoom settings';
+      } finally {
+        zoomLoading.value = false;
+      }
+    };
+    
+    const handleZoomSubmit = async () => {
+      zoomLoading.value = true;
+      zoomError.value = '';
+      zoomSuccess.value = '';
+      
+      try {
+        const token = localStorage.getItem('auth_token');
+        const response = await axios.put(
+          `${API_BASE_URL}/config/zoom`,
+          zoomForm.value,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        
+        if (response.data.success) {
+          zoomSuccess.value = 'Zoom settings saved successfully!';
+          // Update form with returned data (secret will be masked)
+          if (response.data.data) {
+            zoomForm.value.ZOOM_CLIENT_SECRET = response.data.data.ZOOM_CLIENT_SECRET || zoomForm.value.ZOOM_CLIENT_SECRET;
+          }
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            zoomSuccess.value = '';
+          }, 3000);
+        } else {
+          zoomError.value = response.data.error || 'Failed to save Zoom settings';
+        }
+      } catch (err) {
+        zoomError.value = err.response?.data?.error || err.message || 'Failed to save Zoom settings';
+      } finally {
+        zoomLoading.value = false;
+      }
+    };
     
     return {
       activeTab,
@@ -304,7 +503,13 @@ export default {
       smtpError,
       smtpSuccess,
       fetchSmtpSettings,
-      handleSmtpSubmit
+      handleSmtpSubmit,
+      zoomForm,
+      zoomLoading,
+      zoomError,
+      zoomSuccess,
+      fetchZoomSettings,
+      handleZoomSubmit
     };
   }
 };
