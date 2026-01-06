@@ -29,6 +29,18 @@
             Zoom Credentials
           </button>
         </li>
+
+             <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            :class="{ active: activeTab === 'Groq' }"
+            @click="activeTab = 'Groq'"
+            type="button"
+            role="tab"
+          >
+            Groq Credentials
+          </button>
+        </li>
       </ul>
     </div>
 
@@ -292,23 +304,131 @@
         </div>
       </form>
     </div>
+
+    <!-- Groq Creds Tab -->
+<div v-show="activeTab === 'Groq'" class="ats-card">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="fs-5 fw-semibold mb-0">Groq API Keys</h3>
+
+    <button class="btn-ats-primary" @click="openAddKeyModal">
+      + Add Key
+    </button>
+  </div>
+
+  <!-- Search -->
+  <input
+    v-model="GroqSearch"
+    type="text"
+    placeholder="Search by key..."
+    class="form-control-ats mb-3"
+  />
+
+  <div v-if="GroqSuccess" class="alert-ats-success mb-3">{{ GroqSuccess }}</div>
+
+  <!-- Listing -->
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>Key</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr v-for="item in filteredGroqKeys" :key="item.id">
+        <td>{{ maskKey(item.api_key) }}</td>
+        <td>
+          <span
+            class="badge"
+            :class="item.is_active ? 'bg-success' : 'bg-secondary'"
+          >
+            {{ item.is_active ? 'Active' : 'Inactive' }}
+          </span>
+        </td>
+        <td>
+          <button
+            class="btn btn-sm btn-outline-primary me-2"
+            @click="toggleGroqStatus(item)"
+          >
+            {{ item.is_active ? 'Disable' : 'Enable' }}
+          </button>
+          <button
+            class="btn btn-sm btn-outline-danger"
+            @click="deleteGroqKey(item)"
+          >
+            Delete
+          </button>
+        </td>
+      </tr>
+
+      <tr v-if="!filteredGroqKeys?.length">
+        <td colspan="3" class="text-center text-muted">
+          No keys found
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Add Key Modal -->
+<div v-if="showAddKeyModal" class="modal-overlay-ats" @click="closeAddKeyModal">
+  <div class="modal-content-ats modal-content-sm" @click.stop>
+    <div class="modal-header-ats">
+      <h5 class="modal-title-ats">Add Groq API Key</h5>
+      <button type="button" @click="closeAddKeyModal" class="close-btn-ats">×</button>
+    </div>
+
+    <div class="modal-body-ats">
+      <input
+        v-model="newGroqKey"
+        type="text"
+        placeholder="Enter Groq API Key"
+        class="form-control-ats mb-3"
+      />
+
+      <div class="d-flex gap-2 justify-content-end">
+        <button type="button" @click="closeAddKeyModal" class="btn-ats-secondary">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn-ats-primary"
+          @click="addGroqKey"
+        >
+          {{ 'Save' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted , computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { useLoader } from '../composables/useLoader';
+
 
 export default {
   name: 'ConfigPage',
   setup() {
     const router = useRouter();
     const { isAdmin, fetchCurrentUser } = useAuth();
-    
+    const { showLoader, hideLoader } = useLoader();
     const activeTab = ref('smtp');
+    const GroqKeys = ref([]);
+const GroqSearch = ref('');
+const showAddKeyModal = ref(false);
+const newGroqKey = ref('');
+const GroqSuccess = ref('');
     
     // SMTP form state
     const smtpForm = ref({
@@ -338,6 +458,118 @@ export default {
     const zoomLoading = ref(false);
     const zoomError = ref('');
     const zoomSuccess = ref('');
+
+    const filteredGroqKeys = computed(() => {
+  return GroqKeys.value.filter(k =>
+    k.api_key.toLowerCase().includes(GroqSearch.value.toLowerCase())
+  );
+});
+
+const maskKey = (key) => {
+  if (!key) return '';
+  return key.slice(0, 6) + '****' ;
+};
+
+   const fetchGroqKeys = async () => {
+      showLoader('Loading Groq keys...');
+  try {
+    const token = localStorage.getItem('auth_token');
+    const res = await axios.get(`${API_BASE_URL}/config/groq`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (res.data.success) {
+      GroqKeys.value = res.data.data || [];
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Failed to load Groq keys');
+  } finally {
+    hideLoader();
+  }
+};
+
+
+const toggleGroqStatus = async (item) => {
+     showLoader('Changing Status Groq keys...');
+  try {
+    const token = localStorage.getItem('auth_token');
+    await axios.patch(
+      `${API_BASE_URL}/config/groq/${item.id}/status`,
+      { is_active: !item.is_active },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+   
+  } catch (e) {
+    console.error(e);
+    alert( e.response.data.error || 'Failed to update Groq key status');
+   
+  } finally {
+    // hideLoader();
+     fetchGroqKeys(); // 🔁 refetch list
+  }
+};
+
+const deleteGroqKey = async (item) => {
+  if (!confirm('Are you sure you want to delete this API key?')) return;
+    showLoader('Deleting Groq keys...');
+  try {
+    const token = localStorage.getItem('auth_token');
+    await axios.delete(`${API_BASE_URL}/config/groq/${item.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+  } catch (e) {
+    console.error(e);
+    alert( e.response.data.error || 'Failed to delete API key');
+  } finally {
+    fetchGroqKeys();
+    // hideLoader();
+  }
+};
+const openAddKeyModal = () => {
+  newGroqKey.value = '';
+  GroqSuccess.value = '';
+  showAddKeyModal.value = true;
+};
+
+const closeAddKeyModal = () => {
+  showAddKeyModal.value = false;
+};
+
+const addGroqKey = async () => {
+ 
+  if (!newGroqKey.value) return;
+
+  GroqSuccess.value = '';
+    showLoader('Adding Groq keys...');
+  try {
+    const token = localStorage.getItem('auth_token');
+    const response = await axios.post(
+      `${API_BASE_URL}/config/groq`,
+      { api_key: newGroqKey.value.trim() },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (response.data.success) {
+      GroqSuccess.value = 'Groq API key added successfully!';
+      closeAddKeyModal();
+      fetchGroqKeys();
+      setTimeout(() => {
+        GroqSuccess.value = '';
+      }, 3000);
+    } else {
+      alert(response.data.error || 'Failed to add Groq API key');
+    }
+  } catch (err) {
+    alert(err.response?.data?.error || err.message || 'Failed to add Groq API key');
+  } finally {
+    hideLoader()
+  }
+};
+
+
     
     const fetchSmtpSettings = async () => {
       smtpLoading.value = true;
@@ -423,6 +655,7 @@ export default {
       // Fetch existing settings
       await fetchSmtpSettings();
       await fetchZoomSettings();
+        await fetchGroqKeys(); // ✅ ADD THIS
     });
     
     const fetchZoomSettings = async () => {
@@ -509,7 +742,21 @@ export default {
       zoomError,
       zoomSuccess,
       fetchZoomSettings,
-      handleZoomSubmit
+      handleZoomSubmit,
+      openAddKeyModal,
+      closeAddKeyModal,
+      addGroqKey,
+      GroqKeys,
+      GroqSearch,
+      showAddKeyModal,
+      GroqSuccess,
+      filteredGroqKeys,
+      maskKey,
+      toggleGroqStatus,
+      deleteGroqKey,
+      fetchGroqKeys,
+      newGroqKey,
+
     };
   }
 };
