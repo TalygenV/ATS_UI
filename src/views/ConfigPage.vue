@@ -494,11 +494,14 @@ const toggleGroqStatus = async (item) => {
      showLoader('Changing Status Groq keys...');
   try {
     const token = localStorage.getItem('auth_token');
-    await axios.patch(
+  let res =   await axios.patch(
       `${API_BASE_URL}/config/groq/${item.id}/status`,
       { is_active: !item.is_active },
       { headers: { Authorization: `Bearer ${token}` } }
     );
+        if(res?.data?.success === false){
+      alert(res.data.error || 'Failed to delete API key');
+    }
 
    
   } catch (e) {
@@ -516,9 +519,13 @@ const deleteGroqKey = async (item) => {
     showLoader('Deleting Groq keys...');
   try {
     const token = localStorage.getItem('auth_token');
-    await axios.delete(`${API_BASE_URL}/config/groq/${item.id}`, {
+   let res =  await axios.delete(`${API_BASE_URL}/config/groq/${item.id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
+
+    if(res?.data?.success === false){
+      alert(res.data.error || 'Failed to delete API key');
+    }
 
   } catch (e) {
     console.error(e);
