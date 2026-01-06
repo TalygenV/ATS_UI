@@ -467,7 +467,7 @@ const GroqSuccess = ref('');
 
 const maskKey = (key) => {
   if (!key) return '';
-  return key.slice(0, 6) + '****' ;
+  return key.slice(0, 6) + '****' + key.slice(-6);
 };
 
    const fetchGroqKeys = async () => {
