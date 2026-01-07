@@ -267,7 +267,7 @@
   <div
     v-if="showFeedbackModal && selectedAssignment"
     class="modal-overlay-ats"
-    @click="showFeedbackModal = false"
+    
   >
     <div class="modal-content-ats" style="max-width: 900px" @click.stop>
       <div class="modal-header-ats">

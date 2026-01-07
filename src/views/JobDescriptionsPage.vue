@@ -71,7 +71,7 @@
     </div>
 
     <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal || showEditModal" class="modal-overlay-ats" @click="closeModal">
+    <div v-if="showCreateModal || showEditModal" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">{{ showEditModal ? 'Edit Job Description' : 'Create Job Description' }}</h2>

@@ -342,7 +342,7 @@
     </div>
 
     <!-- Edit Modal -->
-    <div v-if="showEditModal" class="modal-overlay-ats" @click="closeEditModal">
+    <div v-if="showEditModal" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2>Edit Job Description</h2>
@@ -407,7 +407,7 @@
     </div>
 
     <!-- Resume Detail Modal -->
-    <div v-if="showResumeModal" class="resume-modal-overlay" @click="closeResumeModal">
+    <div v-if="showResumeModal" class="resume-modal-overlay">
       <div class="resume-modal-content" @click.stop>
         <div class="resume-modal-header">
           <button @click="closeResumeModal" class="close-btn-ats">×</button>
@@ -580,12 +580,17 @@
             </div> -->
 
             <!-- Job Description Section -->
-            <!-- <div class="job-description-card">
-              <h2>Job Description</h2>
-              <div class="job-description-content">
-                <pre class="job-description-text">{{ resumeDetailEvaluation.job_description.description || 'No job description available' }}</pre>
+            <div class="job-description-card">
+              <!-- <h2>Job Description</h2> -->
+              <div class="job-description-content analysis-section">
+                         <h3 class="section-title-gradient">Job Title :</h3>
+                <p class="job-description-text"> {{ resumeDetailEvaluation.job_description.title || 'No job description available' }}</p>
+                <h3 class="section-title-gradient">Job Description</h3>
+                <p class="job-description-text" style="white-space: pre-wrap; line-height: 1.7;">{{ resumeDetailEvaluation.job_description.description || 'No job description available' }}</p>
+                 <h3 class="section-title-gradient">Job Requirements</h3>
+                <p class="job-description-text" style="white-space: pre-wrap; line-height: 1.7;">{{ resumeDetailEvaluation.job_description.requirements || 'No job description available' }}</p>
               </div>
-            </div> -->
+            </div>
 
             <!-- Process Timeline Section -->
             <div class="timeline-card">
@@ -711,7 +716,7 @@
     </div>
 
     <!-- Assign Interviewer Modal -->
-    <div v-if="showAssignModal" class="modal-overlay-ats assign-modal" @click="showAssignModal = false">
+    <div v-if="showAssignModal" class="modal-overlay-ats assign-modal" >
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2>Assign Interviewer</h2>
@@ -793,7 +798,7 @@
                   {{ interviewer.full_name || interviewer.email }}
                 </option>
               </select>
-      
+      <small class="form-hint">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
       </div>
 
 
@@ -832,7 +837,7 @@
     </div>
 
     <!-- Interviewer Feedback Modal -->
-    <div v-if="showFeedbackModal && selectedCandidateForFeedback" class="modal-overlay-ats" @click="showFeedbackModal = false">
+    <div v-if="showFeedbackModal && selectedCandidateForFeedback" class="modal-overlay-ats" >
       <div class="modal-content-ats modal-content-lg" @click.stop>
         <div class="modal-header-ats">
           <h2>Interview Feedback</h2>
@@ -955,7 +960,7 @@
     </div>
 
     <!-- HR Decision Modal -->
-    <div v-if="showHRDecisionModal && selectedCandidateForFeedback" class="modal-overlay-ats" @click="showHRDecisionModal = false">
+    <div v-if="showHRDecisionModal && selectedCandidateForFeedback" class="modal-overlay-ats" >
       <div class="modal-content-ats modal-content-lg" @click.stop>
         <div class="modal-header-ats">
           <h2>Final HR Decision</h2>
@@ -1080,7 +1085,7 @@
     </div>
 
     <!-- Interviewer Details Modal -->
-    <div v-if="showInterviewerDetailsModal && selectedCandidateForInterviewerDetails" class="modal-overlay-ats" @click="showInterviewerDetailsModal = false">
+    <div v-if="showInterviewerDetailsModal && selectedCandidateForInterviewerDetails" class="modal-overlay-ats" >
       <div class="modal-content-ats modal-content-lg p-4" @click.stop>
         <div class="modal-header-ats">
           <h2>Interviewer Details</h2>
@@ -1159,7 +1164,7 @@
     </div>
 
     <!-- On Hold Details Modal -->
-    <div v-if="showHoldModal && holdCandidate" class="modal-overlay-ats" @click="showHoldModal = false">
+    <div v-if="showHoldModal && holdCandidate" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2>On Hold - Candidate Details</h2>
@@ -1196,7 +1201,7 @@
     </div>
 
     <!-- Version History Modal -->
-    <div v-if="showVersionHistoryModal" class="modal-overlay-ats" @click="closeVersionHistoryModal">
+    <div v-if="showVersionHistoryModal" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2>Resume Version History</h2>
@@ -1240,9 +1245,13 @@
                   <div v-if="version.results" class="version-results">
                     <div class="results-section">
                       <h4>Extracted Results:</h4>
+                        <div v-if="version.title" class="result-item">
+                        <strong>Job Title:</strong> {{ version.title }}
+                      </div>
                       <div v-if="version.results.name" class="result-item">
                         <strong>Name:</strong> {{ version.results.name }}
                       </div>
+                      
                       <div v-if="version.results.email" class="result-item">
                         <strong>Email:</strong> {{ version.results.email }}
                       </div>
@@ -1263,6 +1272,7 @@
                           </span>
                         </div>
                       </div>
+                      <!-- //Check at here and all pages -->
                       <div v-if="version.results.experience && version.results.experience.length > 0" class="result-item">
                         <strong>Experience:</strong>
                         <ul class="experience-list">

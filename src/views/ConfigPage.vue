@@ -372,7 +372,7 @@
 </div>
 
 <!-- Add Key Modal -->
-<div v-if="showAddKeyModal" class="modal-overlay-ats" @click="closeAddKeyModal">
+<div v-if="showAddKeyModal" class="modal-overlay-ats" >
   <div class="modal-content-ats modal-content-sm" @click.stop>
     <div class="modal-header-ats">
       <h5 class="modal-title-ats">Add Groq API Key</h5>

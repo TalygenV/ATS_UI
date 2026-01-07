@@ -57,10 +57,11 @@
                 <span v-if="resume.skills.length > 5" class="tag-ats">+{{ resume.skills.length - 5 }} more</span>
               </div>
             </div>
+            <!-- //Check at here and all pages -->
             <div v-if="resume.experience && resume.experience.length > 0" class="mt-3 pt-3 border-top">
               <span class="info-label-ats d-block mb-2">Experience:</span>
               <div v-for="(exp, index) in resume.experience.slice(0, 2)" :key="index" class="small text-secondary mb-1">
-                <strong>{{ exp.position }}</strong> at {{ exp.company }}
+                     <strong v-if="exp.position">{{ exp.position }} at {{ exp.company }} </strong>
                 <span v-if="exp.duration" class="text-muted">({{ exp.duration }})</span>
               </div>
             </div>
@@ -85,7 +86,7 @@
     </div>
 
     <!-- Detail Modal -->
-    <div v-if="selectedResume" class="modal-overlay-ats" @click="closeModal">
+    <div v-if="selectedResume" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">Resume Details</h2>

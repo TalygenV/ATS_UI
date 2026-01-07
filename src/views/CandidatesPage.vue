@@ -91,7 +91,7 @@
     </div>
 
     <!-- Detail Modal -->
-    <div v-if="selectedCandidate" class="modal-overlay-ats" @click="closeModal">
+    <div v-if="selectedCandidate" class="modal-overlay-ats" >
       <div class="modal-content-ats modal-content-lg" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">Candidate Evaluation Details</h2>
@@ -125,7 +125,7 @@
     </div>
 
     <!-- Assign Interviewer Modal -->
-    <div v-if="showAssignModal" class="modal-overlay-ats" @click="showAssignModal = false">
+    <div v-if="showAssignModal" class="modal-overlay-ats">
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">Assign Interviewer</h2>
@@ -158,7 +158,7 @@
     </div>
 
     <!-- HR Decision Modal -->
-    <div v-if="showHRDecisionModal" class="modal-overlay-ats" @click="showHRDecisionModal = false">
+    <div v-if="showHRDecisionModal" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">Final HR Decision</h2>
@@ -189,7 +189,7 @@
     </div>
 
     <!-- On Hold Details Modal -->
-    <div v-if="showHoldModal && holdCandidate" class="modal-overlay-ats" @click="showHoldModal = false">
+    <div v-if="showHoldModal && holdCandidate" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">On Hold - Candidate Details</h2>
@@ -211,7 +211,7 @@
     </div>
 
     <!-- Versions Modal -->
-    <div v-if="showVersionsModal && selectedCandidateForVersions" class="modal-overlay-ats" @click="showVersionsModal = false">
+    <div v-if="showVersionsModal && selectedCandidateForVersions" class="modal-overlay-ats" >
       <div class="modal-content-ats" style="max-width: 800px;" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">Resume Versions - {{ selectedCandidateForVersions.candidate_name || selectedCandidateForVersions.resume?.name || 'Unknown' }}</h2>

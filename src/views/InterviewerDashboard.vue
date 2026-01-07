@@ -201,7 +201,7 @@
     </div>
 
     <!-- Slot Selection Modal -->
-    <div v-if="showSlotSelectionModal" class="modal-overlay-ats" @click="showSlotSelectionModal = false">
+    <div v-if="showSlotSelectionModal" class="modal-overlay-ats" >
       <div class="modal-content-ats" style="max-width: 900px;" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">Select Available Slots</h2>
@@ -237,7 +237,7 @@
     </div>
 
     <!-- Feedback Modal -->
-    <div v-if="showFeedbackModal && selectedAssignment" class="modal-overlay-ats" @click="showFeedbackModal = false">
+    <div v-if="showFeedbackModal && selectedAssignment" class="modal-overlay-ats" >
       <div class="modal-content-ats" style="max-width: 900px;" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">Interview Feedback</h2>
@@ -398,7 +398,7 @@ pastDecissionDoneSlots() {
       const [endHour, endMin] = endTime.split(':').map(Number);
       const startDateTime = new Date(year, month - 1, day, startHour, startMin, 0);
       const endDateTime = new Date(year, month - 1, day, endHour, endMin, 0);
-      if (endDateTime <= startDateTime) { alert('End time must be after start time'); return; }
+      if (endDateTime <= startDateTime) { alert('End time must be after start time');  this.slotForm.max_slots = ""; return; }
       const slotMinutes = 30;
       const now = new Date();
       const selectedDate = new Date(year, month - 1, day);
@@ -416,7 +416,8 @@ pastDecissionDoneSlots() {
         }
         currentStart = currentEnd;
       }
-      if (!slots.length) { alert('No available slots as per time or slots clash with existing ones.'); return; }
+     
+      if (!slots.length) { alert('No available slots as per time or slots clash with existing ones.');  this.slotForm.max_slots = ""; return; }
       this.generatedSlots = slots;
       this.showSlotSelectionModal = true;
     },

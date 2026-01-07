@@ -137,7 +137,7 @@
     </div>
 
     <!-- Edit User Modal -->
-    <div v-if="showEditModal" class="modal-overlay-ats" @click="closeEditModal">
+    <div v-if="showEditModal" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
         <div class="modal-header-ats">
           <h2 class="fs-4 fw-semibold">Edit User</h2>
