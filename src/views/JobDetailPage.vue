@@ -1081,7 +1081,7 @@
 
     <!-- Interviewer Details Modal -->
     <div v-if="showInterviewerDetailsModal && selectedCandidateForInterviewerDetails" class="modal-overlay-ats" @click="showInterviewerDetailsModal = false">
-      <div class="modal-content-ats modal-content-lg" @click.stop>
+      <div class="modal-content-ats modal-content-lg p-4" @click.stop>
         <div class="modal-header-ats">
           <h2>Interviewer Details</h2>
           <button @click="showInterviewerDetailsModal = false" class="close-btn-ats">×</button>
@@ -1098,7 +1098,7 @@
                   Interviewer {{ index + 1 }}: 
                   {{ interviewDetail.interviewer?.full_name || interviewDetail.interviewer?.email || 'N/A' }}
                 </h3>
-                <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
+                <span :class="['status-badge', '' + (interviewDetail.interviewer_status || 'pending')]">
                   {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
                 </span>
               </div>
@@ -1108,10 +1108,10 @@
                   <span class="detail-label">Interview Date:</span>
                   <span class="detail-value">{{ formatDateTime(interviewDetail.interview_date) }}</span>
                 </div>
-                <div v-if="interviewDetail.interview_end_time" class="detail-row">
+                <!-- <div v-if="interviewDetail.interview_end_time" class="detail-row">
                   <span class="detail-label">End Time:</span>
                   <span class="detail-value">{{ formatDateTime(interviewDetail.interview_end_time) }}</span>
-                </div>
+                </div> -->
                 <div v-if="interviewDetail.interviewer?.email" class="detail-row">
                   <span class="detail-label">Email:</span>
                   <span class="detail-value">{{ interviewDetail.interviewer.email }}</span>
@@ -1152,7 +1152,7 @@
             <p>No interviewers assigned yet.</p>
           </div>
         </div>
-        <div class="modal-actions">
+        <div class="d-flex gap-3 justify-content-end mt-4">
           <button type="button" @click="showInterviewerDetailsModal = false" class="btn-ats-secondary">Close</button>
         </div>
       </div>

@@ -83,7 +83,7 @@
       </div>
 
       <!-- Resume Information Section -->
-      <div class="ats-card ats-card-xl">
+      <!-- <div class="ats-card ats-card-xl">
         <h2 class="fs-4 fw-semibold text-dark mb-4">Resume Information</h2>
         
         <div v-if="error && evaluation" class="alert-ats-warning mb-4">
@@ -163,15 +163,15 @@
             <pre class="raw-text">{{ evaluation.resume_text || (resume && resume.raw_text) || 'No text available' }}</pre>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Job Description Section -->
-      <div class="ats-card ats-card-xl">
+      <!-- <div class="ats-card ats-card-xl">
         <h2 class="fs-4 fw-semibold text-dark mb-4">Job Description</h2>
         <div class="bg-light p-4 rounded-3">
           <pre class="mb-0 text-secondary" style="white-space: pre-wrap; font-family: inherit; line-height: 1.8;">{{ evaluation.job_description || 'No job description available' }}</pre>
         </div>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

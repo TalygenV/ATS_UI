@@ -500,7 +500,7 @@ pastDecissionDoneSlots() {
     },
     viewCandidateDetails(assignment) {
       if (assignment.resume_id) {
-        this.$router.push({ name: 'ResumeDetail', params: { jobId: assignment.job_description_id, evaluationId: assignment.id } });
+        this.$router.push({ name: 'ResumeDetail', params: { jobId: assignment.job_description_id, evaluationId: assignment.resume_id } });
       }
     },
     viewAllPending() {
