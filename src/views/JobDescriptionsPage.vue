@@ -1,145 +1,204 @@
 <template>
-  <div class="py-4">
-    <div class="page-header-ats">
-      <h2 class="page-title-ats">Job Descriptions</h2>
-      <button v-if="hasWriteAccess" @click="showCreateModal = true" class="btn-ats-primary">+ Add Job Description</button>
-    </div>
-
-    <div class="mb-4">
-      <input 
-        v-model="searchQuery" 
-        @input="filterJobs"
-        type="text" 
-        placeholder="Search by job title..." 
-        class="search-input-ats"
-      />
-    </div>
-
-    <div v-if="loading" class="loading-state-ats">Loading job descriptions...</div>
-    <div v-else-if="error" class="alert-ats-danger">{{ error }}</div>
-    <div v-else-if="filteredJobs.length === 0" class="empty-state-ats">
-      <p>{{ searchQuery ? 'No job descriptions found matching your search.' : 'No job descriptions found. Create one to get started!' }}</p>
-    </div>
-    <div v-else class="row g-4">
-      <div v-for="job in filteredJobs" :key="job.id" class="col-12 col-md-6 col-xl-4">
-        <div class="ats-card h-100 d-flex flex-column">
-          <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom">
-            <h3 class="fs-5 fw-semibold text-dark mb-0 flex-grow-1">{{ job.title }}</h3>
-            <div v-if="hasWriteAccess" class="d-flex gap-2">
-              <button @click="editJob(job)" class="btn-icon" title="Edit">✏️</button>
-              <button @click="deleteJob(job.id)" class="btn-icon" title="Delete">🗑️</button>
+   <div class="page-wrapper">
+   <div class="content pb-0">
+      <!-- Page Header -->
+      <div class="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
+         <div>
+            <h4 class="mb-1">Job Descriptions</h4>
+            <nav aria-label="breadcrumb">
+               <ol class="breadcrumb mb-0 p-0">
+                  <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                  <li class="breadcrumb-item active" aria-current="page">Job Descriptions</li>
+               </ol>
+            </nav>
+         </div>
+         <div class="gap-2 d-flex align-items-center flex-wrap">
+            <div id="reportrange" class="reportrange-picker d-flex align-items-center shadow">
+               <i class="ti ti-calendar-due text-dark fs-14 me-1"></i><span class="reportrange-picker-field">9 Jun 25 - 9 Jun 25</span>
             </div>
-          </div>
-          <div class="flex-grow-1">
-            <p class="text-secondary mb-3">{{ truncateText(job.description, 200) }}</p>
-            <div v-if="job.requirements" class="pt-3 border-top mb-3">
-              <strong class="text-dark d-block mb-2">Requirements:</strong>
-              <p class="text-secondary small mb-0">{{ truncateText(job.requirements, 150) }}</p>
-            </div>
-            <div v-if="job.interviewers && job.interviewers.length > 0" class="pt-3 border-top mb-3">
-              <strong class="text-dark d-block mb-2">Assigned Interviewers:</strong>
-              <span class="badge-ats badge-ats-primary">{{ job.interviewers.length }} interviewer(s)</span>
-            </div>
-            <div class="pt-3 border-top mb-3">
-              <strong class="text-dark d-block mb-2">Parsed Resumes:</strong>
-              <span class="badge bg-success text-white me-1">{{ job.resume_count || 0 }} resume(s)</span>
-              <div class="mt-2">
-                <span class="fw-bold small">Parse Status:</span>
-                <span class="badge-ats badge-ats-success ms-1">accepted {{job.accepted || 0}}</span>
-                <span class="badge-ats badge-ats-pending ms-1">pending {{job.pending || 0}}</span>
-                <span class="badge-ats badge-ats-danger ms-1">rejected {{job.rejected || 0}}</span>
-              </div>
-            </div>
-            <div v-if="hasWriteAccess" class="pt-3 border-top">
-              <strong class="text-dark d-block mb-2">Application Status:</strong>
-              <div class="d-flex flex-wrap gap-1">
-                <span class="badge-ats badge-ats-success">Scheduled {{job.scheduledInterview || 0}}</span>
-                <span class="badge-ats badge-ats-pending">Pending {{job.totalPending || 0}}</span>
-                <span class="badge-ats badge-ats-warning">On Hold {{job.onhold || 0}}</span>
-                <span class="badge-ats badge-ats-pending">Decision Pending {{job.totalDecisionPending || 0}}</span>
-                <span class="badge-ats badge-ats-danger">Rejected {{job.finalRejected || 0}}</span>
-                <span class="badge-ats badge-ats-success">Accepted {{job.finalSelected || 0}}</span>
-              </div>
-            </div>
-          </div>
-          <div class="d-flex justify-content-between align-items-center pt-3 mt-3 border-top">
-            <span class="text-muted small">{{ formatDate(job.created_at) }}</span>
-            <button @click="viewJobDetail(job.id)" class="btn-ats-secondary btn-ats-sm">View Details</button>
-          </div>
-        </div>
+            <a href="javascript:void(0);" class="btn btn-icon btn-outline-light shadow" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Refresh" data-bs-original-title="Refresh"><i class="ti ti-refresh"></i></a>
+            <a href="javascript:void(0);" class="btn btn-icon btn-outline-light shadow" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Collapse" data-bs-original-title="Collapse" id="collapse-header"><i class="ti ti-transition-top"></i></a>
+         </div>
       </div>
-    </div>
-
-    <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal || showEditModal" class="modal-overlay-ats" @click="closeModal">
-      <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats">
-          <h2 class="fs-4 fw-semibold">{{ showEditModal ? 'Edit Job Description' : 'Create Job Description' }}</h2>
-          <button @click="closeModal" class="close-btn-ats">×</button>
-        </div>
-        <div class="modal-body-ats">
-          <form @submit.prevent="saveJob">
-            <div class="mb-4">
-              <label for="title" class="form-label fw-medium text-dark">Job Title *</label>
-              <input
-                id="title"
-                v-model="currentJob.title"
-                type="text"
-                required
-                placeholder="e.g., Senior Software Engineer"
-                class="form-control-ats"
-              />
+      <!-- End Page Header -->
+      <!-- table header -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+         <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="input-icon input-icon-start position-relative">
+               <span class="input-icon-addon text-dark"><i class="ti ti-search"></i></span>
+               <input      v-model="searchQuery" 
+                  @input="filterJobs"
+                  type="text" 
+                  placeholder="Search by job title..." 
+                  class="form-control"
+                  />
             </div>
-            <div class="mb-4">
-              <label for="description" class="form-label fw-medium text-dark">Job Description *</label>
-              <textarea
-                id="description"
-                v-model="currentJob.description"
-                required
-                rows="8"
-                placeholder="Enter the full job description..."
-                class="form-control-ats form-textarea-ats"
-              ></textarea>
-            </div>
-            <div class="mb-4">
-              <label for="requirements" class="form-label fw-medium text-dark">Requirements (Optional)</label>
-              <textarea
-                id="requirements"
-                v-model="currentJob.requirements"
-                rows="6"
-                placeholder="Enter specific requirements, qualifications, etc..."
-                class="form-control-ats form-textarea-ats"
-              ></textarea>
-            </div>
-            <div class="mb-4">
-              <label for="interviewers" class="form-label fw-medium text-dark">Assign Interviewers (Optional)</label>
-              <select
-                id="interviewers"
-                v-model="currentJob.interviewers"
-                multiple
-                class="form-select-ats"
-                style="min-height: 120px;"
-              >
-                <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
-                  {{ interviewer.full_name || interviewer.email }}
-                </option>
-              </select>
-              <small class="text-muted">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
-            </div>
-            <div class="d-flex gap-3 justify-content-end mt-4">
-              <button type="button" @click="closeModal" class="btn-ats-secondary">Cancel</button>
-              <button type="submit" :disabled="saving" class="btn-ats-primary">
-                <span v-if="saving">Saving...</span>
-                <span v-else>{{ showEditModal ? 'Update' : 'Create' }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
+         </div>
+         <div class="d-flex align-items-center gap-2 flex-wrap"> 
+            <a href="javascript:void(0);" class="btn btn-primary" v-if="hasWriteAccess" @click="showCreateModal = true" data-bs-toggle="offcanvas" data-bs-target="#offcanvas_add"><i class="ti ti-square-rounded-plus-filled me-1"></i>Add Job Description</a>
+         </div>
       </div>
-    </div>
-  </div>
+      <!-- table header --> 
+      <div class="row"  v-if="loading">
+         <div class="col-xxl-3 col-xl-4 col-md-6">
+            <div class="card border shadow">
+               <div class="card-body">
+                  <div class="loading-state-ats">Loading job descriptions...</div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div class="row"  v-else-if="error">
+         <div class="col-xxl-3 col-xl-4 col-md-6">
+            <div class="card border shadow">
+               <div class="card-body">
+                  <div  class="alert-ats-danger">{{ error }}</div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div class="row"  v-else-if="filteredJobs.length === 0">
+         <div class="col-xxl-3 col-xl-4 col-md-6">
+            <div class="card border shadow">
+               <div class="card-body">
+                  <div  class="empty-state-ats">
+                     <p>{{ searchQuery ? 'No job descriptions found matching your search.' : 'No job descriptions found. Create one to get started!' }}</p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div v-else class="row">
+         <div v-for="job in filteredJobs" :key="job.id" class="col-xxl-4 col-xl-4 col-md-6">
+            <div class="card border shadow h-100">
+               <div class="card-body">
+                  <div class="d-flex align-items-center justify-content-between mb-3">
+                     <div class="d-flex align-items-center">
+                        <div>
+                           <h4 class="fs-22">{{ job.title }} </h4>
+                        </div>
+                     </div>
+                     <div class="dropdown table-action fs-16 text-dark">
+                        <strong class=" btn btn-outline-light shadow">{{ formatDate(job.created_at) }}</strong>                          
+                     </div>
+                  </div>
+                  <div class="d-block">
+                     <div class="d-flex flex-column">
+                        <p class="text-default d-flex align-items-center mb-3">{{ truncateText(job.description, 200) }}</p>
+                        <p v-if="job.requirements" class="text-default d-flex mb-2 flex-wrap">
+                           <strong class="text-primary d-block w-100">Requirements:</strong>{{ truncateText(job.requirements, 150) }}
+                        </p>
+                        <p v-if="job.interviewers && job.interviewers.length > 0" class="text-default d-flex mb-2 flex-wrap">
+                           <strong class="d-block w-100 text-dark">Assigned Interviewers: </strong>{{ job.interviewers.length }} interviewer(s)
+                        </p>
+                     </div>
+                  </div>
+                  <div  class="d-flex flex-wrap align-items-center mt-3  border-top pt-3">
+                     <p class="text-default d-flex mb-2 flex-wrap w-100">
+                        <strong class="text-dark d-block w-100">Parsed Resumes: </strong>
+                     </p>
+                     <div class="d-flex align-items-center">
+                        <span class="badge badge-soft-info border border-info me-2">{{ job.resume_count || 0 }} Resume(s)</span>                           
+                     </div>
+                     <p class="text-default d-flex mb-2 flex-wrap w-100 mt-2">
+                        <strong class="text-dark d-block w-100">Parse Status:</strong>
+                     </p>
+                     <div class="d-flex align-items-center">
+                        <span class="badge badge-tag badge-outline-success me-2">Accepted {{job.accepted || 0}}</span>
+                        <span class="badge badge-tag badge-outline-secondary me-2">Pending {{job.pending || 0}}</span>
+                        <span class="badge badge-tag badge-outline-danger">Rejected {{job.rejected || 0}}</span>
+                     </div>
+                  </div>
+                  <div  class="d-flex flex-wrap align-items-center mt-0 pt-3 mt-3 border-top">
+                     <p class="text-default d-flex mb-2 flex-wrap w-100">
+                        <strong class="text-dark d-block w-100">Application Status:</strong>
+                     </p>
+                     <div class="d-flex align-items-center flex-wrap">
+                        <span class="badge bg-dark my-1 me-2">Scheduled {{job.scheduledInterview || 0}}</span>
+                        <span class="badge bg-secondary my-1 me-2">Pending {{job.totalPending || 0}}</span>
+                        <span class="badge bg-warning my-1 me-2">On Hold {{job.onhold || 0}}</span>
+                        <span class="badge bg-info my-1 me-2">Decision Pending {{job.totalDecisionPending || 0}}</span>
+                        <span class="badge bg-danger my-1 me-2">Rejected {{job.finalRejected || 0}}</span>
+                        <span class="badge bg-success my-1 me-2">Accepted {{job.finalSelected || 0}}</span>
+                     </div>
+                  </div>
+                  <div  class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                     <div class="d-flex align-items-center grid-social-links">
+                        <a class="btn btn-dark me-2 shadow" href="javascript:;" @click="viewJobDetail(job.id)">
+                        <i class="ti ti-eye me-1"></i> View
+                        </a>   
+                        <a class="btn btn-success me-2" href="javascript:;" @click="editJob(job)">
+                        <i class="ti ti-edit me-1"></i> Edit
+                        </a>
+                        <a class="btn btn-danger" href="javascript:;" @click="deleteJob(job.id)">
+                        <i class="ti ti-trash me-1"></i> Delete
+                        </a>
+                     </div>
+                     <div class="d-flex align-items-center">
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <!-- Add New Job -->
+      <div class="offcanvas offcanvas-end offcanvas-large show" id="offcanvas_add" v-if="showCreateModal || showEditModal">
+         <div class="offcanvas-header border-bottom">
+            <h5 class="mb-0">{{ showEditModal ? 'Edit Job Description' : 'Create Job Description' }}</h5>
+            <button type="button" class="btn-close custom-btn-close border p-1 me-0 d-flex align-items-center justify-content-center rounded-circle" data-bs-dismiss="offcanvas" aria-label="Close" @click="closeModal">
+            </button>
+         </div>
+         <div class="offcanvas-body">
+            <form @submit.prevent="saveJob">
+               <div>
+                  <div class="row">
+                     <div class="col-md-12">
+                        <div class="mb-3">
+                           <label class="form-label">Job Title <span class="text-danger">*</span></label>
+                           <input id="title" v-model="currentJob.title" type="text" required 	placeholder="e.g., Senior Software Engineer" class="form-control"/>   
+                        </div>
+                     </div>
+                     <div class="col-md-12">
+                        <div class="mb-3">
+                           <label class="form-label">Job Description <span class="text-danger">*</span></label>
+                           <textarea id="description" v-model="currentJob.description" required rows="8" placeholder="Enter the full job description..." class="form-control" ></textarea> 
+                        </div>
+                     </div>
+                     <div class="col-md-12">
+                        <div class="mb-3">
+                           <label class="form-label">Requirements (Optional)</label>
+                           <textarea id="requirements" v-model="currentJob.requirements" rows="6" placeholder="Enter specific requirements, qualifications, etc..." class="form-control" ></textarea>
+                        </div>
+                     </div>
+                     <div class="col-md-12">
+                        <div class="mb-3">
+                           <label class="form-label">Assign Interviewers (Optional)</label>
+                           <select class="select form-control" id="interviewers" v-model="currentJob.interviewers" multiple>
+                              <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
+                                 {{ interviewer.full_name || interviewer.email }}
+                              </option>
+                           </select>
+                           <small class="text-muted">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="d-flex align-items-center justify-content-end">
+                  <button type="button" data-bs-dismiss="offcanvas" class="btn btn-light me-2" @click="closeModal">Cancel</button>
+                  <button type="submit" class="btn btn-primary" :disabled="saving">
+                  <span v-if="saving">Saving...</span>
+                  <span v-else>{{ showEditModal ? 'Update' : 'Create' }}</span>
+                  </button>
+               </div>
+            </form>
+         </div>
+      </div>
+      <!-- /Add New Job -->
+      <div class="offcanvas-backdrop fade show" v-if="showCreateModal || showEditModal" @click="closeModal"></div>
+   </div>
+</div>
+
 </template>
-
 <script>
 import axios from 'axios';
 import { useAuth } from '../composables/useAuth';

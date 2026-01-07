@@ -1,4 +1,6 @@
 <template>
+    <div class="page-wrapper">
+<div class="content pb-0">
   <div class="my-4" @click="onBack">
     <button class="btn-back">← Back</button>
   </div>
@@ -410,6 +412,8 @@
       </div>
     </div>
   </div>
+  </div>
+</div>
 </template>
 
 <script setup>

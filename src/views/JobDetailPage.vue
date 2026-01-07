@@ -1,1300 +1,1182 @@
 <template>
-  <div class="job-detail-page py-4" :class="{ 'processing': uploading }">
-    <div class="mb-4">
-      <button @click="$router.push('/job-descriptions')" class="btn-back">← Back to Job Descriptions</button>
-    </div>
-
-    <div v-if="loading" class="loading-state-ats">Loading...</div>
-    <div v-else-if="error" class="alert-ats-danger">{{ error }}</div>
-    <div v-else-if="jobDescription" class="d-flex flex-column gap-4">
-          <!-- <span data-v-368fdc2f="" class="status-badge ">accepted 5</span> -->
-          
-                       <!-- <span :class="['status-badge', canditateOnholdCount.key]">{{ canditateOnholdCount.key }} {{ canditateOnholdCount.value }}</span>
-                       <span :class="['status-badge', canditateSelectedCount.key]">{{ canditateSelectedCount.key }} {{ canditateSelectedCount.value }}</span> -->
-
-      <!-- Job Description Info -->
-      <div class="ats-card ats-card-xl">
-        <div class="d-flex gap-2 mb-3 flex-wrap">
-          <span class="badge-ats badge-ats-success text-uppercase">{{ canditateAcceptCount.key }} {{ canditateAcceptCount.value }}</span>
-          <span class="badge-ats badge-ats-pending text-uppercase">{{ canditatePendingCount.key }} {{ canditatePendingCount.value }}</span>
-          <span class="badge-ats badge-ats-danger text-uppercase">{{ canditateRejectedCount.key }} {{ canditateRejectedCount.value }}</span>
-        </div>  
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 pb-3 mb-3 border-bottom">
-          <h2 class="page-title-ats mb-0">{{ jobDescription.title }}</h2>
-          <div v-if="hasWriteAccess" class="d-flex gap-2 flex-wrap">
-            <button
-              v-if="!candidateLinkUrl"
-              @click="generateCandidateLink"
-              class="btn-copy-link"
-              :disabled="candidateLinkLoading">
-              <span v-if="candidateLinkLoading">Generating...</span>
-              <span v-else>Generate Candidate Link</span>
-            </button>
-            <button
-              v-else
-              @click="copyCandidateLink"
-              class="btn-copy-link">
-              Copy Candidate Link
-            </button>
-            <button @click="editJob" class="btn-edit">Edit</button>
-            <button @click="deleteJob" class="btn-delete">Delete</button>
-          </div>
-        </div>
-        <div class="">
-      
-          <div class="mb-4">
-            <h3 class="section-title-gradient">Job Description</h3>
-            <p class="text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ jobDescription.description }}</p>
-          </div>
-          <div v-if="jobDescription.requirements" class="mb-4">
-            <h3 class="section-title-gradient">Requirements</h3>
-            <p class="text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ jobDescription.requirements }}</p>
-          </div>
-          <div class="mb-4">
-            <p class="text-muted small">Created: {{ formatDate(jobDescription.created_at) }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Upload Resumes Section -->
-      <div v-if="hasWriteAccess" class="ats-card ats-card-xl">
-        <h3 class="fs-5 fw-bold text-dark mb-4">Upload Resumes</h3>
-        <div class="upload-area-ats" 
-             :class="{ 'drag-over': isDragOver }"
-             @drop="handleDrop"
-             @dragover.prevent="isDragOver = true"
-             @dragleave="isDragOver = false"
-             @click="triggerFileInput">
-          <input 
-            ref="fileInput"
-            type="file" 
-            multiple 
-            accept=".pdf,.doc,.docx,.txt"
-            @change="handleFileSelect"
-            style="display: none"
-          />
-          <div class="upload-icon">📄</div>
-          <p class="upload-text">
-            <strong>Click to upload</strong> or drag and drop
-          </p>
-          <p class="upload-hint">Supports PDF, DOC, DOCX, and TXT files</p>
-          <p class="upload-limit">Maximum 5 files allowed for bulk upload</p>
-        </div>
-
-        <div v-if="selectedFiles.length > 0" class="selected-files">
-          <h4>Selected Files ({{ selectedFiles.length }}/5)</h4>
-          <div class="file-list">
-            <div v-for="(file, index) in selectedFiles" :key="index" class="file-item">
-              <span class="file-name">{{ file.name }}</span>
-              <span class="file-size">({{ formatFileSize(file.size) }})</span>
-              <button @click="removeFile(index)" class="remove-btn">×</button>
+<div class="page-wrapper">
+   <div class="content pb-0" :class="{ 'processing': uploading }">
+      <!-- Page Header -->
+      <div class="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
+         <div>
+            <h4 class="mb-1">Job Descriptions</h4>
+            <nav aria-label="breadcrumb">
+               <ol class="breadcrumb mb-0 p-0">
+                  <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                  <li class="breadcrumb-item">Job Descriptions</li>
+                  <li class="breadcrumb-item active" aria-current="page" v-if="jobDescription">{{ jobDescription.title }}</li>
+               </ol>
+            </nav>
+         </div>
+         <div class="gap-2 d-flex align-items-center flex-wrap">
+            <div id="reportrange" class="reportrange-picker d-flex align-items-center shadow">
+               <i class="ti ti-calendar-due text-dark fs-14 me-1"></i><span class="reportrange-picker-field">9 Jun 25 - 9 Jun 25</span>
             </div>
-          </div>
-        </div>
-
-        <div class="d-flex gap-3 mt-4">
-          <button 
-            @click="uploadFiles" 
-            :disabled="selectedFiles.length === 0 || uploading || selectedFiles.length > 5"
-            class="btn-ats-primary">
+            <a href="javascript:void(0);" class="btn btn-icon btn-outline-light shadow" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Refresh" data-bs-original-title="Refresh"><i class="ti ti-refresh"></i></a>
+            <a href="javascript:void(0);" class="btn btn-icon btn-outline-light shadow" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Collapse" data-bs-original-title="Collapse" id="collapse-header"><i class="ti ti-transition-top"></i></a>
+         </div>
+      </div>
+      <!-- End Page Header -->
+      <!-- card start -->
+      <div class="card border-0 rounded-0" v-if="loading" >
+         <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            Loading...
+         </div>
+      </div>
+      <div class="card border-0 rounded-0" v-else-if="error" >
+         <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            {{ error }}
+         </div>
+      </div>
+      <div class="card border-0 rounded-0" v-else-if="jobDescription" >
+         <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div class="input-icon input-icon-start position-relative">
+               <div>
+                  <h4 class="fs-22">{{ jobDescription.title }} <span class="fs-14 text-info"><em>( Created On: {{ formatDate(jobDescription.created_at) }}</em> )</span></h4>
+               </div>
+               <span class="badge badge-soft-success border border-success text-uppercase me-2">{{ canditateAcceptCount.key }} {{ canditateAcceptCount.value }}</span>
+               <span class="badge badge-soft-secondary border border-secondary text-uppercase me-2">{{ canditatePendingCount.key }} {{ canditatePendingCount.value }}</span>
+               <span class="badge badge-soft-danger border border-danger text-uppercase">{{ canditateRejectedCount.key }} {{ canditateRejectedCount.value }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+               <a href="javascript:void(0);" class="btn btn-primary" @click="$router.push('/job-descriptions')"><i class="ti ti-arrow-left me-1"></i>Back to Job Descriptions</a>
+               <div v-if="hasWriteAccess" class="d-flex align-items-center gap-2 flex-wrap">
+                  <a v-if="!candidateLinkUrl" href="javascript:;" @click="generateCandidateLink" class="btn btn-secondary" :disabled="candidateLinkLoading">
+                  <span v-if="candidateLinkLoading">Generating...</span>
+                  <span v-else><i class="ti ti-files me-1"></i> Generate Candidate Link</span>
+                  </a>
+                  <a v-else href="javascript:;"   @click="copyCandidateLink"  class="btn btn-warning"><i class="ti ti-files me-1"></i>Copy Candidate Link</a>
+                  <a href="javascript:;" @click="editJob" class="btn btn-success"><i class="ti ti-edit me-1"></i>Edit</a>
+                  <a href="javascript:;" @click="deleteJob" class="btn btn-danger"><i class="ti ti-trash me-1"></i>Delete</a>
+               </div>
+            </div>
+         </div>
+         <div class="card-body">
+            <p class="text-default d-flex align-items-center mb-3" style="white-space: pre-wrap; line-height: 1.4;">{{ jobDescription.description }}</p>
+            <div v-if="jobDescription.requirements" class="mt-4">
+               <h3>Requirements</h3>
+               <p class="text-default d-flex align-items-center mb-3" style="white-space: pre-wrap; line-height: 1.7;">{{ jobDescription.requirements }}</p>
+            </div>
+            <div v-if="hasWriteAccess" class="row upload-section mt-4" >
+               <div class="col-md-6">
+                  <h3>Upload Resumes</h3>
+                  <div class="upload-area" 
+                  :class="{ 'drag-over': isDragOver }"
+                  @drop="handleDrop"
+                  @dragover.prevent="isDragOver = true"
+                  @dragleave="isDragOver = false"
+                  @click="triggerFileInput">
+                  <input 
+                     ref="fileInput"
+                     type="file" 
+                     multiple 
+                     accept=".pdf,.doc,.docx,.txt"
+                     @change="handleFileSelect"
+                     style="display: none"
+                     />
+                  <div class="upload-icon">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" 
+                        viewBox="0 0 24 24" fill="none" 
+                        stroke="#ffffff" stroke-width="2" 
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                     </svg>
+                  </div>
+                  <p class="upload-text">
+                     <strong>Click to upload</strong> or drag and drop
+                  </p>
+                  <p class="upload-hint">Supports PDF, DOC, DOCX, and TXT files</p>
+                  <p class="upload-limit">Maximum 5 files allowed for bulk upload</p>
+               </div>
+            </div>
+            <div class="col-md-6 selected-files" v-if="selectedFiles.length > 0">
+               <h3 class="text-info">Selected Files ({{ selectedFiles.length }}/5)</h3>
+               <div class="file-list">
+                  <div class="alert alert-light text-bg-light alert-dismissible border mb-2" v-for="(file, index) in selectedFiles" :key="index">
+                     <button type="button" class="btn-close" @click="removeFile(index)"></button>
+                     <strong>{{ file.name }} - </strong> ({{ formatFileSize(file.size) }})
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div class="d-flex gap-3 mt-3">
+            <button 
+               @click="uploadFiles" 
+               :disabled="selectedFiles.length === 0 || uploading || selectedFiles.length > 5"
+               class="btn btn-primary">
             Upload & Parse Resumes
-          </button>
-          <button 
-            @click="clearFiles" 
-            :disabled="selectedFiles.length === 0 || uploading"
-            class="btn-ats-secondary">
+            </button>
+            <button 
+               @click="clearFiles" 
+               :disabled="selectedFiles.length === 0 || uploading"
+               class="btn btn-danger">
             Clear
-          </button>
-        </div>
-
-        <div v-if="uploadResults.length > 0" class="upload-results">
-          <h4>Upload Results</h4>
-          <div class="results-summary">
-            <div class="summary-item success">
-              <span class="summary-label">Success:</span>
-              <span class="summary-value">{{ successCount }}</span>
+            </button>
+         </div>
+         <div v-if="uploadResults.length > 0" class="upload-results">
+            <h4>Upload Results</h4>
+            <div class="results-summary">
+               <div class="summary-item success">
+                  <span class="summary-label">Success:</span>
+                  <span class="summary-value">{{ successCount }}</span>
+               </div>
+               <div class="summary-item error">
+                  <span class="summary-label">Failed:</span>
+                  <span class="summary-value">{{ errorCount }}</span>
+               </div>
             </div>
-            <div class="summary-item error">
-              <span class="summary-label">Failed:</span>
-              <span class="summary-value">{{ errorCount }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="uploadResults.length > 0" > 
-          <h4>Detailed Results</h4>
+         </div>
+         <div v-if="uploadResults.length > 0" >
+            <h4>Detailed Results</h4>
             <div v-for="(result, index) in uploadResults" :key="index" class="upload-result-item" :class="{ 'success': result.success, 'error': !result.success }">
-              <p class="result-file-name mb-0"> File Name : {{ result.fileName }}</p>
-              <span v-if="result.success" class="result-success"> Message :  Uploaded Successfully</span>
-              <span v-else class="result-error"> Message : {{ result.error }}</span>
+               <p class="result-file-name mb-0"> File Name : {{ result.fileName }}</p>
+               <span v-if="result.success" class="result-success"> Message :  Uploaded Successfully</span>
+               <span v-else class="result-error"> Message : {{ result.error }}</span>
             </div>
-          </div>
+         </div>
       </div>
-
-      <!-- Candidates List -->
-      <div class="ats-card ats-card-xl">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-          <h3 class="fs-5 fw-bold text-dark mb-0">Candidates ({{ candidates.length }})</h3>
-          <div class="d-flex gap-2 flex-wrap">
-            <select v-model="statusFilter" @change="fetchCandidates" class="form-select-ats">
-              <!-- <option value="">All Status</option>
-              <option value="selected">Selected</option>
-              <option value="rejected">Rejected</option>
-              <option value="on_hold">On Hold</option>
-              <option value="pending">Pending</option> -->
-                <option value="">All Status</option>
-              <option value="accepted">Accepted</option>
-              <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
+   </div>
+   <div class="card border-0 rounded-0">
+      <div class="card-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+         <div class="input-icon input-icon-start position-relative">
+            <div>
+               <h4 class="fs-22">Candidates ({{ candidates.length }})</h4>
+            </div>
+         </div>
+         <div class="d-flex align-items-center gap-2 flex-wrap">
+            <select v-model="statusFilter" @change="fetchCandidates" class="dropdown-toggle btn btn-outline-light px-2 shadow">
+               <option value="">All Status</option>
+               <option value="accepted">Accepted</option>
+               <option value="pending">Pending</option>
+               <option value="rejected">Rejected</option>
             </select>
-            <select v-model="sortBy" @change="fetchCandidates" class="form-select-ats">
-              <option value="match">Sort by Match Score</option>
-              <option value="date">Sort by Date</option>
+            <select v-model="sortBy" @change="fetchCandidates" class="dropdown-toggle btn btn-outline-light px-2 shadow">
+               <option value="match">Sort by Match Score</option>
+               <option value="date">Sort by Date</option>
             </select>
-          </div>
-        </div>
-
-        <div v-if="loadingCandidates" class="loading-state-ats">Loading candidates...</div>
-        <div v-else-if="candidates.length === 0" class="empty-state-ats">
-          <p>No candidates found. Upload resumes to get started!</p>
-        </div>
-              <!-- v-show="hasRole('Interviewer') ? candidate.interviewer_id === user?.id : true "  -->
-        <!-- New Candidate Cards Grid -->
-        <div v-else class="candidates-grid">
-          <div 
-            v-for="candidate in candidates" 
-            :key="candidate.id" 
-            class="candidate-card-new" 
-            :class="'status-' + candidate.status"
-            v-show="hasRole('Interviewer')
-  ? ((candidate.interview_details && candidate.interview_details.some(id => id.interviewer_id === user?.id)) || candidate.isDuplicate)
-  : true"
-          >
-            <!-- Header: Name, Email, Match Score -->
-            <div class="candidate-card-header">
-              <div class="candidate-basic-info">
-                <h4 class="candidate-name">
-                  {{ candidate.candidate_name || 'Unknown' }}
-                  <span v-if="candidate.isVersion || candidate.isDuplicate" class="version-badge-new">
-                    V{{ candidate.versionNumber || 1 }}
-                  </span>
-                </h4>
-                <p class="candidate-email-new">{{ candidate.email || 'N/A' }}</p>
-              </div>
-              <div class="match-score-badge-new">
-                <span class="match-score-value">{{ formatScore(candidate.overall_match) }}%</span>
-                <span class="match-score-label">MATCH</span>
-              </div>
-            </div>
-
-            <!-- Interviewer Info Section -->
-            <div class="candidate-interview-info">
-              <div class="interview-info-row">
-                <span class="interview-info-label">Interviewer{{ candidate.interview_details && candidate.interview_details.length > 1 ? 's' : '' }}:</span>
-                <span class="interview-info-value" :class="{ 'na': !getInterviewerName(candidate) }">
-                  <template v-if="candidate.interview_details && candidate.interview_details.length > 0">
-                    <template v-if="candidate.interview_details.length === 1">
-                      {{ candidate.interview_details[0].interviewer?.full_name || candidate.interview_details[0].interviewer?.email || 'N/A' }}
-                    </template>
-                    <template v-else>
-                      {{ candidate.interview_details.length }} Interviewer(s)
-                      <button @click="openInterviewerDetailsModal(candidate)" class="btn-action-details" style="margin-left: 8px; padding: 4px 8px; font-size: 0.85em;" title="View Interviewer Details">
-                        View Details
-                      </button>
-                    </template>
-                  </template>
-                  <template v-else>
-                    {{ getInterviewerName(candidate) || 'N/A' }}
-                  </template>
-                </span>
-              </div>
-              <div v-if="candidate.interview_date || (candidate.interview_details && candidate.interview_details.length > 0)" class="interview-info-row">
-                <span class="interview-info-label">Interview:</span>
-                <span class="interview-info-value">
-                  <template v-if="candidate.interview_details && candidate.interview_details.length > 0">
-                    {{ formatDateTime(candidate.interview_details[0].interview_date) }}
-                    <template v-if="candidate.interview_details.length > 1">
-                      <span class="text-muted"> (+{{ candidate.interview_details.length - 1 }} more)</span>
-                    </template>
-                  </template>
-                  <template v-else>
-                    {{ formatDateTime(candidate.interview_date) }}
-                  </template>
-                </span>
-              </div>
-            </div>
-
-            <!-- Decision Badges -->
-            <div class="decision-badges">
-              <div v-if="(candidate.interviewer_status && candidate.interviewer_status !== 'pending') || (candidate.interview_details && candidate.interview_details.length > 0)" class="decision-badge">
-                <span class="label">Interviewer Decision:</span>
-                <span class="value" :class="getInterviewerDecisionClass(candidate)">
-                  {{ getInterviewerDecisionText(candidate) }}
-                </span>
-              </div>
-              <div v-if="!['Interviewer'].includes(user.role) && candidate.hr_final_status && candidate.hr_final_status !== 'pending'" class="decision-badge">
-                <span class="label">HR Final Decision:</span>
-                <span class="value" :class="candidate.hr_final_status">
-                  {{ candidate.hr_final_status.replace(/_/g, ' ').toUpperCase() }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Main Status Badge -->
-            <div class="status-badge-main">
-              <span class="status-badge-pill" :class="candidate.status">
-                {{ candidate.status.toUpperCase() }}
-              </span>
-            </div>
-
-            <!-- Match Breakdown Progress Bars -->
-            <div class="match-breakdown-section">
-              <div class="match-progress-item">
-                <div class="match-progress-header">
-                  <span class="match-progress-label">Skills</span>
-                  <span class="match-progress-value">{{ formatScore(candidate.skills_match) }}%</span>
-                </div>
-                <div class="match-progress-bar">
-                  <div class="match-progress-fill" :style="{ width: formatScore(candidate.skills_match) + '%' }"></div>
-                </div>
-              </div>
-              <div class="match-progress-item">
-                <div class="match-progress-header">
-                  <span class="match-progress-label">Experience</span>
-                  <span class="match-progress-value">{{ formatScore(candidate.experience_match) }}%</span>
-                </div>
-                <div class="match-progress-bar">
-                  <div class="match-progress-fill" :style="{ width: formatScore(candidate.experience_match) + '%' }"></div>
-                </div>
-              </div>
-              <div class="match-progress-item">
-                <div class="match-progress-header">
-                  <span class="match-progress-label">Education</span>
-                  <span class="match-progress-value">{{ formatScore(candidate.education_match) }}%</span>
-                </div>
-                <div class="match-progress-bar">
-                  <div class="match-progress-fill" :style="{ width: formatScore(candidate.education_match) + '%' }"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Footer: Date and Actions -->
-            <div class="candidate-card-footer">
-              <span class="card-date">{{ formatDate(candidate.created_at) }}</span>
-              <div class="card-actions">
-                <!-- HR/Admin: Assignment buttons -->
-                 
-                <button v-if="hasWriteAccess && (!candidate.interview_details || candidate.interview_details.length === 0)" @click="openAssignModal(candidate)" class="btn-action-assign">
-                  Assign Interviewer
-                </button>
-                <button v-if="hasWriteAccess && candidate.interview_details && candidate.interview_details.length > 0" @click="openAssignModal(candidate)" class="btn-action-assign">
-                  Reassign
-                </button>
-                <!-- Interviewer: Feedback button (only for assigned candidates) -->
-                 <!--  -->
-                <button 
-                  v-if="hasRole('Interviewer') && candidate.interview_details && candidate.interview_details.some(id => id.interviewer_id === user?.id && id.interviewer_status === 'pending' && id.interview_date && new Date() > new Date(id.interview_date))" 
-                  @click="openFeedbackModal(candidate)" 
-                  class="btn-action-feedback"
-                >
-                  Submit Feedback
-                </button>
-                <button 
-                  v-if="hasRole('Interviewer') && candidate.interview_details && candidate.interview_details.some(id => id.interviewer_id === user?.id && id.interviewer_status !== 'pending' && id.interview_date && new Date() > new Date(id.interview_date))" 
-                  @click="openFeedbackModal(candidate)" 
-                  class="btn-action-feedback"
-                >
-                  View/Edit Feedback
-                </button>
-                <!-- HR/Admin: Final Decision button (after interviewer feedback) -->
-                <button 
-                  v-if="hasWriteAccess && ((candidate.interviewer_status && candidate.interviewer_status !== 'pending') || (candidate.interview_details && candidate.interview_details.some(id => id.interviewer_status && id.interviewer_status !== 'pending'))) && (!candidate.hr_final_status || candidate.hr_final_status === 'pending')" 
-                  @click="openHRDecisionModal(candidate)" 
-                  class="btn-action-hr-decision"
-                >
-                  HR Decision
-                </button>
-                <!-- On Hold Details button -->
-                <button 
-                  v-if="candidate.hr_final_status === 'on_hold' || candidate.interviewer_status === 'on_hold' || (candidate.interview_details && candidate.interview_details.some(id => id.interviewer_status === 'on_hold'))" 
-                  @click="viewHoldDetails(candidate)" 
-                  class="btn-action-hold"
-                >
-                  View Hold Details
-                </button>
-                <button @click="downloadResume(candidate.resume_id, candidate)" class="btn-action-icon" title="Download Resume">
-                  ⬇️
-                </button>
-                <button 
-                  v-if="candidate.isVersion || candidate.isDuplicate" 
-                  @click="viewVersionHistory(candidate)" 
-                  class="btn-action-version"
-                  title="View Version History"
-                >
-                  📜 Versions 
-                </button>
-                <button @click="viewResumeDetail(candidate)" class="btn-action-details">View Details</button>
-              </div>
-            </div>
-          </div>
-        </div>
+         </div>
       </div>
-    </div>
-
-    <!-- Edit Modal -->
-    <div v-if="showEditModal" class="modal-overlay-ats" @click="closeEditModal">
-      <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats">
-          <h2>Edit Job Description</h2>
-          <button @click="closeEditModal" class="close-btn-ats">×</button>
-        </div>
-        <div class="modal-body-ats">
-          <form @submit.prevent="saveJob">
-            <div class="mb-4">
-              <label for="title">Job Title *</label>
-              <input
-                id="title"
-                v-model="editForm.title"
-                type="text"
-                required
-                class="form-control-ats"
-              />
+   </div>
+   <div class="row" v-if="loadingCandidates">
+      <div class="col-12">
+         <div class="card border shadow">
+            <div class="card-body">
+                Loading candidates...
             </div>
-            <div class="mb-4">
-              <label for="description">Job Description *</label>
-              <textarea
-                id="description"
-                v-model="editForm.description"
-                required
-                rows="8"
-                class="form-control-ats form-textarea-ats"
-              ></textarea>
-            </div>
-            <div class="mb-4">
-              <label for="requirements">Requirements (Optional)</label>
-              <textarea
-                id="requirements"
-                v-model="editForm.requirements"
-                rows="6"
-                class="form-control-ats form-textarea-ats"
-              ></textarea>
-            </div>
-            <div class="mb-4">
-              <label for="interviewers">Assign Interviewers (Optional)</label>
-              <select
-                id="interviewers"
-                v-model="editForm.interviewers"
-                multiple
-                class="form-select-ats"
-                style="min-height: 120px;"
-              >
-                <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
-                  {{ interviewer.full_name || interviewer.email }}
-                </option>
-              </select>
-              <small class="form-hint">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
-            </div>
-            <div class="d-flex gap-3 justify-content-end mt-4">
-              <button type="button" @click="closeEditModal" class="btn-ats-secondary">Cancel</button>
-              <button type="submit" :disabled="saving" class="btn-ats-primary">
-                <span v-if="saving">Saving...</span>
-                <span v-else>Update</span>
-              </button>
-            </div>
-          </form>
-        </div>
+         </div>
       </div>
-    </div>
-
-    <!-- Resume Detail Modal -->
-    <div v-if="showResumeModal" class="resume-modal-overlay" @click="closeResumeModal">
-      <div class="resume-modal-content" @click.stop>
-        <div class="resume-modal-header">
-          <button @click="closeResumeModal" class="close-btn-ats">×</button>
-        </div>
-        <div class="resume-modal-body">
-          <div v-if="loadingResumeDetail" class="loading">Loading resume details...</div>
-          <div v-else-if="errorResumeDetail && !resumeDetailEvaluation" class="error-message">{{ errorResumeDetail }}</div>
-          <div v-else-if="resumeDetailEvaluation" class="resume-detail-content">
-            <!-- Header Section -->
-            <div class="resume-header-card">
-              <div class="resume-header-content">
-                <h1>{{ resumeDetailEvaluation.candidate_name || 'Unknown Candidate' }}</h1>
-                <p class="candidate-contact">
-                  <span v-if="resumeDetailEvaluation.email">📧 {{ resumeDetailEvaluation.email }}</span>
-                  <span v-if="resumeDetailEvaluation.contact_number"> | 📞 {{ resumeDetailEvaluation.contact_number }}</span>
-                </p>
-                <div class="resume-header-actions">
-                  <button @click="downloadResumeFromModal" class="btn-ats-primary">⬇️Download Resume</button>
-                  <select v-if="hasWriteAccess && !showVersionHistoryModal" v-model="resumeDetailEvaluation.status" @change="updateResumeStatus" class="status-select">
-                    <option value="pending">Pending</option>
-                    <option value="accepted">Accepted</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                  <span v-else class="status-display">{{ resumeDetailEvaluation.status }}</span>
-                </div>
-              </div>
-              <div class="match-score-large">
-                <div class="score-value-large">{{ formatScore(resumeDetailEvaluation.overall_match) }}%</div>
-                <div class="score-label-large">Overall Match</div>
-              </div>
+   </div>
+   <div class="row" v-else-if="candidates.length === 0">
+      <div class="col-12">
+         <div v-if="loadingCandidates" class="card border shadow">
+            <div class="card-body">
+               <p>No candidates found. Upload resumes to get started!</p>
             </div>
-
-            <!-- Match Scores Section -->
-            <div class="resume-scores-card">
-              <h2>Match Scores</h2>
-              <div class="scores-grid">
-                <div class="score-card">
-                  <div class="score-value">{{ formatScore(resumeDetailEvaluation.skills_match) }}%</div>
-                  <div class="score-label">Skills Match</div>
-                </div>
-                <div class="score-card">
-                  <div class="score-value">{{ formatScore(resumeDetailEvaluation.experience_match) }}%</div>
-                  <div class="score-label">Experience Match</div>
-                </div>
-                <div class="score-card">
-                  <div class="score-value">{{ formatScore(resumeDetailEvaluation.education_match) }}%</div>
-                  <div class="score-label">Education Match</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Detailed Analysis Section -->
-            <div class="resume-analysis-card">
-              <h2>Detailed Analysis</h2>
-              
-              <div class="analysis-section">
-                <h3>Skills Analysis</h3>
-                <div class="analysis-content">
-                  <p>{{ resumeDetailEvaluation.skills_details || 'No analysis available' }}</p>
-                </div>
-              </div>
-
-              <div class="analysis-section">
-                <h3>Experience Analysis</h3>
-                <div class="analysis-content">
-                  <p>{{ resumeDetailEvaluation.experience_details || 'No analysis available' }}</p>
-                </div>
-              </div>
-
-              <div class="analysis-section">
-                <h3>Education Analysis</h3>
-                <div class="analysis-content">
-                  <p>{{ resumeDetailEvaluation.education_details || 'No analysis available' }}</p>
-                </div>
-              </div>
-
-              <div v-if="resumeDetailEvaluation.rejection_reason" class="analysis-section rejection">
-                <h3>Rejection Reason</h3>
-                <div class="analysis-content">
-                  <p>{{ resumeDetailEvaluation.rejection_reason }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Resume Information Section -->
-            <!-- <div class="resume-info-card">
-              <h2>Resume Information</h2>
-              
-              <div v-if="errorResumeDetail && resumeDetailEvaluation" class="error-notice">
-                <p>{{ errorResumeDetail }}</p>
-              </div>
-              
-              <div class="info-grid">
-                <div class="info-item">
-                  <span class="info-label">Name:</span>
-                  <span class="info-value">{{ (resumeDetail && resumeDetail.name) || resumeDetailEvaluation.candidate_name || 'N/A' }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Email:</span>
-                  <span class="info-value">{{ (resumeDetail && resumeDetail.email) || resumeDetailEvaluation.email || 'N/A' }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Phone:</span>
-                  <span class="info-value">{{ (resumeDetail && resumeDetail.phone) || resumeDetailEvaluation.contact_number || 'N/A' }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Location:</span>
-                  <span class="info-value">{{ (resumeDetail && resumeDetail.location) || 'N/A' }}</span>
-                </div>
-                <div v-if="resumeDetail && resumeDetail.total_experience !== null && resumeDetail.total_experience !== undefined" class="info-item">
-                  <span class="info-label">Total Experience:</span>
-                  <span class="info-value">{{ formatExperience(resumeDetail.total_experience) }}</span>
-                </div>
-              </div>
-
-              <div v-if="resumeDetail && resumeDetail.summary" class="mb-4">
-                <h3>Summary</h3>
-                <p class="summary-text">{{ resumeDetail.summary }}</p>
-              </div>
-
-              <div v-if="resumeDetail && resumeDetail.skills && resumeDetail.skills.length > 0" class="mb-4">
-                <h3>Skills</h3>
-                <div class="tags">
-                  <span v-for="(skill, index) in resumeDetail.skills" :key="index" class="tag">
-                    {{ skill }}
-                  </span>
-                </div>
-              </div>
-
-              <div v-if="resumeDetail && resumeDetail.experience && resumeDetail.experience.length > 0" class="mb-4">
-                <h3>Work Experience</h3>
-                <div class="experience-list">
-                  <div v-for="(exp, index) in resumeDetail.experience" :key="index" class="experience-item">
-                    <h4>{{ exp.position }}</h4>
-                    <p class="company">{{ exp.company }}</p>
-                    <p v-if="exp.duration" class="duration">{{ exp.duration }}</p>
-                    <p v-if="exp.startDate && exp.endDate" class="dates">
-                      {{ formatDateRange(exp.startDate, exp.endDate) }}
-                    </p>
-                    <p v-if="exp.description" class="description">{{ exp.description }}</p>
+         </div>
+      </div>
+   </div>
+   <div class="row"  v-else>
+      <div class="col-xxl-3 col-xl-4 col-md-6"
+       v-for="candidate in candidates" 
+         :key="candidate.id"          
+         :class="'status-' + candidate.status"
+         v-show="hasRole('Interviewer')
+         ? ((candidate.interview_details && candidate.interview_details.some(id => id.interviewer_id === user?.id)) || candidate.isDuplicate)
+         : true"
+      >      
+         <div class="card border shadow">
+            <div class="card-body">
+               <div class="d-flex align-items-center justify-content-between mb-3">
+                  <div class="d-flex align-items-center">
+                     <a href="contact-details.html"
+                        class="avatar avatar-md flex-shrink-0 me-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" fill="#ffffff"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path></svg>
+                     </a>
+                     <div>
+                        <h6 class="fs-14"><a href="contact-details.html" class="fw-medium">Darlee
+                           Robertson</a>
+                        </h6>
+                        <p class="text-default mb-0">Facility Manager</p>
+                     </div>
                   </div>
-                </div>
-              </div>
-
-              <div v-if="resumeDetail && resumeDetail.education && resumeDetail.education.length > 0" class="mb-4">
-                <h3>Education</h3>
-                <div class="education-list">
-                  <div v-for="(edu, index) in resumeDetail.education" :key="index" class="education-item">
-                    <h4>{{ edu.degree }}</h4>
-                    <p v-if="edu.field">Field: {{ edu.field }}</p>
-                    <p v-if="edu.institution">Institution: {{ edu.institution }}</p>
-                    <p v-if="edu.year">Year: {{ edu.year }}</p>
+                  <div class="dropdown table-action">
+                     <a href="#" class="action-icon btn btn-icon btn-sm btn-outline-light shadow" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                     <i class="ti ti-dots-vertical"></i>
+                     </a>
+                     <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="#" data-bs-toggle="offcanvas"
+                           data-bs-target="#offcanvas_edit"><i
+                           class="ti ti-edit text-blue"></i> Edit</a>
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                           data-bs-target="#delete_contact"><i
+                           class="ti ti-trash"></i> Delete</a>
+                        <a class="dropdown-item" href="contact-details.html"><i
+                           class="ti ti-eye text-blue-light"></i> Preview</a>
+                     </div>
                   </div>
-                </div>
-              </div>
-
-              <div v-if="resumeDetail && resumeDetail.certifications && resumeDetail.certifications.length > 0" class="mb-4">
-                <h3>Certifications</h3>
-                <ul class="certifications-list">
-                  <li v-for="(cert, index) in resumeDetail.certifications" :key="index">{{ cert }}</li>
-                </ul>
-              </div>
-
-              <div class="mb-4">
-                <h3>Raw Resume Text</h3>
-                <div class="raw-text-container">
-                  <pre class="raw-text">{{ resumeDetailEvaluation.resume_text || (resumeDetail && resumeDetail.raw_text) || 'No text available' }}</pre>
-                </div>
-              </div>
-            </div> -->
-
-            <!-- Job Description Section -->
-            <!-- <div class="job-description-card">
-              <h2>Job Description</h2>
-              <div class="job-description-content">
-                <pre class="job-description-text">{{ resumeDetailEvaluation.job_description.description || 'No job description available' }}</pre>
-              </div>
-            </div> -->
-
-            <!-- Process Timeline Section -->
-            <div class="timeline-card">
-              <h2>Process Timeline</h2>
-              <div v-if="loadingTimeline" class="loading">Loading timeline...</div>
-              <div v-else-if="timeline.length === 0" class="empty-timeline">
-                <p>No timeline events available.</p>
-              </div>
-              <div v-else class="timeline-container">
-                <div v-for="(event, index) in timeline" :key="index" class="timeline-item">
-                  <div class="timeline-marker" :class="getTimelineMarkerClass(event.type)"></div>
-                  <div class="timeline-content">
-                    <div class="timeline-header">
-                      <h3 class="timeline-title">{{ event.title }}</h3>
-                      <span class="timeline-date">{{ formatDateTime(event.timestamp) }}</span>
-                    </div>
-                    <p class="timeline-description">{{ event.description }}</p>
-                    
-                    <!-- Event-specific details -->
-                    <div v-if="event.details" class="timeline-details">
-                      <!-- Resume uploaded details -->
-                      <div v-if="event.type === 'resume_uploaded' && event.details.overall_match" class="detail-box">
-                        <div class="detail-row">
-                          <span class="detail-label">Overall Match:</span>
-                          <span class="detail-value">{{ formatScore(event.details.overall_match) }}%</span>
-                        </div>
-                        <div class="detail-row">
-                          <span class="detail-label">Skills:</span>
-                          <span class="detail-value">{{ formatScore(event.details.skills_match) }}%</span>
-                        </div>
-                        <div class="detail-row">
-                          <span class="detail-label">Experience:</span>
-                          <span class="detail-value">{{ formatScore(event.details.experience_match) }}%</span>
-                        </div>
-                        <div class="detail-row">
-                          <span class="detail-label">Education:</span>
-                          <span class="detail-value">{{ formatScore(event.details.education_match) }}%</span>
-                        </div>
-                      </div>
-
-                      <!-- Interview assignment details -->
-                      <div v-if="(event.type === 'interviewer_assigned' || event.type === 'interviewer_reassigned') && event.details.interviewer" class="detail-box">
-                        <div class="detail-row">
-                          <span class="detail-label">Interviewer:</span>
-                          <span class="detail-value">{{ event.details.interviewer.full_name  || N/A }}</span>
-                        </div>
-                        <div v-if="event.user" class="detail-row">
-                          <span class="detail-label">Assigned by:</span>
-                          <span class="detail-value">{{ event.user.full_name || event.user.email }}</span>
-                        </div>
-                        <div v-if="event.details.notes" class="detail-row">
-                          <span class="detail-label">Note:</span>
-                          <span class="detail-value">{{ event.details.notes }}</span>
-                        </div>
-                      </div>
-
-                      <!-- Interview scheduled details -->
-                      <div v-if="event.type === 'interview_scheduled' && event.details.interviewer" class="detail-box">
-                        <div class="detail-row">
-                          <span class="detail-label">Interviewer:</span>
-                          <span class="detail-value">{{ event.details.interviewer.full_name || N/A }}</span>
-                        </div>
-                      </div>
-
-                      <!-- Feedback details -->
-                      <div v-if="event.type === 'feedback_submitted' && event.details.ratings" class="detail-box">
-                        <div class="detail-row">
-                          <span class="detail-label">Decision:</span>
-                          <span :class="['status-badge', 'timeline-status', 'interviewer-' + event.details.status]">
-                            {{ event.details.status }}
-                          </span>
-                        </div>
-                        <div v-if="event.details.ratings && typeof event.details.ratings === 'object' && Object.keys(event.details.ratings).filter(key => key !== 'interviewer_remarks' && event.details.ratings[key]).length > 0" class="ratings-detail">
-                          <strong>Ratings:</strong>
-                          <div class="ratings-list">
-                            <div v-for="(rating, key) in getFilteredRatings(event.details.ratings)" :key="key" class="rating-detail-item">
-                              <span class="rating-key">{{ key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
-                              <span class="rating-value">{{ rating }}/10</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div v-if="event.details.ratings && event.details.ratings.interviewer_remarks" class="remarks-detail">
-                          <strong>Remarks:</strong>
-                          <p>{{ event.details.ratings.interviewer_remarks }}</p>
-                        </div>
-                        <div v-if="event.details.hold_reason" class="hold-reason-detail">
-                          <strong>Hold Reason:</strong>
-                          <p>{{ event.details.hold_reason }}</p>
-                        </div>
-                      </div>
-
-                      <!-- HR decision details -->
-                      <div v-if="event.type === 'hr_decision'" class="detail-box">
-                        <div class="detail-row">
-                          <span class="detail-label">Final Decision:</span>
-                          <span :class="['status-badge', 'timeline-status', 'hr-' + event.details.status]">
-                            {{ event.details.status }}
-                          </span>
-                        </div>
-                        <div v-if="event.details.reason" class="decision-reason-detail">
-                          <strong>Reason:</strong>
-                          <p>{{ event.details.reason }}</p>
-                        </div>
-                        <div v-if="event.details.hr_remarks" class="hr-remarks-detail">
-                          <strong>HR Remarks:</strong>
-                          <p>{{ event.details.hr_remarks }}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- User who performed the action -->
-                    <div v-if="event.user" class="timeline-user">
-                      <span class="user-label">By:</span>
-                      <span class="user-name">{{ event.user.full_name || event.user.email }}</span>
-                    </div>
+               </div>
+               <div class="d-block">
+                  <div class="d-flex flex-column">
+                     <p class="text-default d-inline-flex align-items-center mb-2"><i
+                        class="ti ti-mail text-dark me-1"></i><a href="https://crms.dreamstechnologies.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="81f3eee3e4f3f5f2eeefc1e4f9e0ecf1ede4afe2eeec">[email&#160;protected]</a>
+                     </p>
+                     <p class="text-default d-inline-flex align-items-center mb-2"><i
+                        class="ti ti-phone text-dark me-1"></i>1234567890</p>
+                     <p class="text-default d-inline-flex align-items-center"><i
+                        class="ti ti-map-pin-pin text-dark me-1"></i>Germany</p>
                   </div>
-                </div>
-              </div>
+                  <div class="d-flex align-items-center">
+                     <span
+                        class="badge badge-tag badge-soft-success me-2">Collab</span>
+                     <span class="badge badge-tag badge-soft-warning">VIP</span>
+                  </div>
+               </div>
+               <div
+                  class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                  <div class="d-flex align-items-center grid-social-links">
+                     <a href="#"
+                        class="avatar avatar-xs text-dark rounded-circle me-1"><i
+                        class="ti ti-mail fs-14"></i></a>
+                     <a href="#"
+                        class="avatar avatar-xs text-dark rounded-circle me-1"><i
+                        class="ti ti-phone-check fs-14"></i></a>
+                     <a href="#"
+                        class="avatar avatar-xs text-dark rounded-circle me-1"><i
+                        class="ti ti-message-circle-share fs-14"></i></a>
+                     <a href="#" class="avatar avatar-xs text-dark rounded-circle"><i class="ti ti-brand-facebook fs-14"></i></a>                         
+                  </div>
+                  <div class="d-flex align-items-center">
+                     <a href="javascript:void(0);" class="avatar avatar-xs">
+                     <img src="assets/img/profiles/avatar-12.jpg" alt="img" class="rounded-circle">
+                     </a>
+                  </div>
+               </div>
             </div>
-          </div>
-        </div>
+         </div>
       </div>
-    </div>
-
-    <!-- Assign Interviewer Modal -->
-    <div v-if="showAssignModal" class="modal-overlay-ats assign-modal" @click="showAssignModal = false">
-      <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats">
-          <h2>Assign Interviewer</h2>
-          <button @click="showAssignModal = false" class="close-btn-ats">×</button>
-        </div>
-
-  <div class="d-flex gap-2 justify-content-end me-4">
-    <input
-      type="radio"
-      class="btn-check"
-      name="assignType"
-      id="opt1"
-      :value="true"
-      v-model="assignMultipleInterviwer"
-    />
-    <label class="btn btn-outline-success" for="opt1">
-      Panel Assign
-    </label>
-
-    <input
-      type="radio"
-      class="btn-check"
-      name="assignType"
-      id="opt2"
-      :value="false"
-      v-model="assignMultipleInterviwer"
-    />
-    <label class="btn btn-outline-success" for="opt2">
-      Single Assign
-    </label>
-  </div>
-
-        <!-- // Single Assign //  -->
-        <div v-if="!assignMultipleInterviwer" class="modal-body-ats">
-          <form @submit.prevent="assignInterviewer">
-            <div class="form-group">
-              <label>Interviewer *</label>
-              <select v-model="assignmentData.interviewer_id" @change="fetchAvailableSlots" required class="form-select-clean">
-                <option value="">Select Interviewer</option>
-                <option v-for="interviewer in assignInterviewers" :key="interviewer.id" :value="interviewer.id">
-                  {{ interviewer.full_name || interviewer.email }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Available Slots *</label>
-              <select v-model="assignmentData.slot_id" required class="form-select-clean">
-                <option value="">Select Time Slot</option>
-                <option v-for="slot in availableSlots" :key="slot.id" :value="slot.id">
-                  {{ formatDateTime(slot.start_time) }} - {{ formatTime(slot.end_time) }} 
-                  ({{ slot.interviewer?.full_name || slot.interviewer?.email || 'Interviewer' }})
-                </option>
-              </select>
-              <p v-if="availableSlots.length === 0 && assignmentData.interviewer_id" class="hint-text">
-                No available slots found for the selected interviewer. Ask interviewer to add availability.
-              </p>
-            </div>
-            <div class="modal-actions">
-              <button type="button" @click="showAssignModal = false" class="btn-modal-cancel">Cancel</button>
-              <button type="submit" class="btn-modal-primary">Assign</button>
-            </div>
-          </form>
-        </div>
-         
-
-         <!-- // Bulk Assign // -->
-        <div v-if="assignMultipleInterviwer" class="modal-body-ats">
-  <form @submit.prevent="assignInterviewerGroup">
-
-    <!-- SECTION 1: Interviewer -->
- 
-
-      <div class="form-group">
-        <label>Interviewer *</label>
-       
-         <select v-model="selectedInterviewersforAssign" multiple class="form-select-ats" @change="fetchAvailableSlotsByGroup" style="min-height: 120px;">
-                <option value="">Select Interviewer</option>
-                <option v-for="interviewer in assignInterviewers" :key="interviewer.id" :value="interviewer.id">
-                  {{ interviewer.full_name || interviewer.email }}
-                </option>
-              </select>
-      
-      </div>
-
-
-    <!-- SECTION 2: Available Slots -->
-
-
-       <div class="form-group">
-              <label>Available Slots *</label>
-              <select v-model="selectedTimeSlotforBulkAssign"  required class="form-select-clean">
-                <option value="">Select Time Slot</option>
-                <option v-for="(slot, index) in availableSlots" :key="index" :value="JSON.stringify(slot.slot_ids)">
-                  {{ formatDateTime(slot.start_time) }} - {{ formatTime(slot.end_time) }} 
-                  ({{ slot.interviewer_ids?.length || 0 }} interviewer(s))
-                </option>
-              </select>
-              <p v-if="availableSlots.length === 0" class="hint-text">
-                No available slots found for the selected interviewer. Ask interviewer to add availability.
-              </p>
-            </div>
-
-
-    <!-- SECTION 3: Actions -->
-    <section class="modal-actions">
-      <button type="button" class="btn-modal-cancel">
-        Cancel
-      </button>
-      <button type="submit" class="btn-modal-primary">
-        Assign
-      </button>
-    </section>
-
-  </form>
+   </div>
 </div>
-
+<!-- Candidates List -->
+<div class="ats-card ats-card-xl">
+   <div  class="loading-state-ats"></div>
+   <div  class="empty-state-ats">
+      
+   </div>
+   <!-- v-show="hasRole('Interviewer') ? candidate.interviewer_id === user?.id : true "  -->
+   <!-- New Candidate Cards Grid -->
+   <div>
+      
+   </div>
+</div>
+<!-- Card End -->
+<div class="job-detail-page py-4" >
+   <!-- Edit Modal -->
+   <div v-if="showEditModal" class="modal-overlay-ats" @click="closeEditModal">
+      <div class="modal-content-ats" @click.stop>
+         <div class="modal-header-ats">
+            <h2>Edit Job Description</h2>
+            <button @click="closeEditModal" class="close-btn-ats">×</button>
+         </div>
+         <div class="modal-body-ats">
+            <form @submit.prevent="saveJob">
+               <div class="mb-4">
+                  <label for="title">Job Title *</label>
+                  <input
+                     id="title"
+                     v-model="editForm.title"
+                     type="text"
+                     required
+                     class="form-control-ats"
+                     />
+               </div>
+               <div class="mb-4">
+                  <label for="description">Job Description *</label>
+                  <textarea
+                     id="description"
+                     v-model="editForm.description"
+                     required
+                     rows="8"
+                     class="form-control-ats form-textarea-ats"
+                     ></textarea>
+               </div>
+               <div class="mb-4">
+                  <label for="requirements">Requirements (Optional)</label>
+                  <textarea
+                     id="requirements"
+                     v-model="editForm.requirements"
+                     rows="6"
+                     class="form-control-ats form-textarea-ats"
+                     ></textarea>
+               </div>
+               <div class="mb-4">
+                  <label for="interviewers">Assign Interviewers (Optional)</label>
+                  <select
+                     id="interviewers"
+                     v-model="editForm.interviewers"
+                     multiple
+                     class="form-select-ats"
+                     style="min-height: 120px;"
+                     >
+                     <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
+                        {{ interviewer.full_name || interviewer.email }}
+                     </option>
+                  </select>
+                  <small class="form-hint">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
+               </div>
+               <div class="d-flex gap-3 justify-content-end mt-4">
+                  <button type="button" @click="closeEditModal" class="btn-ats-secondary">Cancel</button>
+                  <button type="submit" :disabled="saving" class="btn-ats-primary">
+                  <span v-if="saving">Saving...</span>
+                  <span v-else>Update</span>
+                  </button>
+               </div>
+            </form>
+         </div>
       </div>
-    </div>
-
-    <!-- Interviewer Feedback Modal -->
-    <div v-if="showFeedbackModal && selectedCandidateForFeedback" class="modal-overlay-ats" @click="showFeedbackModal = false">
-      <div class="modal-content-ats modal-content-lg" @click.stop>
-        <div class="modal-header-ats">
-          <h2>Interview Feedback</h2>
-          <button @click="showFeedbackModal = false" class="close-btn-ats">×</button>
-        </div>
-        <div class="modal-body-ats">
-          <form @submit.prevent="submitFeedback">
-            <div class="form-section">
-              <h3>Candidate Ratings (1-10 scale)</h3>
-              <div class="ratings-grid">
-                <div class="rating-group">
-                  <label>Technical Skills</label>
-                  <input 
-                    v-model.number="feedbackData.ratings.technical_skills" 
-                    type="number" 
-                    min="1" 
-                    max="10" 
-                    class="rating-input"
-                    
-                  />
-                </div>
-                <div class="rating-group">
-                  <label>Communication</label>
-                  <input 
-                    v-model.number="feedbackData.ratings.communication" 
-                    type="number" 
-                    min="1" 
-                    max="10" 
-                    class="rating-input"
-                    
-                  />
-                </div>
-                <div class="rating-group">
-                  <label>Problem Solving</label>
-                  <input 
-                    v-model.number="feedbackData.ratings.problem_solving" 
-                    type="number" 
-                    min="1" 
-                    max="10" 
-                    class="rating-input"
-                    
-                  />
-                </div>
-                <div class="rating-group">
-                  <label>Cultural Fit</label>
-                  <input 
-                    v-model.number="feedbackData.ratings.cultural_fit" 
-                    type="number" 
-                    min="1" 
-                    max="10" 
-                    class="rating-input"
-                    
-                  />
-                </div>
-                <div class="rating-group">
-                  <label>Experience Relevance</label>
-                  <input 
-                    v-model.number="feedbackData.ratings.experience_relevance" 
-                    type="number" 
-                    min="1" 
-                    max="10" 
-                    class="rating-input"
-                    
-                  />
-                </div>
-                <div class="rating-group">
-                  <label>Overall Assessment</label>
-                  <input 
-                    v-model.number="feedbackData.ratings.overall" 
-                    type="number" 
-                    min="1" 
-                    max="10" 
-                    class="rating-input"
+   </div>
+   <!-- Resume Detail Modal -->
+   <div v-if="showResumeModal" class="resume-modal-overlay" @click="closeResumeModal">
+      <div class="resume-modal-content" @click.stop>
+         <div class="resume-modal-header">
+            <button @click="closeResumeModal" class="close-btn-ats">×</button>
+         </div>
+         <div class="resume-modal-body">
+            <div v-if="loadingResumeDetail" class="loading">Loading resume details...</div>
+            <div v-else-if="errorResumeDetail && !resumeDetailEvaluation" class="error-message">{{ errorResumeDetail }}</div>
+            <div v-else-if="resumeDetailEvaluation" class="resume-detail-content">
+               <!-- Header Section -->
+               <div class="resume-header-card">
+                  <div class="resume-header-content">
+                     <h1>{{ resumeDetailEvaluation.candidate_name || 'Unknown Candidate' }}</h1>
+                     <p class="candidate-contact">
+                        <span v-if="resumeDetailEvaluation.email">📧 {{ resumeDetailEvaluation.email }}</span>
+                        <span v-if="resumeDetailEvaluation.contact_number"> | 📞 {{ resumeDetailEvaluation.contact_number }}</span>
+                     </p>
+                     <div class="resume-header-actions">
+                        <button @click="downloadResumeFromModal" class="btn-ats-primary">⬇️Download Resume</button>
+                        <select v-if="hasWriteAccess && !showVersionHistoryModal" v-model="resumeDetailEvaluation.status" @change="updateResumeStatus" class="status-select">
+                           <option value="pending">Pending</option>
+                           <option value="accepted">Accepted</option>
+                           <option value="rejected">Rejected</option>
+                        </select>
+                        <span v-else class="status-display">{{ resumeDetailEvaluation.status }}</span>
+                     </div>
+                  </div>
+                  <div class="match-score-large">
+                     <div class="score-value-large">{{ formatScore(resumeDetailEvaluation.overall_match) }}%</div>
+                     <div class="score-label-large">Overall Match</div>
+                  </div>
+               </div>
+               <!-- Match Scores Section -->
+               <div class="resume-scores-card">
+                  <h2>Match Scores</h2>
+                  <div class="scores-grid">
+                     <div class="score-card">
+                        <div class="score-value">{{ formatScore(resumeDetailEvaluation.skills_match) }}%</div>
+                        <div class="score-label">Skills Match</div>
+                     </div>
+                     <div class="score-card">
+                        <div class="score-value">{{ formatScore(resumeDetailEvaluation.experience_match) }}%</div>
+                        <div class="score-label">Experience Match</div>
+                     </div>
+                     <div class="score-card">
+                        <div class="score-value">{{ formatScore(resumeDetailEvaluation.education_match) }}%</div>
+                        <div class="score-label">Education Match</div>
+                     </div>
+                  </div>
+               </div>
+               <!-- Detailed Analysis Section -->
+               <div class="resume-analysis-card">
+                  <h2>Detailed Analysis</h2>
+                  <div class="analysis-section">
+                     <h3>Skills Analysis</h3>
+                     <div class="analysis-content">
+                        <p>{{ resumeDetailEvaluation.skills_details || 'No analysis available' }}</p>
+                     </div>
+                  </div>
+                  <div class="analysis-section">
+                     <h3>Experience Analysis</h3>
+                     <div class="analysis-content">
+                        <p>{{ resumeDetailEvaluation.experience_details || 'No analysis available' }}</p>
+                     </div>
+                  </div>
+                  <div class="analysis-section">
+                     <h3>Education Analysis</h3>
+                     <div class="analysis-content">
+                        <p>{{ resumeDetailEvaluation.education_details || 'No analysis available' }}</p>
+                     </div>
+                  </div>
+                  <div v-if="resumeDetailEvaluation.rejection_reason" class="analysis-section rejection">
+                     <h3>Rejection Reason</h3>
+                     <div class="analysis-content">
+                        <p>{{ resumeDetailEvaluation.rejection_reason }}</p>
+                     </div>
+                  </div>
+               </div>
+               <!-- Resume Information Section -->
+               <!-- <div class="resume-info-card">
+                  <h2>Resume Information</h2>
                   
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h3>Remarks</h3>
-              <div class="mb-4">
-                <textarea v-model="feedbackData.remarks" rows="4" class="form-control-ats form-textarea-ats" placeholder="Additional remarks (optional)"></textarea>
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h3>Final Decision</h3>
-              <div class="mb-4">
-                <label>Status *</label>
-                <select v-model="feedbackData.status" required class="form-control-ats" @change="onStatusChange">
-                  <option value="pending">Pending</option>
-                  <option value="selected">Selected</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="on_hold">On Hold</option>
-                </select>
-              </div>
-              <div v-if="feedbackData.status === 'on_hold'" class="mb-4">
-                <label>Hold Reason *</label>
-                <textarea 
-                  v-model="feedbackData.hold_reason" 
-                  required 
-                  rows="4" 
-                  class="form-control-ats form-textarea-ats"
-                  placeholder="Please provide a reason for putting this candidate on hold..."
-                ></textarea>
-              </div>
-            </div>
-
-            <div class="d-flex gap-3 justify-content-end mt-4">
-              <button type="button" @click="showFeedbackModal = false" class="btn-ats-secondary">Cancel</button>
-              <button type="submit" :disabled="submittingFeedback" class="btn-ats-primary">
-                <span v-if="submittingFeedback">Submitting...</span>
-                <span v-else>Submit Feedback</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- HR Decision Modal -->
-    <div v-if="showHRDecisionModal && selectedCandidateForFeedback" class="modal-overlay-ats" @click="showHRDecisionModal = false">
-      <div class="modal-content-ats modal-content-lg" @click.stop>
-        <div class="modal-header-ats">
-          <h2>Final HR Decision</h2>
-          <button @click="showHRDecisionModal = false" class="close-btn-ats">×</button>
-        </div>
-        <div class="modal-body-ats">
-          <!-- Show All Interviewers Feedback -->
-          <div v-if="selectedCandidateForFeedback.interview_details && selectedCandidateForFeedback.interview_details.length > 0" class="interviewer-feedback-section">
-            <h3>Interviewer Feedback</h3>
-            <div v-for="(interviewDetail, index) in selectedCandidateForFeedback.interview_details" :key="interviewDetail.id || index" class="feedback-display mb-4" style="border-bottom: 1px solid #e0e0e0; padding-bottom: 1.5rem;">
-              <div class="feedback-interviewer-header mb-3">
-                <h4>
-                  Interviewer {{ index + 1 }}: 
-                  {{ interviewDetail.interviewer?.full_name || interviewDetail.interviewer?.email || 'N/A' }}
-                </h4>
-              </div>
-              
-              <div v-if="interviewDetail.interviewer_feedback || interviewDetail.interviewer_status !== 'pending'">
-                <div v-if="interviewDetail.interviewer_feedback" class="feedback-ratings mb-3">
-                  <h5>Ratings (1-10 scale):</h5>
-                  <div class="ratings-display-grid">
-                    <div v-for="(rating, key) in getFilteredRatings(interviewDetail.interviewer_feedback)" :key="key" class="rating-display-item">
-                      <span class="rating-display-label">{{ key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
-                      <span class="rating-display-value">{{ rating }}/10</span>
+                  <div v-if="errorResumeDetail && resumeDetailEvaluation" class="error-notice">
+                    <p>{{ errorResumeDetail }}</p>
+                  </div>
+                  
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <span class="info-label">Name:</span>
+                      <span class="info-value">{{ (resumeDetail && resumeDetail.name) || resumeDetailEvaluation.candidate_name || 'N/A' }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Email:</span>
+                      <span class="info-value">{{ (resumeDetail && resumeDetail.email) || resumeDetailEvaluation.email || 'N/A' }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Phone:</span>
+                      <span class="info-value">{{ (resumeDetail && resumeDetail.phone) || resumeDetailEvaluation.contact_number || 'N/A' }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Location:</span>
+                      <span class="info-value">{{ (resumeDetail && resumeDetail.location) || 'N/A' }}</span>
+                    </div>
+                    <div v-if="resumeDetail && resumeDetail.total_experience !== null && resumeDetail.total_experience !== undefined" class="info-item">
+                      <span class="info-label">Total Experience:</span>
+                      <span class="info-value">{{ formatExperience(resumeDetail.total_experience) }}</span>
                     </div>
                   </div>
-                </div>
-                <div v-if="interviewDetail.interviewer_feedback && interviewDetail.interviewer_feedback.interviewer_remarks" class="feedback-remarks mb-3">
-                  <h5>Interviewer Remarks:</h5>
-                  <p>{{ interviewDetail.interviewer_feedback.interviewer_remarks }}</p>
-                </div>
-                <div class="feedback-status mb-3">
-                  <h5>Interviewer's Decision:</h5>
-                  <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
-                    {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
-                  </span>
-                </div>
-                <div v-if="interviewDetail.interviewer_hold_reason" class="feedback-hold-reason mb-3">
-                  <h5>Hold Reason:</h5>
-                  <p>{{ interviewDetail.interviewer_hold_reason }}</p>
-                </div>
-              </div>
-              <div v-else class="feedback-pending">
-                <p class="text-muted">Feedback not yet submitted</p>
-              </div>
-            </div>
-          </div>
-          <!-- Fallback for backward compatibility (single interviewer) -->
-          <div v-else-if="selectedCandidateForFeedback.interviewer_feedback" class="interviewer-feedback-section">
-            <h3>Interviewer Feedback</h3>
-            <div class="feedback-display">
-              <div class="feedback-ratings">
-                <h4>Ratings (1-10 scale):</h4>
-                <div class="ratings-display-grid">
-                  <div v-for="(rating, key) in getFilteredRatings(selectedCandidateForFeedback.interviewer_feedback)" :key="key" class="rating-display-item">
-                    <span class="rating-display-label">{{ key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
-                    <span class="rating-display-value">{{ rating }}/10</span>
+                  
+                  <div v-if="resumeDetail && resumeDetail.summary" class="mb-4">
+                    <h3>Summary</h3>
+                    <p class="summary-text">{{ resumeDetail.summary }}</p>
                   </div>
-                </div>
-              </div>
-              <div v-if="selectedCandidateForFeedback.interviewer_feedback && selectedCandidateForFeedback.interviewer_feedback.interviewer_remarks" class="feedback-remarks">
-                <h4>Interviewer Remarks:</h4>
-                <p>{{ selectedCandidateForFeedback.interviewer_feedback.interviewer_remarks }}</p>
-              </div>
-              <div class="feedback-status">
-                <h4>Interviewer's Decision:</h4>
-                <span :class="['status-badge', 'interviewer-' + selectedCandidateForFeedback.interviewer_status]">
-                  {{ selectedCandidateForFeedback.interviewer_status }}
-                </span>
-              </div>
-              <div v-if="selectedCandidateForFeedback.interviewer_hold_reason" class="feedback-hold-reason">
-                <h4>Hold Reason:</h4>
-                <p>{{ selectedCandidateForFeedback.interviewer_hold_reason }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- HR Decision Form -->
-          <div class="form-section">
-            <h3>Your Final Decision</h3>
-            <div class="mb-4">
-              <label>Final Status *</label>
-              <select v-model="hrDecisionData.status" required class="form-control-ats" @change="onHRStatusChange">
-                <option value="pending">Pending</option>
-                <option value="selected">Selected</option>
-                <option value="rejected">Rejected</option>
-                <option value="on_hold">On Hold</option>
-              </select>
-            </div>
-            <!-- Show reason field if:
-                 1. Status is rejected or on_hold (always required)
-                 2. Status is selected AND no interviewer selected (override case) -->
-            <div v-if="hrDecisionData.status === 'rejected' || hrDecisionData.status === 'on_hold' || (hrDecisionData.status === 'selected' && !hasAnyInterviewerSelected(selectedCandidateForFeedback))" class="mb-4">
-              <label>Reason *</label>
-              <textarea 
-                v-model="hrDecisionData.reason" 
-                required 
-                rows="4" 
-                class="form-control-ats form-textarea-ats" 
-                :placeholder="getReasonPlaceholder()"
-              ></textarea>
-              <small v-if="hrDecisionData.status === 'selected' && !hasAnyInterviewerSelected(selectedCandidateForFeedback)" class="reason-hint">
-                Reason is required when overriding interviewer's decision to select this candidate.
-              </small>
-            </div>
-            <div class="mb-4">
-              <label>Remarks</label>
-              <textarea 
-                v-model="hrDecisionData.hrRemarks" 
-                rows="4" 
-                class="form-control-ats form-textarea-ats" 
-                placeholder="Additional remarks (optional)"
-              ></textarea>
-            </div>
-            <div class="d-flex gap-3 justify-content-end mt-4">
-              <button type="button" @click="showHRDecisionModal = false" class="btn-ats-secondary">Cancel</button>
-              <button type="button" @click="submitHRDecision" class="btn-ats-primary">Submit Decision</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Interviewer Details Modal -->
-    <div v-if="showInterviewerDetailsModal && selectedCandidateForInterviewerDetails" class="modal-overlay-ats" @click="showInterviewerDetailsModal = false">
-      <div class="modal-content-ats modal-content-lg" @click.stop>
-        <div class="modal-header-ats">
-          <h2>Interviewer Details</h2>
-          <button @click="showInterviewerDetailsModal = false" class="close-btn-ats">×</button>
-        </div>
-        <div class="modal-body-ats">
-          <div v-if="selectedCandidateForInterviewerDetails.interview_details && selectedCandidateForInterviewerDetails.interview_details.length > 0" class="interviewer-details-list">
-            <div 
-              v-for="(interviewDetail, index) in selectedCandidateForInterviewerDetails.interview_details" 
-              :key="interviewDetail.id || index"
-              class="interviewer-detail-item"
-            >
-              <div class="interviewer-detail-header">
-                <h3>
-                  Interviewer {{ index + 1 }}: 
-                  {{ interviewDetail.interviewer?.full_name || interviewDetail.interviewer?.email || 'N/A' }}
-                </h3>
-                <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
-                  {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
-                </span>
-              </div>
-
-              <div class="interviewer-detail-info">
-                <div class="detail-row">
-                  <span class="detail-label">Interview Date:</span>
-                  <span class="detail-value">{{ formatDateTime(interviewDetail.interview_date) }}</span>
-                </div>
-                <div v-if="interviewDetail.interview_end_time" class="detail-row">
-                  <span class="detail-label">End Time:</span>
-                  <span class="detail-value">{{ formatDateTime(interviewDetail.interview_end_time) }}</span>
-                </div>
-                <div v-if="interviewDetail.interviewer?.email" class="detail-row">
-                  <span class="detail-label">Email:</span>
-                  <span class="detail-value">{{ interviewDetail.interviewer.email }}</span>
-                </div>
-              </div>
-
-              <!-- Interviewer Feedback Section -->
-              <div v-if="interviewDetail.interviewer_feedback || interviewDetail.interviewer_status !== 'pending'" class="interviewer-feedback-section">
-                <h4>Interviewer Feedback</h4>
-                <div class="feedback-display">
-                  <div v-if="interviewDetail.interviewer_feedback" class="feedback-ratings">
-                    <h5>Ratings (1-10 scale):</h5>
-                    <div class="ratings-display-grid">
-                      <div v-for="(rating, key) in interviewDetail.interviewer_feedback" :key="key" class="rating-display-item">
-                        <span class="rating-display-label">{{ key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
-                        <span class="rating-display-value">{{ rating }}/10</span>
+                  
+                  <div v-if="resumeDetail && resumeDetail.skills && resumeDetail.skills.length > 0" class="mb-4">
+                    <h3>Skills</h3>
+                    <div class="tags">
+                      <span v-for="(skill, index) in resumeDetail.skills" :key="index" class="tag">
+                        {{ skill }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div v-if="resumeDetail && resumeDetail.experience && resumeDetail.experience.length > 0" class="mb-4">
+                    <h3>Work Experience</h3>
+                    <div class="experience-list">
+                      <div v-for="(exp, index) in resumeDetail.experience" :key="index" class="experience-item">
+                        <h4>{{ exp.position }}</h4>
+                        <p class="company">{{ exp.company }}</p>
+                        <p v-if="exp.duration" class="duration">{{ exp.duration }}</p>
+                        <p v-if="exp.startDate && exp.endDate" class="dates">
+                          {{ formatDateRange(exp.startDate, exp.endDate) }}
+                        </p>
+                        <p v-if="exp.description" class="description">{{ exp.description }}</p>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div v-if="resumeDetail && resumeDetail.education && resumeDetail.education.length > 0" class="mb-4">
+                    <h3>Education</h3>
+                    <div class="education-list">
+                      <div v-for="(edu, index) in resumeDetail.education" :key="index" class="education-item">
+                        <h4>{{ edu.degree }}</h4>
+                        <p v-if="edu.field">Field: {{ edu.field }}</p>
+                        <p v-if="edu.institution">Institution: {{ edu.institution }}</p>
+                        <p v-if="edu.year">Year: {{ edu.year }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div v-if="resumeDetail && resumeDetail.certifications && resumeDetail.certifications.length > 0" class="mb-4">
+                    <h3>Certifications</h3>
+                    <ul class="certifications-list">
+                      <li v-for="(cert, index) in resumeDetail.certifications" :key="index">{{ cert }}</li>
+                    </ul>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <h3>Raw Resume Text</h3>
+                    <div class="raw-text-container">
+                      <pre class="raw-text">{{ resumeDetailEvaluation.resume_text || (resumeDetail && resumeDetail.raw_text) || 'No text available' }}</pre>
+                    </div>
+                  </div>
+                  </div> -->
+               <!-- Job Description Section -->
+               <!-- <div class="job-description-card">
+                  <h2>Job Description</h2>
+                  <div class="job-description-content">
+                    <pre class="job-description-text">{{ resumeDetailEvaluation.job_description.description || 'No job description available' }}</pre>
+                  </div>
+                  </div> -->
+               <!-- Process Timeline Section -->
+               <div class="timeline-card">
+                  <h2>Process Timeline</h2>
+                  <div v-if="loadingTimeline" class="loading">Loading timeline...</div>
+                  <div v-else-if="timeline.length === 0" class="empty-timeline">
+                     <p>No timeline events available.</p>
+                  </div>
+                  <div v-else class="timeline-container">
+                     <div v-for="(event, index) in timeline" :key="index" class="timeline-item">
+                        <div class="timeline-marker" :class="getTimelineMarkerClass(event.type)"></div>
+                        <div class="timeline-content">
+                           <div class="timeline-header">
+                              <h3 class="timeline-title">{{ event.title }}</h3>
+                              <span class="timeline-date">{{ formatDateTime(event.timestamp) }}</span>
+                           </div>
+                           <p class="timeline-description">{{ event.description }}</p>
+                           <!-- Event-specific details -->
+                           <div v-if="event.details" class="timeline-details">
+                              <!-- Resume uploaded details -->
+                              <div v-if="event.type === 'resume_uploaded' && event.details.overall_match" class="detail-box">
+                                 <div class="detail-row">
+                                    <span class="detail-label">Overall Match:</span>
+                                    <span class="detail-value">{{ formatScore(event.details.overall_match) }}%</span>
+                                 </div>
+                                 <div class="detail-row">
+                                    <span class="detail-label">Skills:</span>
+                                    <span class="detail-value">{{ formatScore(event.details.skills_match) }}%</span>
+                                 </div>
+                                 <div class="detail-row">
+                                    <span class="detail-label">Experience:</span>
+                                    <span class="detail-value">{{ formatScore(event.details.experience_match) }}%</span>
+                                 </div>
+                                 <div class="detail-row">
+                                    <span class="detail-label">Education:</span>
+                                    <span class="detail-value">{{ formatScore(event.details.education_match) }}%</span>
+                                 </div>
+                              </div>
+                              <!-- Interview assignment details -->
+                              <div v-if="(event.type === 'interviewer_assigned' || event.type === 'interviewer_reassigned') && event.details.interviewer" class="detail-box">
+                                 <div class="detail-row">
+                                    <span class="detail-label">Interviewer:</span>
+                                    <span class="detail-value">{{ event.details.interviewer.full_name  || N/A }}</span>
+                                 </div>
+                                 <div v-if="event.user" class="detail-row">
+                                    <span class="detail-label">Assigned by:</span>
+                                    <span class="detail-value">{{ event.user.full_name || event.user.email }}</span>
+                                 </div>
+                                 <div v-if="event.details.notes" class="detail-row">
+                                    <span class="detail-label">Note:</span>
+                                    <span class="detail-value">{{ event.details.notes }}</span>
+                                 </div>
+                              </div>
+                              <!-- Interview scheduled details -->
+                              <div v-if="event.type === 'interview_scheduled' && event.details.interviewer" class="detail-box">
+                                 <div class="detail-row">
+                                    <span class="detail-label">Interviewer:</span>
+                                    <span class="detail-value">{{ event.details.interviewer.full_name || N/A }}</span>
+                                 </div>
+                              </div>
+                              <!-- Feedback details -->
+                              <div v-if="event.type === 'feedback_submitted' && event.details.ratings" class="detail-box">
+                                 <div class="detail-row">
+                                    <span class="detail-label">Decision:</span>
+                                    <span :class="['status-badge', 'timeline-status', 'interviewer-' + event.details.status]">
+                                    {{ event.details.status }}
+                                    </span>
+                                 </div>
+                                 <div v-if="event.details.ratings && typeof event.details.ratings === 'object' && Object.keys(event.details.ratings).filter(key => key !== 'interviewer_remarks' && event.details.ratings[key]).length > 0" class="ratings-detail">
+                                    <strong>Ratings:</strong>
+                                    <div class="ratings-list">
+                                       <div v-for="(rating, key) in getFilteredRatings(event.details.ratings)" :key="key" class="rating-detail-item">
+                                          <span class="rating-key">{{ key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
+                                          <span class="rating-value">{{ rating }}/10</span>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <div v-if="event.details.ratings && event.details.ratings.interviewer_remarks" class="remarks-detail">
+                                    <strong>Remarks:</strong>
+                                    <p>{{ event.details.ratings.interviewer_remarks }}</p>
+                                 </div>
+                                 <div v-if="event.details.hold_reason" class="hold-reason-detail">
+                                    <strong>Hold Reason:</strong>
+                                    <p>{{ event.details.hold_reason }}</p>
+                                 </div>
+                              </div>
+                              <!-- HR decision details -->
+                              <div v-if="event.type === 'hr_decision'" class="detail-box">
+                                 <div class="detail-row">
+                                    <span class="detail-label">Final Decision:</span>
+                                    <span :class="['status-badge', 'timeline-status', 'hr-' + event.details.status]">
+                                    {{ event.details.status }}
+                                    </span>
+                                 </div>
+                                 <div v-if="event.details.reason" class="decision-reason-detail">
+                                    <strong>Reason:</strong>
+                                    <p>{{ event.details.reason }}</p>
+                                 </div>
+                                 <div v-if="event.details.hr_remarks" class="hr-remarks-detail">
+                                    <strong>HR Remarks:</strong>
+                                    <p>{{ event.details.hr_remarks }}</p>
+                                 </div>
+                              </div>
+                           </div>
+                           <!-- User who performed the action -->
+                           <div v-if="event.user" class="timeline-user">
+                              <span class="user-label">By:</span>
+                              <span class="user-name">{{ event.user.full_name || event.user.email }}</span>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <!-- Assign Interviewer Modal -->
+   <div v-if="showAssignModal" class="modal-overlay-ats assign-modal" @click="showAssignModal = false">
+      <div class="modal-content-ats" @click.stop>
+         <div class="modal-header-ats">
+            <h2>Assign Interviewer</h2>
+            <button @click="showAssignModal = false" class="close-btn-ats">×</button>
+         </div>
+         <div class="d-flex gap-2 justify-content-end me-4">
+            <input
+               type="radio"
+               class="btn-check"
+               name="assignType"
+               id="opt1"
+               :value="true"
+               v-model="assignMultipleInterviwer"
+               />
+            <label class="btn btn-outline-success" for="opt1">
+            Panel Assign
+            </label>
+            <input
+               type="radio"
+               class="btn-check"
+               name="assignType"
+               id="opt2"
+               :value="false"
+               v-model="assignMultipleInterviwer"
+               />
+            <label class="btn btn-outline-success" for="opt2">
+            Single Assign
+            </label>
+         </div>
+         <!-- // Single Assign //  -->
+         <div v-if="!assignMultipleInterviwer" class="modal-body-ats">
+            <form @submit.prevent="assignInterviewer">
+               <div class="form-group">
+                  <label>Interviewer *</label>
+                  <select v-model="assignmentData.interviewer_id" @change="fetchAvailableSlots" required class="form-select-clean">
+                     <option value="">Select Interviewer</option>
+                     <option v-for="interviewer in assignInterviewers" :key="interviewer.id" :value="interviewer.id">
+                        {{ interviewer.full_name || interviewer.email }}
+                     </option>
+                  </select>
+               </div>
+               <div class="form-group">
+                  <label>Available Slots *</label>
+                  <select v-model="assignmentData.slot_id" required class="form-select-clean">
+                     <option value="">Select Time Slot</option>
+                     <option v-for="slot in availableSlots" :key="slot.id" :value="slot.id">
+                        {{ formatDateTime(slot.start_time) }} - {{ formatTime(slot.end_time) }} 
+                        ({{ slot.interviewer?.full_name || slot.interviewer?.email || 'Interviewer' }})
+                     </option>
+                  </select>
+                  <p v-if="availableSlots.length === 0 && assignmentData.interviewer_id" class="hint-text">
+                     No available slots found for the selected interviewer. Ask interviewer to add availability.
+                  </p>
+               </div>
+               <div class="modal-actions">
+                  <button type="button" @click="showAssignModal = false" class="btn-modal-cancel">Cancel</button>
+                  <button type="submit" class="btn-modal-primary">Assign</button>
+               </div>
+            </form>
+         </div>
+         <!-- // Bulk Assign // -->
+         <div v-if="assignMultipleInterviwer" class="modal-body-ats">
+            <form @submit.prevent="assignInterviewerGroup">
+               <!-- SECTION 1: Interviewer -->
+               <div class="form-group">
+                  <label>Interviewer *</label>
+                  <select v-model="selectedInterviewersforAssign" multiple class="form-select-ats" @change="fetchAvailableSlotsByGroup" style="min-height: 120px;">
+                     <option value="">Select Interviewer</option>
+                     <option v-for="interviewer in assignInterviewers" :key="interviewer.id" :value="interviewer.id">
+                        {{ interviewer.full_name || interviewer.email }}
+                     </option>
+                  </select>
+               </div>
+               <!-- SECTION 2: Available Slots -->
+               <div class="form-group">
+                  <label>Available Slots *</label>
+                  <select v-model="selectedTimeSlotforBulkAssign"  required class="form-select-clean">
+                     <option value="">Select Time Slot</option>
+                     <option v-for="(slot, index) in availableSlots" :key="index" :value="JSON.stringify(slot.slot_ids)">
+                        {{ formatDateTime(slot.start_time) }} - {{ formatTime(slot.end_time) }} 
+                        ({{ slot.interviewer_ids?.length || 0 }} interviewer(s))
+                     </option>
+                  </select>
+                  <p v-if="availableSlots.length === 0" class="hint-text">
+                     No available slots found for the selected interviewer. Ask interviewer to add availability.
+                  </p>
+               </div>
+               <!-- SECTION 3: Actions -->
+               <section class="modal-actions">
+                  <button type="button" class="btn-modal-cancel">
+                  Cancel
+                  </button>
+                  <button type="submit" class="btn-modal-primary">
+                  Assign
+                  </button>
+               </section>
+            </form>
+         </div>
+      </div>
+   </div>
+   <!-- Interviewer Feedback Modal -->
+   <div v-if="showFeedbackModal && selectedCandidateForFeedback" class="modal-overlay-ats" @click="showFeedbackModal = false">
+      <div class="modal-content-ats modal-content-lg" @click.stop>
+         <div class="modal-header-ats">
+            <h2>Interview Feedback</h2>
+            <button @click="showFeedbackModal = false" class="close-btn-ats">×</button>
+         </div>
+         <div class="modal-body-ats">
+            <form @submit.prevent="submitFeedback">
+               <div class="form-section">
+                  <h3>Candidate Ratings (1-10 scale)</h3>
+                  <div class="ratings-grid">
+                     <div class="rating-group">
+                        <label>Technical Skills</label>
+                        <input 
+                           v-model.number="feedbackData.ratings.technical_skills" 
+                           type="number" 
+                           min="1" 
+                           max="10" 
+                           class="rating-input"
+                           />
+                     </div>
+                     <div class="rating-group">
+                        <label>Communication</label>
+                        <input 
+                           v-model.number="feedbackData.ratings.communication" 
+                           type="number" 
+                           min="1" 
+                           max="10" 
+                           class="rating-input"
+                           />
+                     </div>
+                     <div class="rating-group">
+                        <label>Problem Solving</label>
+                        <input 
+                           v-model.number="feedbackData.ratings.problem_solving" 
+                           type="number" 
+                           min="1" 
+                           max="10" 
+                           class="rating-input"
+                           />
+                     </div>
+                     <div class="rating-group">
+                        <label>Cultural Fit</label>
+                        <input 
+                           v-model.number="feedbackData.ratings.cultural_fit" 
+                           type="number" 
+                           min="1" 
+                           max="10" 
+                           class="rating-input"
+                           />
+                     </div>
+                     <div class="rating-group">
+                        <label>Experience Relevance</label>
+                        <input 
+                           v-model.number="feedbackData.ratings.experience_relevance" 
+                           type="number" 
+                           min="1" 
+                           max="10" 
+                           class="rating-input"
+                           />
+                     </div>
+                     <div class="rating-group">
+                        <label>Overall Assessment</label>
+                        <input 
+                           v-model.number="feedbackData.ratings.overall" 
+                           type="number" 
+                           min="1" 
+                           max="10" 
+                           class="rating-input"
+                           />
+                     </div>
+                  </div>
+               </div>
+               <div class="form-section">
+                  <h3>Remarks</h3>
+                  <div class="mb-4">
+                     <textarea v-model="feedbackData.remarks" rows="4" class="form-control-ats form-textarea-ats" placeholder="Additional remarks (optional)"></textarea>
+                  </div>
+               </div>
+               <div class="form-section">
+                  <h3>Final Decision</h3>
+                  <div class="mb-4">
+                     <label>Status *</label>
+                     <select v-model="feedbackData.status" required class="form-control-ats" @change="onStatusChange">
+                        <option value="pending">Pending</option>
+                        <option value="selected">Selected</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="on_hold">On Hold</option>
+                     </select>
+                  </div>
+                  <div v-if="feedbackData.status === 'on_hold'" class="mb-4">
+                     <label>Hold Reason *</label>
+                     <textarea 
+                        v-model="feedbackData.hold_reason" 
+                        required 
+                        rows="4" 
+                        class="form-control-ats form-textarea-ats"
+                        placeholder="Please provide a reason for putting this candidate on hold..."
+                        ></textarea>
+                  </div>
+               </div>
+               <div class="d-flex gap-3 justify-content-end mt-4">
+                  <button type="button" @click="showFeedbackModal = false" class="btn-ats-secondary">Cancel</button>
+                  <button type="submit" :disabled="submittingFeedback" class="btn-ats-primary">
+                  <span v-if="submittingFeedback">Submitting...</span>
+                  <span v-else>Submit Feedback</span>
+                  </button>
+               </div>
+            </form>
+         </div>
+      </div>
+   </div>
+   <!-- HR Decision Modal -->
+   <div v-if="showHRDecisionModal && selectedCandidateForFeedback" class="modal-overlay-ats" @click="showHRDecisionModal = false">
+      <div class="modal-content-ats modal-content-lg" @click.stop>
+         <div class="modal-header-ats">
+            <h2>Final HR Decision</h2>
+            <button @click="showHRDecisionModal = false" class="close-btn-ats">×</button>
+         </div>
+         <div class="modal-body-ats">
+            <!-- Show All Interviewers Feedback -->
+            <div v-if="selectedCandidateForFeedback.interview_details && selectedCandidateForFeedback.interview_details.length > 0" class="interviewer-feedback-section">
+               <h3>Interviewer Feedback</h3>
+               <div v-for="(interviewDetail, index) in selectedCandidateForFeedback.interview_details" :key="interviewDetail.id || index" class="feedback-display mb-4" style="border-bottom: 1px solid #e0e0e0; padding-bottom: 1.5rem;">
+                  <div class="feedback-interviewer-header mb-3">
+                     <h4>
+                        Interviewer {{ index + 1 }}: 
+                        {{ interviewDetail.interviewer?.full_name || interviewDetail.interviewer?.email || 'N/A' }}
+                     </h4>
+                  </div>
+                  <div v-if="interviewDetail.interviewer_feedback || interviewDetail.interviewer_status !== 'pending'">
+                     <div v-if="interviewDetail.interviewer_feedback" class="feedback-ratings mb-3">
+                        <h5>Ratings (1-10 scale):</h5>
+                        <div class="ratings-display-grid">
+                           <div v-for="(rating, key) in getFilteredRatings(interviewDetail.interviewer_feedback)" :key="key" class="rating-display-item">
+                              <span class="rating-display-label">{{ key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
+                              <span class="rating-display-value">{{ rating }}/10</span>
+                           </div>
+                        </div>
+                     </div>
+                     <div v-if="interviewDetail.interviewer_feedback && interviewDetail.interviewer_feedback.interviewer_remarks" class="feedback-remarks mb-3">
+                        <h5>Interviewer Remarks:</h5>
+                        <p>{{ interviewDetail.interviewer_feedback.interviewer_remarks }}</p>
+                     </div>
+                     <div class="feedback-status mb-3">
+                        <h5>Interviewer's Decision:</h5>
+                        <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
+                        {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
+                        </span>
+                     </div>
+                     <div v-if="interviewDetail.interviewer_hold_reason" class="feedback-hold-reason mb-3">
+                        <h5>Hold Reason:</h5>
+                        <p>{{ interviewDetail.interviewer_hold_reason }}</p>
+                     </div>
+                  </div>
+                  <div v-else class="feedback-pending">
+                     <p class="text-muted">Feedback not yet submitted</p>
+                  </div>
+               </div>
+            </div>
+            <!-- Fallback for backward compatibility (single interviewer) -->
+            <div v-else-if="selectedCandidateForFeedback.interviewer_feedback" class="interviewer-feedback-section">
+               <h3>Interviewer Feedback</h3>
+               <div class="feedback-display">
+                  <div class="feedback-ratings">
+                     <h4>Ratings (1-10 scale):</h4>
+                     <div class="ratings-display-grid">
+                        <div v-for="(rating, key) in getFilteredRatings(selectedCandidateForFeedback.interviewer_feedback)" :key="key" class="rating-display-item">
+                           <span class="rating-display-label">{{ key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
+                           <span class="rating-display-value">{{ rating }}/10</span>
+                        </div>
+                     </div>
+                  </div>
+                  <div v-if="selectedCandidateForFeedback.interviewer_feedback && selectedCandidateForFeedback.interviewer_feedback.interviewer_remarks" class="feedback-remarks">
+                     <h4>Interviewer Remarks:</h4>
+                     <p>{{ selectedCandidateForFeedback.interviewer_feedback.interviewer_remarks }}</p>
                   </div>
                   <div class="feedback-status">
-                    <h5>Interviewer's Decision:</h5>
-                    <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
-                      {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
-                    </span>
+                     <h4>Interviewer's Decision:</h4>
+                     <span :class="['status-badge', 'interviewer-' + selectedCandidateForFeedback.interviewer_status]">
+                     {{ selectedCandidateForFeedback.interviewer_status }}
+                     </span>
                   </div>
-                  <div v-if="interviewDetail.interviewer_hold_reason" class="feedback-hold-reason">
-                    <h5>Hold Reason:</h5>
-                    <p>{{ interviewDetail.interviewer_hold_reason }}</p>
+                  <div v-if="selectedCandidateForFeedback.interviewer_hold_reason" class="feedback-hold-reason">
+                     <h4>Hold Reason:</h4>
+                     <p>{{ selectedCandidateForFeedback.interviewer_hold_reason }}</p>
                   </div>
-                  <div v-if="!interviewDetail.interviewer_feedback && interviewDetail.interviewer_status === 'pending'" class="feedback-pending">
-                    <p class="text-muted">Feedback not yet submitted</p>
-                  </div>
-                </div>
-              </div>
+               </div>
             </div>
-          </div>
-          <div v-else class="no-interviewers">
-            <p>No interviewers assigned yet.</p>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button type="button" @click="showInterviewerDetailsModal = false" class="btn-ats-secondary">Close</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- On Hold Details Modal -->
-    <div v-if="showHoldModal && holdCandidate" class="modal-overlay-ats" @click="showHoldModal = false">
-      <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats">
-          <h2>On Hold - Candidate Details</h2>
-          <button @click="showHoldModal = false" class="close-btn-ats">×</button>
-        </div>
-        <div class="modal-body-ats">
-          <div class="detail-section">
-            <h3>Candidate Information</h3>
-            <div class="detail-grid">
-              <div class="detail-item">
-                <span class="detail-label">Name:</span>
-                <span class="detail-value">{{ holdCandidate.candidate_name || holdCandidate.resume?.name || 'N/A' }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Email:</span>
-                <span class="detail-value">{{ holdCandidate.email || holdCandidate.resume?.email || 'N/A' }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Contact:</span>
-                <span class="detail-value">{{ holdCandidate.contact_number || holdCandidate.resume?.phone || 'N/A' }}</span>
-              </div>
+            <!-- HR Decision Form -->
+            <div class="form-section">
+               <h3>Your Final Decision</h3>
+               <div class="mb-4">
+                  <label>Final Status *</label>
+                  <select v-model="hrDecisionData.status" required class="form-control-ats" @change="onHRStatusChange">
+                     <option value="pending">Pending</option>
+                     <option value="selected">Selected</option>
+                     <option value="rejected">Rejected</option>
+                     <option value="on_hold">On Hold</option>
+                  </select>
+               </div>
+               <!-- Show reason field if:
+                  1. Status is rejected or on_hold (always required)
+                  2. Status is selected AND no interviewer selected (override case) -->
+               <div v-if="hrDecisionData.status === 'rejected' || hrDecisionData.status === 'on_hold' || (hrDecisionData.status === 'selected' && !hasAnyInterviewerSelected(selectedCandidateForFeedback))" class="mb-4">
+                  <label>Reason *</label>
+                  <textarea 
+                     v-model="hrDecisionData.reason" 
+                     required 
+                     rows="4" 
+                     class="form-control-ats form-textarea-ats" 
+                     :placeholder="getReasonPlaceholder()"
+                     ></textarea>
+                  <small v-if="hrDecisionData.status === 'selected' && !hasAnyInterviewerSelected(selectedCandidateForFeedback)" class="reason-hint">
+                  Reason is required when overriding interviewer's decision to select this candidate.
+                  </small>
+               </div>
+               <div class="mb-4">
+                  <label>Remarks</label>
+                  <textarea 
+                     v-model="hrDecisionData.hrRemarks" 
+                     rows="4" 
+                     class="form-control-ats form-textarea-ats" 
+                     placeholder="Additional remarks (optional)"
+                     ></textarea>
+               </div>
+               <div class="d-flex gap-3 justify-content-end mt-4">
+                  <button type="button" @click="showHRDecisionModal = false" class="btn-ats-secondary">Cancel</button>
+                  <button type="button" @click="submitHRDecision" class="btn-ats-primary">Submit Decision</button>
+               </div>
             </div>
-          </div>
-          <div v-if="holdCandidate.interviewer_hold_reason" class="detail-section">
-            <h3>Interviewer Hold Reason</h3>
-            <p class="detail-text hold">{{ holdCandidate.interviewer_hold_reason }}</p>
-          </div>
-          <div v-if="holdCandidate.hr_final_reason" class="detail-section">
-            <h3>HR Hold Reason</h3>
-            <p class="detail-text hold">{{ holdCandidate.hr_final_reason }}</p>
-          </div>
-        </div>
+         </div>
       </div>
-    </div>
-
-    <!-- Version History Modal -->
-    <div v-if="showVersionHistoryModal" class="modal-overlay-ats" @click="closeVersionHistoryModal">
-      <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats">
-          <h2>Resume Version History</h2>
-          <button @click="closeVersionHistoryModal" class="close-btn-ats">×</button>
-        </div>
-        <div class="modal-body-ats">
-          <div v-if="selectedCandidateForVersions" class="candidate-info-header">
-      
-            <h3>{{ selectedCandidateForVersions.candidate_name || selectedCandidateForVersions.resume?.name || 'Unknown Candidate' }}</h3>
-            <p class="candidate-email">{{ selectedCandidateForVersions.email || selectedCandidateForVersions.resume?.email || 'N/A' }}</p>
-          </div>
-          
-          <div v-if="loadingVersionHistory" class="loading">Loading version history...</div>
-          <div v-else-if="versionHistory.length === 0" class="empty-state-ats">
-            <p>No version history found.</p>
-          </div>
-          <div v-else class="version-list">
-            <div 
-              v-for="version in versionHistory" 
-              :key="version.resume_id" 
-              class="version-item"
-              :class="{ 'current-version': version.version === (selectedCandidateForVersions?.versionNumber || 1) }"
-            >
-              <div class="version-header">
-                      
-                <div class="version-number-badge">
-                  <span class="version-label">Version</span>
-                  <span class="version-number">{{ version.version }}</span>
-                </div>
-                <span class="version-date">{{ formatDateTime(version.uploaded_on) }}</span>
-              </div>
-              
-              <button v-if="!hasRole('Interviewer')" @click="viewResumeDetail(version)" 
-              class="btn-action-details mb-4"> Check Interview Record For this Version </button>
-              <div class="version-details">
-                <div class="version-info">
-                  <div class="info-row">
-                    <span class="info-label">File:</span>
-                    <span class="info-value">{{ version.file_name }}</span>
+   </div>
+   <!-- Interviewer Details Modal -->
+   <div v-if="showInterviewerDetailsModal && selectedCandidateForInterviewerDetails" class="modal-overlay-ats" @click="showInterviewerDetailsModal = false">
+      <div class="modal-content-ats modal-content-lg p-4" @click.stop>
+         <div class="modal-header-ats">
+            <h2>Interviewer Details</h2>
+            <button @click="showInterviewerDetailsModal = false" class="close-btn-ats">×</button>
+         </div>
+         <div class="modal-body-ats">
+            <div v-if="selectedCandidateForInterviewerDetails.interview_details && selectedCandidateForInterviewerDetails.interview_details.length > 0" class="interviewer-details-list">
+               <div 
+                  v-for="(interviewDetail, index) in selectedCandidateForInterviewerDetails.interview_details" 
+                  :key="interviewDetail.id || index"
+                  class="interviewer-detail-item"
+                  >
+                  <div class="interviewer-detail-header">
+                     <h3>
+                        Interviewer {{ index + 1 }}: 
+                        {{ interviewDetail.interviewer?.full_name || interviewDetail.interviewer?.email || 'N/A' }}
+                     </h3>
+                     <span :class="['status-badge', '' + (interviewDetail.interviewer_status || 'pending')]">
+                     {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
+                     </span>
                   </div>
-                  <div v-if="version.results" class="version-results">
-                    <div class="results-section">
-                      <h4>Extracted Results:</h4>
-                      <div v-if="version.results.name" class="result-item">
-                        <strong>Name:</strong> {{ version.results.name }}
-                      </div>
-                      <div v-if="version.results.email" class="result-item">
-                        <strong>Email:</strong> {{ version.results.email }}
-                      </div>
-                      <div v-if="version.results.phone" class="result-item">
-                        <strong>Phone:</strong> {{ version.results.phone }}
-                      </div>
-                      <div v-if="version.results.location" class="result-item">
-                        <strong>Location:</strong> {{ version.results.location }}
-                      </div>
-                      <div v-if="version.results.total_experience" class="result-item">
-                        <strong>Total Experience:</strong> {{ formatExperience(version.results.total_experience) }}
-                      </div>
-                      <div v-if="version.results.skills && version.results.skills.length > 0" class="result-item">
-                        <strong>Skills:</strong>
-                        <div class="skills-tags">
-                          <span v-for="(skill, idx) in version.results.skills" :key="idx" class="skill-tag">
-                            {{ skill }}
-                          </span>
+                  <div class="interviewer-detail-info">
+                     <div class="detail-row">
+                        <span class="detail-label">Interview Date:</span>
+                        <span class="detail-value">{{ formatDateTime(interviewDetail.interview_date) }}</span>
+                     </div>
+                     <!-- <div v-if="interviewDetail.interview_end_time" class="detail-row">
+                        <span class="detail-label">End Time:</span>
+                        <span class="detail-value">{{ formatDateTime(interviewDetail.interview_end_time) }}</span>
+                        </div> -->
+                     <div v-if="interviewDetail.interviewer?.email" class="detail-row">
+                        <span class="detail-label">Email:</span>
+                        <span class="detail-value">{{ interviewDetail.interviewer.email }}</span>
+                     </div>
+                  </div>
+                  <!-- Interviewer Feedback Section -->
+                  <div v-if="interviewDetail.interviewer_feedback || interviewDetail.interviewer_status !== 'pending'" class="interviewer-feedback-section">
+                     <h4>Interviewer Feedback</h4>
+                     <div class="feedback-display">
+                        <div v-if="interviewDetail.interviewer_feedback" class="feedback-ratings">
+                           <h5>Ratings (1-10 scale):</h5>
+                           <div class="ratings-display-grid">
+                              <div v-for="(rating, key) in interviewDetail.interviewer_feedback" :key="key" class="rating-display-item">
+                                 <span class="rating-display-label">{{ key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
+                                 <span class="rating-display-value">{{ rating }}/10</span>
+                              </div>
+                           </div>
                         </div>
-                      </div>
-                      <div v-if="version.results.experience && version.results.experience.length > 0" class="result-item">
-                        <strong>Experience:</strong>
-                        <ul class="experience-list">
-                          <li v-for="(exp, idx) in version.results.experience" :key="idx">
-                            {{ exp.position || exp.title || 'Position' }} at {{ exp.company || 'Company' }}
-                            <span v-if="exp.duration"> ({{ exp.duration }})</span>
-                          </li>
-                        </ul>
-                      </div>
-                      <div v-if="version.results.education && version.results.education.length > 0" class="result-item">
-                        <strong>Education:</strong>
-                        <ul class="education-list">
-                          <li v-for="(edu, idx) in version.results.education" :key="idx">
-                            {{ edu.degree || 'Degree' }}
-                            <span v-if="edu.institution"> from {{ edu.institution }}</span>
-                            <span v-if="edu.year"> ({{ edu.year }})</span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
+                        <div class="feedback-status">
+                           <h5>Interviewer's Decision:</h5>
+                           <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
+                           {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
+                           </span>
+                        </div>
+                        <div v-if="interviewDetail.interviewer_hold_reason" class="feedback-hold-reason">
+                           <h5>Hold Reason:</h5>
+                           <p>{{ interviewDetail.interviewer_hold_reason }}</p>
+                        </div>
+                        <div v-if="!interviewDetail.interviewer_feedback && interviewDetail.interviewer_status === 'pending'" class="feedback-pending">
+                           <p class="text-muted">Feedback not yet submitted</p>
+                        </div>
+                     </div>
                   </div>
-                </div>
-              </div>
+               </div>
             </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button @click="closeVersionHistoryModal" class="btn-ats-primary">Close</button>
-        </div>
+            <div v-else class="no-interviewers">
+               <p>No interviewers assigned yet.</p>
+            </div>
+         </div>
+         <div class="d-flex gap-3 justify-content-end mt-4">
+            <button type="button" @click="showInterviewerDetailsModal = false" class="btn-ats-secondary">Close</button>
+         </div>
       </div>
-    </div>
-  </div>
+   </div>
+   <!-- On Hold Details Modal -->
+   <div v-if="showHoldModal && holdCandidate" class="modal-overlay-ats" @click="showHoldModal = false">
+      <div class="modal-content-ats" @click.stop>
+         <div class="modal-header-ats">
+            <h2>On Hold - Candidate Details</h2>
+            <button @click="showHoldModal = false" class="close-btn-ats">×</button>
+         </div>
+         <div class="modal-body-ats">
+            <div class="detail-section">
+               <h3>Candidate Information</h3>
+               <div class="detail-grid">
+                  <div class="detail-item">
+                     <span class="detail-label">Name:</span>
+                     <span class="detail-value">{{ holdCandidate.candidate_name || holdCandidate.resume?.name || 'N/A' }}</span>
+                  </div>
+                  <div class="detail-item">
+                     <span class="detail-label">Email:</span>
+                     <span class="detail-value">{{ holdCandidate.email || holdCandidate.resume?.email || 'N/A' }}</span>
+                  </div>
+                  <div class="detail-item">
+                     <span class="detail-label">Contact:</span>
+                     <span class="detail-value">{{ holdCandidate.contact_number || holdCandidate.resume?.phone || 'N/A' }}</span>
+                  </div>
+               </div>
+            </div>
+            <div v-if="holdCandidate.interviewer_hold_reason" class="detail-section">
+               <h3>Interviewer Hold Reason</h3>
+               <p class="detail-text hold">{{ holdCandidate.interviewer_hold_reason }}</p>
+            </div>
+            <div v-if="holdCandidate.hr_final_reason" class="detail-section">
+               <h3>HR Hold Reason</h3>
+               <p class="detail-text hold">{{ holdCandidate.hr_final_reason }}</p>
+            </div>
+         </div>
+      </div>
+   </div>
+   <!-- Version History Modal -->
+   <div v-if="showVersionHistoryModal" class="modal-overlay-ats" @click="closeVersionHistoryModal">
+      <div class="modal-content-ats" @click.stop>
+         <div class="modal-header-ats">
+            <h2>Resume Version History</h2>
+            <button @click="closeVersionHistoryModal" class="close-btn-ats">×</button>
+         </div>
+         <div class="modal-body-ats">
+            <div v-if="selectedCandidateForVersions" class="candidate-info-header">
+               <h3>{{ selectedCandidateForVersions.candidate_name || selectedCandidateForVersions.resume?.name || 'Unknown Candidate' }}</h3>
+               <p class="candidate-email">{{ selectedCandidateForVersions.email || selectedCandidateForVersions.resume?.email || 'N/A' }}</p>
+            </div>
+            <div v-if="loadingVersionHistory" class="loading">Loading version history...</div>
+            <div v-else-if="versionHistory.length === 0" class="empty-state-ats">
+               <p>No version history found.</p>
+            </div>
+            <div v-else class="version-list">
+               <div 
+                  v-for="version in versionHistory" 
+                  :key="version.resume_id" 
+                  class="version-item"
+                  :class="{ 'current-version': version.version === (selectedCandidateForVersions?.versionNumber || 1) }"
+                  >
+                  <div class="version-header">
+                     <div class="version-number-badge">
+                        <span class="version-label">Version</span>
+                        <span class="version-number">{{ version.version }}</span>
+                     </div>
+                     <span class="version-date">{{ formatDateTime(version.uploaded_on) }}</span>
+                  </div>
+                  <button v-if="!hasRole('Interviewer')" @click="viewResumeDetail(version)" 
+                     class="btn-action-details mb-4"> Check Interview Record For this Version </button>
+                  <div class="version-details">
+                     <div class="version-info">
+                        <div class="info-row">
+                           <span class="info-label">File:</span>
+                           <span class="info-value">{{ version.file_name }}</span>
+                        </div>
+                        <div v-if="version.results" class="version-results">
+                           <div class="results-section">
+                              <h4>Extracted Results:</h4>
+                              <div v-if="version.results.name" class="result-item">
+                                 <strong>Name:</strong> {{ version.results.name }}
+                              </div>
+                              <div v-if="version.results.email" class="result-item">
+                                 <strong>Email:</strong> {{ version.results.email }}
+                              </div>
+                              <div v-if="version.results.phone" class="result-item">
+                                 <strong>Phone:</strong> {{ version.results.phone }}
+                              </div>
+                              <div v-if="version.results.location" class="result-item">
+                                 <strong>Location:</strong> {{ version.results.location }}
+                              </div>
+                              <div v-if="version.results.total_experience" class="result-item">
+                                 <strong>Total Experience:</strong> {{ formatExperience(version.results.total_experience) }}
+                              </div>
+                              <div v-if="version.results.skills && version.results.skills.length > 0" class="result-item">
+                                 <strong>Skills:</strong>
+                                 <div class="skills-tags">
+                                    <span v-for="(skill, idx) in version.results.skills" :key="idx" class="skill-tag">
+                                    {{ skill }}
+                                    </span>
+                                 </div>
+                              </div>
+                              <div v-if="version.results.experience && version.results.experience.length > 0" class="result-item">
+                                 <strong>Experience:</strong>
+                                 <ul class="experience-list">
+                                    <li v-for="(exp, idx) in version.results.experience" :key="idx">
+                                       {{ exp.position || exp.title || 'Position' }} at {{ exp.company || 'Company' }}
+                                       <span v-if="exp.duration"> ({{ exp.duration }})</span>
+                                    </li>
+                                 </ul>
+                              </div>
+                              <div v-if="version.results.education && version.results.education.length > 0" class="result-item">
+                                 <strong>Education:</strong>
+                                 <ul class="education-list">
+                                    <li v-for="(edu, idx) in version.results.education" :key="idx">
+                                       {{ edu.degree || 'Degree' }}
+                                       <span v-if="edu.institution"> from {{ edu.institution }}</span>
+                                       <span v-if="edu.year"> ({{ edu.year }})</span>
+                                    </li>
+                                 </ul>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div class="modal-footer">
+            <button @click="closeVersionHistoryModal" class="btn-ats-primary">Close</button>
+         </div>
+      </div>
+   </div>
+</div>
+</div>
+
 </template>
 
 <script>

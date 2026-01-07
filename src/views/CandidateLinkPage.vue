@@ -1,4 +1,6 @@
 <template>
+    <div class="page-wrapper">
+<div class="content pb-0">
   <div class="py-4 d-flex justify-content-center">
     <div class="ats-card ats-card-xl" style="max-width: 850px; width: 100%;" v-if="loading">
       <p>Loading interview information...</p>
@@ -97,6 +99,9 @@
       </div>
     </div>
   </div>
+  </div>
+  </div>
+  
 </template>
 
 <script>

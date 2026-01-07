@@ -1,4 +1,6 @@
 <template>
+    <div class="page-wrapper">
+<div class="content pb-0">
   <div class="py-4">
     <div class="page-header-ats">
       <div>
@@ -244,6 +246,7 @@
       </div>
     </div>
   </div>
+</div></div>
 </template>
 
 <script>

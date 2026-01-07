@@ -1,4 +1,6 @@
 <template>
+    <div class="page-wrapper">
+<div class="content pb-0">
   <div class="py-4">
     <div class="page-header-ats">
       <h2 class="page-title-ats">Resume Database</h2>
@@ -166,6 +168,8 @@
         </div>
       </div>
     </div>
+  </div>
+  </div>
   </div>
 </template>
 
