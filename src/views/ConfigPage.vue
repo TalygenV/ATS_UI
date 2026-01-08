@@ -620,9 +620,18 @@ const addGroqKey = async () => {
       
       try {
         const token = localStorage.getItem('auth_token');
+        const trimmedForm = {
+          ...smtpForm.value,
+          smtp_server: smtpForm.value.smtp_server.trim(),
+          smtp_port: smtpForm.value.smtp_port.trim(),
+          smtp_user_name: smtpForm.value.smtp_user_name.trim(),
+          smtp_password: smtpForm.value.smtp_password.trim(),
+          from_email: smtpForm.value.from_email.trim(),
+          smtp_type: smtpForm.value.smtp_type.trim(),
+        };
         const response = await axios.put(
           `${API_BASE_URL}/config/smtp`,
-          smtpForm.value,
+          trimmedForm,
           {
             headers: {
               'Authorization': `Bearer ${token}`
@@ -706,9 +715,16 @@ const addGroqKey = async () => {
       
       try {
         const token = localStorage.getItem('auth_token');
+        const trimmedForm = {
+          ...zoomForm.value,
+          ZOOM_ACCOUNT_ID: zoomForm.value.ZOOM_ACCOUNT_ID.trim(),
+          ZOOM_CLIENT_ID: zoomForm.value.ZOOM_CLIENT_ID.trim(),
+          ZOOM_CLIENT_SECRET: zoomForm.value.ZOOM_CLIENT_SECRET.trim(),
+          Zoom_Email: zoomForm.value.Zoom_Email.trim(),
+        };
         const response = await axios.put(
           `${API_BASE_URL}/config/zoom`,
-          zoomForm.value,
+          trimmedForm,
           {
             headers: {
               'Authorization': `Bearer ${token}`
