@@ -1194,10 +1194,17 @@
               </div>
             </div>
           </div>
-          <div v-if="holdCandidate.interviewer_hold_reason" class="detail-section">
+          <div v-if="holdCandidate.interview_details && holdCandidate.interview_details.some(d => d.interviewer_status === 'on_hold')" class="detail-section">
+            <h3>Interviewer Hold Reasons</h3>
+            <div v-for="(detail, index) in holdCandidate.interview_details.filter(d => d.interviewer_status === 'on_hold')" :key="detail.id || index" class="hold-reason-item">
+              <strong>{{ detail.interviewer?.full_name || detail.interviewer?.email || 'Interviewer' }}:</strong>
+              <p class="detail-text hold">{{ detail.interviewer_hold_reason }}</p>
+            </div>
+          </div>
+          <!-- <div v-if="holdCandidate.interviewer_hold_reason" class="detail-section">
             <h3>Interviewer Hold Reason</h3>
             <p class="detail-text hold">{{ holdCandidate.interviewer_hold_reason }}</p>
-          </div>
+          </div> -->
           <div v-if="holdCandidate.hr_final_reason" class="detail-section">
             <h3>HR Hold Reason</h3>
             <p class="detail-text hold">{{ holdCandidate.hr_final_reason }}</p>
