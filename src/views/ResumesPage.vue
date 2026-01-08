@@ -188,7 +188,8 @@ export default {
       loading: false,
       error: null,
       searchQuery: '',
-      selectedResume: null
+      selectedResume: null,
+      searchDebounceTimer: null
     };
   },
   mounted() {
@@ -197,9 +198,13 @@ export default {
   methods: {
     
     async handleRefresh() {
-        this.searchQuery = '';
+      // Clear any pending search
+      if (this.searchDebounceTimer) {
+        clearTimeout(this.searchDebounceTimer);
+        this.searchDebounceTimer = null;
+      }
+      this.searchQuery = '';
       this.fetchResumes();
-    
     },
 
     async fetchResumes() {
@@ -219,12 +224,24 @@ export default {
         this.hideLoader();
       }
     },
-    async searchResumes() {
+    searchResumes() {
+      // Clear existing timer
+      if (this.searchDebounceTimer) {
+        clearTimeout(this.searchDebounceTimer);
+      }
+
+      // If search query is empty, fetch all resumes immediately
       if (!this.searchQuery.trim()) {
         this.fetchResumes();
         return;
       }
 
+      // Debounce the search
+      this.searchDebounceTimer = setTimeout(() => {
+        this.performSearch();
+      }, 300);
+    },
+    async performSearch() {
       this.loading = true;
       this.error = null;
       this.showLoader('Searching Resumes', `Searching for "${this.searchQuery}"...`);
