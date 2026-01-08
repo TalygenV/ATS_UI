@@ -20,10 +20,20 @@
           <span class="badge-ats badge-ats-danger text-uppercase">{{ canditateRejectedCount.key }} {{ canditateRejectedCount.value }}</span>
         </div>  
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 pb-3 mb-3 border-bottom">
-          <h2 class="page-title-ats mb-0">{{ jobDescription.title }}</h2>
+          <div>
+            <h2 class="page-title-ats mb-0">{{ jobDescription.title }}</h2>
+            <div class="mt-2">
+              <span 
+                :class="['badge-ats', jobDescription.status === 'Open' ? 'badge-ats-success' : 'badge-ats-warning']"
+                style="font-size: 0.875rem;"
+              >
+                {{ jobDescription.status || 'Open' }}
+              </span>
+            </div>
+          </div>
           <div v-if="hasWriteAccess" class="d-flex gap-2 flex-wrap">
             <button
-              v-if="!candidateLinkUrl"
+              v-if="jobDescription.status !== 'On Hold' && !candidateLinkUrl"
               @click="generateCandidateLink"
               class="btn-copy-link"
               :disabled="candidateLinkLoading">
@@ -31,7 +41,7 @@
               <span v-else>Generate Candidate Link</span>
             </button>
             <button
-              v-else
+              v-if="jobDescription.status !== 'On Hold' && candidateLinkUrl"
               @click="copyCandidateLink"
               class="btn-copy-link">
               Copy Candidate Link
@@ -393,6 +403,19 @@
                 </option>
               </select>
               <small class="form-hint">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
+            </div>
+            <div class="mb-4">
+              <label for="status">Job Status *</label>
+              <select
+                id="status"
+                v-model="editForm.status"
+                required
+                class="form-select-ats"
+              >
+                <option value="Open">Open</option>
+                <option value="On Hold">On Hold</option>
+              </select>
+              <small class="form-hint">When set to "On Hold", candidate links cannot be generated or used</small>
             </div>
             <div class="d-flex gap-3 justify-content-end mt-4">
               <button type="button" @click="closeEditModal" class="btn-ats-secondary">Cancel</button>
@@ -1356,7 +1379,8 @@ export default {
         title: '',
         description: '',
         requirements: '',
-         interviewers:  []
+        interviewers: [],
+        status: 'Open'
       },
       showResumeModal: false,
       resumeDetailEvaluation: null,
@@ -1488,9 +1512,22 @@ export default {
     },
     async fetchExistingCandidateLink() {
       if (!this.jobDescription || !this.jobDescription.id) return;
+      
+      // Don't fetch link if job is on hold
+      if (this.jobDescription.status === 'On Hold') {
+        this.candidateLinkUrl = '';
+        return;
+      }
+      
       try {
         const response = await axios.get(`${API_BASE_URL}/candidate-links/job/${this.jobDescription.id}`);
         if (response.data.success && response.data.data && response.data.data.url) {
+          // Check if job status from response is on hold
+          const jobStatus = response.data.data.job?.status;
+          if (jobStatus === 'On Hold') {
+            this.candidateLinkUrl = '';
+            return;
+          }
           this.candidateLinkUrl = response.data.data.url;
         }
       } catch (error) {
@@ -1500,6 +1537,13 @@ export default {
     },
     async generateCandidateLink() {
       if (!this.jobDescription) return;
+      
+      // Check if job is on hold
+      if (this.jobDescription.status === 'On Hold') {
+        alert('Cannot generate candidate link. Job description is currently On Hold.');
+        return;
+      }
+      
       this.candidateLinkLoading = true;
       try {
         const response = await axios.post(`${API_BASE_URL}/candidate-links/generate`, {
@@ -1512,7 +1556,14 @@ export default {
         }
       } catch (error) {
         console.error('Error generating candidate link:', error);
-        alert(error.response?.data?.error || 'Failed to generate candidate link.');
+        const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to generate candidate link.';
+        alert(errorMessage);
+        
+        // If error is 403 (Forbidden), it means job is on hold
+        if (error.response?.status === 403) {
+          // Refresh job description to get updated status
+          this.fetchJobDescription();
+        }
       } finally {
         this.candidateLinkLoading = false;
       }
@@ -2064,7 +2115,8 @@ const proxyPath = externalFileUrl;
         title: this.jobDescription.title,
         description: this.jobDescription.description,
         requirements: this.jobDescription.requirements || '',
-        interviewers: this.jobDescription.interviewers || []
+        interviewers: this.jobDescription.interviewers || [],
+        status: this.jobDescription.status || 'Open'
       };
       
       this.showEditModal = true;
@@ -2106,7 +2158,9 @@ const proxyPath = externalFileUrl;
       this.editForm = {
         title: '',
         description: '',
-        requirements: ''
+        requirements: '',
+        interviewers: [],
+        status: 'Open'
       };
     },
     getStatusClass(status) {

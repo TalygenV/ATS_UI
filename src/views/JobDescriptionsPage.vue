@@ -24,7 +24,17 @@
       <div v-for="job in filteredJobs" :key="job.id" class="col-12 col-md-6 col-xl-4">
         <div class="ats-card h-100 d-flex flex-column">
           <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom">
-            <h3 class="fs-5 fw-semibold text-dark mb-0 flex-grow-1">{{ job.title }}</h3>
+            <div class="flex-grow-1">
+              <h3 class="fs-5 fw-semibold text-dark mb-0">{{ job.title }}</h3>
+              <div class="mt-2">
+                <span 
+                  :class="['badge-ats', job.status === 'Open' ? 'badge-ats-success' : 'badge-ats-warning']"
+                  style="font-size: 0.75rem;"
+                >
+                  {{ job.status || 'Open' }}
+                </span>
+              </div>
+            </div>
             <div v-if="hasWriteAccess" class="d-flex gap-2">
               <button @click="editJob(job)" class="btn-icon" title="Edit">✏️</button>
               <button @click="deleteJob(job.id)" class="btn-icon" title="Delete">🗑️</button>
@@ -126,6 +136,19 @@
               </select>
               <small class="text-muted">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
             </div>
+            <div class="mb-4">
+              <label for="status" class="form-label fw-medium text-dark">Job Status *</label>
+              <select
+                id="status"
+                v-model="currentJob.status"
+                required
+                class="form-select-ats"
+              >
+                <option value="Open">Open</option>
+                <option value="On Hold">On Hold</option>
+              </select>
+              <small class="text-muted">When set to "On Hold", candidate links cannot be generated or used</small>
+            </div>
             <div class="d-flex gap-3 justify-content-end mt-4">
               <button type="button" @click="closeModal" class="btn-ats-secondary">Cancel</button>
               <button type="submit" :disabled="saving" class="btn-ats-primary">
@@ -169,7 +192,8 @@ export default {
         title: '',
         description: '',
         requirements: '',
-        interviewers: []
+        interviewers: [],
+        status: 'Open'
       },
       interviewers: [],
       loadingInterviewers: false
@@ -251,7 +275,8 @@ export default {
         title: job.title,
         description: job.description,
         requirements: job.requirements || '',
-        interviewers: job.interviewers || []
+        interviewers: job.interviewers || [],
+        status: job.status || 'Open'
       };
       this.showEditModal = true;
     },
@@ -289,7 +314,8 @@ export default {
         title: '',
         description: '',
         requirements: '',
-        interviewers: []
+        interviewers: [],
+        status: 'Open'
       };
     },
     truncateText(text, length) {
