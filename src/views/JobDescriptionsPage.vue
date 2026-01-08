@@ -52,7 +52,7 @@
             </div>
             <div class="pt-3 border-top mb-3">
               <strong class="text-dark d-block mb-2">Parsed Resumes:</strong>
-              <span class="badge bg-success text-white me-1">{{ job.resume_count || 0 }} resume(s)</span>
+              <span class="badge bg-success text-white me-1">{{ (job.accepted || 0) + (job.pending || 0) + (job.rejected || 0) }} resume(s)</span>
               <div class="mt-2">
                 <span class="fw-bold small">Parse Status:</span>
                 <span class="badge-ats badge-ats-success ms-1">accepted {{job.accepted || 0}}</span>

@@ -3319,7 +3319,9 @@ body {
   padding: 20px 0;
 }
 
-
+.status-display {
+   margin-top: 7px;
+}
 
 
 @media (max-width: 768px) {

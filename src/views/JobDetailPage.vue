@@ -1285,9 +1285,9 @@
                   <div v-if="version.results" class="version-results">
                     <div class="results-section">
                       <h4>Extracted Results:</h4>
-                        <div v-if="version.title" class="result-item">
+                        <!-- <div v-if="version.title" class="result-item">
                         <strong>Job Title:</strong> {{ version.title }}
-                      </div>
+                      </div> -->
                       <div v-if="version.results.name" class="result-item">
                         <strong>Name:</strong> {{ version.results.name }}
                       </div>
@@ -1774,6 +1774,7 @@ export default {
 
         // Refresh candidates list
         await this.fetchCandidates();
+              this.selectedFiles = [];
 
         // Clear files after successful upload
         // if (this.uploadResults.every(r => r.success)) {
