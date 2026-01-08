@@ -562,7 +562,7 @@ const viewCandidateDetails = (assignment) => {
       name: 'ResumeDetail',
       params: {
         jobId: assignment.job_description_id,
-        evaluationId: assignment.id
+        evaluationId: assignment.resume_id
       }
     });
   }
