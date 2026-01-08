@@ -1085,7 +1085,7 @@
     </div>
 
     <!-- Interviewer Details Modal -->
-    <div v-if="showInterviewerDetailsModal && selectedCandidateForInterviewerDetails" class="modal-overlay-ats" >
+    <div v-if="showInterviewerDetailsModal && selectedCandidateForInterviewerDetails" class="modal-overlay-ats interviewer-details-scope" >
       <div class="modal-content-ats modal-content-lg p-4" @click.stop>
         <div class="modal-header-ats">
           <h2>Interviewer Details</h2>
@@ -1130,17 +1130,23 @@
                   <div v-if="interviewDetail.interviewer_feedback" class="feedback-ratings">
                     <h5>Ratings (1-10 scale):</h5>
                     <div class="ratings-display-grid">
-                      <div v-for="(rating, key) in interviewDetail.interviewer_feedback" :key="key" class="rating-display-item">
+                      <div v-for="(rating, key) in getFilteredRatings(interviewDetail.interviewer_feedback)"  :key="key" class="rating-display-item">
                         <span class="rating-display-label">{{ key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
                         <span class="rating-display-value">{{ rating }}/10</span>
                       </div>
+
+                   
                     </div>
+                        <div v-if="interviewDetail.interviewer_feedback && interviewDetail.interviewer_feedback.interviewer_remarks" class="remarks-detail">
+                          <span class="m-0 ">Remarks:</span>
+                          <span class="mx-2">{{ interviewDetail.interviewer_feedback.interviewer_remarks }}</span>
+                        </div>
                   </div>
                   <div class="feedback-status">
                     <h5>Interviewer's Decision:</h5>
-                    <span :class="['status-badge', 'interviewer-' + (interviewDetail.interviewer_status || 'pending')]">
-                      {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
-                    </span>
+                   <span :class="['status-badge', '' + (interviewDetail.interviewer_status || 'pending')]">
+                  {{ (interviewDetail.interviewer_status || 'pending').replace(/_/g, ' ').toUpperCase() }}
+                </span>
                   </div>
                   <div v-if="interviewDetail.interviewer_hold_reason" class="feedback-hold-reason">
                     <h5>Hold Reason:</h5>

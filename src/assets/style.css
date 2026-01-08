@@ -3147,6 +3147,181 @@ body {
   background: #d97706;
 }
 
+
+/* =====================================================
+   INTERVIEWER DETAILS POPUP (SCOPED – NO LEAKS)
+   Parent class: .interviewer-details-scope
+   ===================================================== */
+
+.interviewer-details-scope .interviewer-detail-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+/* Header */
+.interviewer-details-scope .interviewer-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.interviewer-details-scope .interviewer-detail-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+/* Status Badge */
+.interviewer-details-scope .status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+}
+
+.interviewer-details-scope .status-badge.pending {
+  background: #fff3e6;
+  color: #e65100;
+}
+
+.interviewer-details-scope .status-badge.selected {
+  background: #e6f9f1;
+  color: #047857;
+}
+
+.interviewer-details-scope .status-badge.rejected {
+  background: #fdecec;
+  color: #b91c1c;
+}
+
+.interviewer-details-scope .status-badge.on_hold {
+  background: #eaf2ff;
+  color: #1d4ed8;
+}
+
+/* Info Grid */
+.interviewer-details-scope .interviewer-detail-info {
+  display: grid;
+  grid-template-columns: 220px 1fr 80px 1fr;
+  column-gap: 50px;
+  row-gap: 8px;
+  font-size: 13px;
+  align-items: center;
+}
+
+.interviewer-details-scope .detail-label {
+  font-weight: 600;
+  color: #64748b;
+}
+
+.interviewer-details-scope .detail-value {
+  color: #0f172a;
+  font-weight: 500;
+}
+
+/* Feedback Section */
+.interviewer-details-scope .interviewer-feedback-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.interviewer-details-scope .interviewer-feedback-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+/* Ratings */
+.interviewer-details-scope .feedback-ratings h5 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.interviewer-details-scope .ratings-display-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.interviewer-details-scope .rating-display-item {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+.interviewer-details-scope .remarks-detail {
+    margin-top: 10px;
+
+    color: #0f172a;
+    font-size: 12px;
+}
+
+
+.interviewer-details-scope .rating-display-label {
+  color: #475569;
+}
+
+.interviewer-details-scope .rating-display-value {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Decision */
+.interviewer-details-scope .feedback-status {
+  margin-top: 12px;
+}
+
+.interviewer-details-scope .feedback-status h5 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+/* Hold Reason */
+.interviewer-details-scope .feedback-hold-reason {
+  margin-top: 10px;
+}
+
+.interviewer-details-scope .feedback-hold-reason p {
+  font-size: 12px;
+  background: #ffffff;
+  border: 1px dashed #e2e8f0;
+  padding: 8px;
+  border-radius: 6px;
+  color: #475569;
+}
+
+/* Pending Text */
+.interviewer-details-scope .feedback-pending {
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Empty State */
+.interviewer-details-scope .no-interviewers {
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
+  padding: 20px 0;
+}
+
+
+
+
 @media (max-width: 768px) {
   .candidates-grid {
     grid-template-columns: 1fr;
