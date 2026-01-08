@@ -613,9 +613,9 @@
                          <h3 class="section-title-gradient">Job Title :</h3>
                 <p class="job-description-text"> {{ resumeDetailEvaluation.job_description.title || 'No job description available' }}</p>
                 <h3 class="section-title-gradient">Job Description</h3>
-                <p class="job-description-text" style="white-space: pre-wrap; line-height: 1.7;">{{ resumeDetailEvaluation.job_description.description || 'No job description available' }}</p>
+                <p class="job-description-text" style="white-space: pre-wrap; line-height: 1.7;">{{ resumeDetailEvaluation.job_description.description  }}</p>
                  <h3 class="section-title-gradient">Job Requirements</h3>
-                <p class="job-description-text" style="white-space: pre-wrap; line-height: 1.7;">{{ resumeDetailEvaluation.job_description.requirements || 'No job description available' }}</p>
+                <p class="job-description-text" style="white-space: pre-wrap; line-height: 1.7;">{{ resumeDetailEvaluation.job_description.requirements  }}</p>
               </div>
             </div>
 
