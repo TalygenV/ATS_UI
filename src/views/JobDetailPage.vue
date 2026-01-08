@@ -146,13 +146,17 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <h3 class="fs-5 fw-bold text-dark mb-0">Candidates ({{ candidates.length }})</h3>
           <div class="d-flex gap-2 flex-wrap">
-            <select v-model="statusFilter" @change="fetchCandidates" class="form-select-ats">
-              <!-- <option value="">All Status</option>
+            <select class="form-select-ats" v-model="interviewerFilter" @change="fetchCandidates">
+               <option value="">All Interview Status</option>
               <option value="selected">Selected</option>
               <option value="rejected">Rejected</option>
               <option value="on_hold">On Hold</option>
-              <option value="pending">Pending</option> -->
-                <option value="">All Status</option>
+              <option value="pending">Pending</option>
+            </select>
+
+            <select v-model="statusFilter" @change="fetchCandidates" class="form-select-ats">
+              
+                <option value="">All Application Status</option>
               <option value="accepted">Accepted</option>
               <option value="pending">Pending</option>
               <option value="rejected">Rejected</option>
@@ -1297,7 +1301,7 @@
                       <div v-if="version.results.location" class="result-item">
                         <strong>Location:</strong> {{ version.results.location }}
                       </div>
-                      <div v-if="version.results.total_experience" class="result-item">
+                      <div v-if="version.results.total_experience" class="result-item d-none">
                         <strong>Total Experience:</strong> {{ formatExperience(version.results.total_experience) }}
                       </div>
                       <div v-if="version.results.skills && version.results.skills.length > 0" class="result-item">
@@ -1371,6 +1375,7 @@ export default {
       isDragOver: false,
       uploading: false,
       uploadResults: [],
+      interviewerFilter: '',
       statusFilter: '',
       sortBy: 'match',
       showEditModal: false,
@@ -1591,6 +1596,10 @@ export default {
         const params = new URLSearchParams();
         if (this.statusFilter) {
           params.append('status', this.statusFilter);
+        }
+
+        if (this.interviewerFilter) {
+          params.append('interviewer_status', this.interviewerFilter);
         }
         params.append('sort_by', this.sortBy);
         

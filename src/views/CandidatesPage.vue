@@ -236,7 +236,7 @@
                 <div class="info-row-ats"><span class="info-label-ats">Email:</span><span class="info-value-ats">{{ version.results.email || 'N/A' }}</span></div>
                 <div v-if="version.results.phone" class="info-row-ats"><span class="info-label-ats">Phone:</span><span class="info-value-ats">{{ version.results.phone }}</span></div>
                 <div v-if="version.results.location" class="info-row-ats"><span class="info-label-ats">Location:</span><span class="info-value-ats">{{ version.results.location }}</span></div>
-                <div v-if="version.results.total_experience" class="info-row-ats"><span class="info-label-ats">Experience:</span><span class="info-value-ats">{{ version.results.total_experience }}</span></div>
+                <div v-if="version.results.total_experience" class="info-row-ats d-none"><span class="info-label-ats d-none">Experience:</span><span class="info-value-ats">{{ version.results.total_experience }}</span></div>
               </div>
             </div>
           </div>

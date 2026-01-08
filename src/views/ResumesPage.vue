@@ -46,7 +46,7 @@
               <span class="info-label-ats">Location:</span>
               <span class="info-value-ats">{{ resume.location || 'N/A' }}</span>
             </div>
-            <div v-if="resume.total_experience !== null && resume.total_experience !== undefined" class="info-row-ats">
+            <div v-if="resume.total_experience !== null && resume.total_experience !== undefined" class="info-row-ats d-none">
               <span class="info-label-ats">Experience:</span>
               <span class="experience-badge-ats">{{ formatExperience(resume.total_experience) }}</span>
             </div>
@@ -76,7 +76,7 @@
           <div class="d-flex justify-content-between align-items-center pt-3 border-top">
             <div class="d-flex flex-column gap-1">
               <button @click="downloadResume(resume.id, resume)" class="btn-icon" title="Download Resume">⬇️</button>
-              <span v-if="resume.parent_id" class="small text-warning fw-medium">Original ID: {{ resume.parent_id }}</span>
+              <span v-if="resume.parent_id" class="small text-warning fw-medium d-none">Original ID: {{ resume.parent_id }}</span>
             </div>
             <span class="text-muted small">{{ formatDate(resume.created_at) }}</span>
           </div>
@@ -93,7 +93,7 @@
           <button @click="closeModal" class="close-btn-ats">×</button>
         </div>
         <div class="modal-body-ats">
-          <div v-if="selectedResume.parent_id" class="duplicate-notice-ats mb-4">
+          <div v-if="selectedResume.parent_id" class="duplicate-notice-ats mb-4 d-none">
             <strong>⚠️ Duplicate Resume:</strong> This resume is linked to parent resume ID {{ selectedResume.parent_id }}
           </div>
           <div class="mb-4">
@@ -115,7 +115,7 @@
                 <span class="info-label-ats d-block">Location:</span>
                 <span class="text-dark">{{ selectedResume.location || 'N/A' }}</span>
               </div>
-              <div v-if="selectedResume.total_experience !== null && selectedResume.total_experience !== undefined" class="col-6 mb-3">
+              <div v-if="selectedResume.total_experience !== null && selectedResume.total_experience !== undefined" class="col-6 mb-3 d-none">
                 <span class="info-label-ats d-block">Total Experience:</span>
                 <span class="experience-badge-ats">{{ formatExperience(selectedResume.total_experience) }}</span>
               </div>

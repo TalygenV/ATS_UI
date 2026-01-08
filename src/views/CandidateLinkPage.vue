@@ -137,7 +137,7 @@ export default {
         this.job = this.link.job;
         this.questions = this.link.questions || [];
       } else {
-        this.error = 'Unable to load link information.';
+        this.error = response.data.error || 'Unable to load link information.';
       }
     } catch (err) {
       console.error('Error loading candidate link:', err);

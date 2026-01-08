@@ -149,11 +149,11 @@
                     <div class="info-row-ats"><span class="info-label-ats">Name:</span><span class="info-value-ats">{{ cand.name || 'N/A' }}</span></div>
                     <div class="info-row-ats"><span class="info-label-ats">Email:</span><span class="info-value-ats">{{ cand.email || 'N/A' }}</span></div>
                     <div class="info-row-ats"><span class="info-label-ats">Applied:</span><span class="info-value-ats">{{ cand.appliedDate || 'N/A' }}</span></div>
-                    <div class="info-row-ats"><span class="info-label-ats">Experience:</span><span class="info-value-ats">{{ formatExperience(cand.experience) }}</span></div>
+                    <div class="info-row-ats d-none"><span class="info-label-ats ">Experience:</span><span class="info-value-ats">{{ formatExperience(cand.experience) }}</span></div>
                   </div>
                   <div class="d-none d-md-flex status-pill-available flex-column align-items-center">
                     <span class="small">NEW</span>
-                    <span class="small">Candidates</span>
+                    <span class="small">Candidate</span>
                   </div>
                 </div>
               </div>

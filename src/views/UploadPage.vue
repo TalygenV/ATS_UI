@@ -114,7 +114,7 @@
               <p class="mb-1 small text-secondary"><strong>Name:</strong> {{ result.data.name || 'N/A' }}</p>
               <p class="mb-1 small text-secondary"><strong>Email:</strong> {{ result.data.email || 'N/A' }}</p>
               <p class="mb-1 small text-secondary"><strong>Location:</strong> {{ result.data.location || 'N/A' }}</p>
-              <p v-if="result.data.total_experience !== null && result.data.total_experience !== undefined" class="mb-1 small text-secondary">
+              <p v-if="result.data.total_experience !== null && result.data.total_experience !== undefined" class="mb-1 small text-secondary d-none">
                 <strong>Total Experience:</strong> {{ formatExperience(result.data.total_experience) }}
               </p>
               <div v-if="result.matchScores" class="mt-3 pt-3 border-top">

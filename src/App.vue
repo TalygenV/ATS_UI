@@ -13,11 +13,14 @@
 
     <nav v-if="isAuthenticated" class="navbar navbar-expand-lg navbar-ats">
       <div class="container-fluid px-4 py-2">
+         <router-link to="/" style=" text-decoration:none">
         <h1 class="logo-ats mb-0">ATS System</h1>
+         </router-link>
         <div class="d-flex flex-wrap align-items-center gap-4">
+          <router-link to="/" class="nav-link-ats">Dashboard</router-link>
           <router-link :to="{ name: 'JobDescriptions' }" class="nav-link-ats">Job Descriptions</router-link>
           <router-link v-if="user?.role !== 'Interviewer'" to="/resumes" class="nav-link-ats">All Resumes</router-link>
-          <router-link to="/" class="nav-link-ats">Dashboard</router-link>
+          
           <router-link v-if="isAdmin" to="/register" class="nav-link-ats">Create User</router-link>
           <router-link v-if="isAdmin" to="/config" class="nav-link-ats">Settings</router-link>
           <div class="d-flex align-items-center gap-3 ms-auto ps-4 border-start border-light border-opacity-25">
