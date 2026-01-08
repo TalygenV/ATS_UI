@@ -634,7 +634,7 @@
                       <h3 class="timeline-title">{{ event.title }}</h3>
                       <span class="timeline-date">{{ formatDateTime(event.timestamp) }}</span>
                     </div>
-                    <p class="timeline-description">{{ event.description }}</p>
+                    <p class="timeline-description">{{ event.description.replace(/_/g, ' ') }}</p>
                     
                     <!-- Event-specific details -->
                     <div v-if="event.details" class="timeline-details">
@@ -686,8 +686,8 @@
                       <div v-if="event.type === 'feedback_submitted' && event.details.ratings" class="detail-box">
                         <div class="detail-row">
                           <span class="detail-label">Decision:</span>
-                          <span :class="['status-badge', 'timeline-status', 'interviewer-' + event.details.status]">
-                            {{ event.details.status }}
+                          <span :class="['status-badge', 'timeline-status',  event.details.status]">
+                            {{ event.details.status.replace(/_/g, ' ') }}
                           </span>
                         </div>
                         <div v-if="event.details.ratings && typeof event.details.ratings === 'object' && Object.keys(event.details.ratings).filter(key => key !== 'interviewer_remarks' && event.details.ratings[key]).length > 0" class="ratings-detail">
