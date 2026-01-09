@@ -248,9 +248,14 @@ export default {
       }, 600);
     },
     async performSearch() {
+      if (!this.searchQuery.trim()) {
+        this.fetchResumes();
+        return;
+      }
       this.loading = true;
       this.error = null;
       this.showLoader('Searching Resumes', `Searching for "${this.searchQuery}"...`);
+
       try {
         const response = await axios.get(`${API_BASE_URL}/resumes/search/${encodeURIComponent(this.searchQuery)}`);
         if (response.data.success) {
