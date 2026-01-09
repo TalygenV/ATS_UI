@@ -632,10 +632,11 @@
                   <div class="timeline-content">
                     <div class="timeline-header">
                       <h3 class="timeline-title">{{ event.title }}</h3>
-                      <span class="timeline-date">{{ formatDateTime(event.timestamp) }}</span>
+                      <span class="timeline-date">{{ formatDateTime(event.timestamp) }} </span>
                     </div>
-                    <p class="timeline-description">{{ event.description.replace(/_/g, ' ') }}</p>
-                    
+
+                    <p v-if="event.type === 'interview_scheduled' && event.details.interviewer" class="timeline-description">{{ event.description.replace(/_/g, ' ') }} {{ formatDateTime(event.timestamp) }}</p>
+                    <p v-else class="timeline-description">{{ event.description.replace(/_/g, ' ') }}</p>
                     <!-- Event-specific details -->
                     <div v-if="event.details" class="timeline-details">
                       <!-- Resume uploaded details -->
