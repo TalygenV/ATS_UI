@@ -239,7 +239,7 @@ export default {
       // Debounce the search
       this.searchDebounceTimer = setTimeout(() => {
         this.performSearch();
-      }, 300);
+      }, 600);
     },
     async performSearch() {
       this.loading = true;
