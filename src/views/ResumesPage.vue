@@ -94,7 +94,9 @@
     <!-- Detail Modal -->
     <div v-if="selectedResume" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats">
+        <div class="modal-header-ats" style="    position: sticky;
+    top: 0;
+    background-color: white;" >
           <h2 class="fs-4 fw-semibold">Resume Details</h2>
           <button @click="closeModal" class="close-btn-ats">×</button>
         </div>

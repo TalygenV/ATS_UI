@@ -85,7 +85,9 @@
     <!-- Create/Edit Modal -->
     <div v-if="showCreateModal || showEditModal" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats">
+        <div class="modal-header-ats" style="    position: sticky;
+    top: 0;
+    background-color: white;" >
           <h2 class="fs-4 fw-semibold">{{ showEditModal ? 'Edit Job Description' : 'Create Job Description' }}</h2>
           <button @click="closeModal" class="close-btn-ats">×</button>
         </div>

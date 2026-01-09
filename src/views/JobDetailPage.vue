@@ -358,7 +358,9 @@
     <!-- Edit Modal -->
     <div v-if="showEditModal" class="modal-overlay-ats" >
       <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats">
+        <div class="modal-header-ats" style="    position: sticky;
+    top: 0;
+    background-color: white;" >
           <h2>Edit Job Description</h2>
           <button @click="closeEditModal" class="close-btn-ats">×</button>
         </div>
@@ -990,7 +992,9 @@
     <!-- HR Decision Modal -->
     <div v-if="showHRDecisionModal && selectedCandidateForFeedback" class="modal-overlay-ats" >
       <div class="modal-content-ats modal-content-lg" @click.stop>
-        <div class="modal-header-ats">
+        <div class="modal-header-ats" style="    position: sticky;
+    top: 0;
+    background-color: white;" >
           <h2>Final HR Decision</h2>
           <button @click="showHRDecisionModal = false" class="close-btn-ats">×</button>
         </div>
@@ -1243,8 +1247,10 @@
 
     <!-- Version History Modal -->
     <div v-if="showVersionHistoryModal" class="modal-overlay-ats" >
-      <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats">
+      <div class="modal-content-ats"  @click.stop>
+        <div class="modal-header-ats" style="    position: sticky;
+    top: 0;
+    background-color: white;" >
           <h2>Resume Version History</h2>
           <button @click="closeVersionHistoryModal" class="close-btn-ats">×</button>
         </div>
