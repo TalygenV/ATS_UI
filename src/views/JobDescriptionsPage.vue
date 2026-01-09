@@ -63,12 +63,14 @@
             <div v-if="hasWriteAccess" class="pt-3 border-top">
               <strong class="text-dark d-block mb-2">Application Status:</strong>
               <div class="d-flex flex-wrap gap-1">
-                <span class="badge-ats badge-ats-success">Scheduled {{job.scheduledInterview || 0}}</span>
                 <span class="badge-ats badge-ats-pending">Pending {{job.totalPending || 0}}</span>
-                <span class="badge-ats badge-ats-warning">On Hold {{job.onhold || 0}}</span>
+                <span class="badge-ats badge-ats-success">Scheduled {{job.scheduledInterview || 0}}</span>
                 <span class="badge-ats badge-ats-pending">Decision Pending {{job.totalDecisionPending || 0}}</span>
-                <span class="badge-ats badge-ats-danger">Rejected {{job.finalRejected || 0}}</span>
                 <span class="badge-ats badge-ats-success">Selected {{job.finalSelected || 0}}</span>
+                <span class="badge-ats badge-ats-warning">On Hold {{job.onhold || 0}}</span>
+            
+                <span class="badge-ats badge-ats-danger">Rejected {{job.finalRejected || 0}}</span>
+           
               </div>
             </div>
           </div>
