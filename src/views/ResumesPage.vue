@@ -3,19 +3,25 @@
     <div class="page-header-ats">
       <h2 class="page-title-ats">Resume Database</h2>
       <div class="d-flex gap-3 align-items-center">
+         <!-- @input="searchResumes" -->
+         <form @submit.prevent="performSearch" class="d-flex gap-2 align-items-center">
         <input 
           v-model="searchQuery" 
-          @input="searchResumes"
+         
           type="text" 
           placeholder="Search resumes..." 
           class="search-input-ats"
           style="min-width: 280px;"
         />
-        <button @click="handleRefresh" class="btn-ats-primary" style="width: 45px; padding: 0.75rem;">
+        <button  type="submit" class="btn-ats-primary" style=" padding: 0.75rem;">
+           Search
+        </button>
+        <button type="button" @click="handleRefresh" class="btn-ats-primary" style="width: 45px; padding: 0.75rem;">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px;">
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992V4.356M19.016 14.657a7.5 7.5 0 11-1.43-7.585" />
           </svg>
         </button>
+         </form>
       </div>
     </div>
 
