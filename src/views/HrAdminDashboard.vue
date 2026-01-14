@@ -67,6 +67,10 @@
       {{ getInterviewButtonText(interview) }}
     </button>
   </a>
+
+  <button v-if="interview.is_video_call == 0" class="btn-ats-primary btn-ats-sm">
+       On Call Interview
+    </button>
                   </div>
                   <div class="interview-time-badge-inline">
                     <span class="time">{{ interview.time }}</span>
@@ -106,6 +110,7 @@
                     <div class="info-row-ats"><span class="info-label-ats">Job Discription:</span><span class="info-value-ats">{{ interview.position || 'N/A' }}</span></div>
                     <div class="info-row-ats"><span class="info-label-ats">Interviewer:</span><span class="info-value-ats">{{ interview.interviewer || 'N/A' }}</span></div>
                                               <a
+                                v-if="!hideJoinButton(interview)"
     :href="interview.interview_start_url"
     target="_blank"
   >
@@ -113,6 +118,10 @@
       {{ getInterviewButtonText(interview) }}
     </button>
   </a>
+
+    <button v-if="interview.is_video_call == 0" class="btn-ats-primary btn-ats-sm">
+       On Call Interview
+    </button>
                   </div>
                   <div class="interview-time-badge-inline in-progress">
                     <span class="time">{{ interview.time }}</span>
@@ -194,13 +203,18 @@ function formatDate(isoString) {
 }
  
  function hideJoinButton(assignment){
+  debugger;
          const nowUtc = new Date(); // current UTC
+           if(assignment.is_video_call == 0)
+       {
+          return true
+       }
     const interviewendUtc = new Date(assignment.end_time);
-
      if(nowUtc > interviewendUtc)
        {
           return true
        }
+   
        return false
  }
   function  getInterviewButtonText(assignment) {
@@ -252,6 +266,7 @@ const getTodayInterview = async () => {
           rawDate: item.interview_date,
           type: item.type || '',
           status,
+          is_video_call: item.is_video_call,
           start_time: item.start_time,
           end_time: item.end_time,
           interview_start_url : item.interview_start_url

@@ -752,8 +752,30 @@
           <h2>Assign Interviewer</h2>
           <button @click="showAssignModal = false" class="close-btn-ats">×</button>
         </div>
+<div class="d-flex gap-2 ms-4 ">
+  
 
-  <div class="d-flex gap-2 justify-content-end me-4">
+ <div class="btn-group" role="group">
+  <input
+    type="radio"
+    class="btn-check"
+    id="videoCall"
+    :value="true"
+    v-model="assignmentData.isVideoCall"
+  />
+  <label class="btn btn-outline-success" for="videoCall">Video Call</label>
+
+  <input
+    type="radio"
+    class="btn-check"
+    id="audioCall"
+    :value="false"
+    v-model="assignmentData.isVideoCall"
+  />
+  <label class="btn btn-outline-danger" for="audioCall">Audio Call</label>
+</div>
+
+<div style="flex:auto" class="d-flex gap-2 justify-content-end me-4">
     <input
       type="radio"
       class="btn-check"
@@ -778,6 +800,7 @@
       Single Assign
     </label>
   </div>
+</div>
 
         <!-- // Single Assign //  -->
         <div v-if="!assignMultipleInterviwer" class="modal-body-ats">
@@ -804,6 +827,14 @@
                 No available slots found for the selected interviewer. Ask interviewer to add availability.
               </p>
             </div>
+
+                 <!-- // Video Call or Voice Call Toggle Interview Schueduling -->
+            <!-- <div class="form-check form-switch">
+  <input class="form-check-input" type="checkbox" id="toggleSwitchSingle" v-model="assignmentData.isVideoCall">
+  <label class="form-check-label" for="toggleSwitchSingle">
+      {{ assignmentData.isVideoCall ? 'Video Call Interview' : 'Voice Call Interview' }}
+  </label>
+</div> -->
             <div class="modal-actions">
               <button type="button" @click="showAssignModal = false" class="btn-modal-cancel">Cancel</button>
               <button type="submit" class="btn-modal-primary">Assign</button>
@@ -848,6 +879,13 @@
                 No available slots found for the selected interviewer. Ask interviewer to add availability.
               </p>
             </div>
+         <!-- // Video Call or Voice Call Toggle Interview Schueduling -->
+            <!-- <div class="form-check form-switch">
+  <input class="form-check-input" type="checkbox" id="toggleSwitchBulk" v-model="assignmentData.isVideoCall">
+  <label class="form-check-label" for="toggleSwitchBulk">
+       {{ assignmentData.isVideoCall ? 'Video Call Interview' : 'Voice Call Interview' }}
+  </label>
+</div> -->
 
 
     <!-- SECTION 3: Actions -->
@@ -1019,6 +1057,12 @@
                       <span class="rating-display-value">{{ rating }}/10</span>
                     </div>
                   </div>
+                     <div v-if="
+    Object.values(interviewDetail.interviewer_feedback)
+      .every(value => value === '' || value === null || value === undefined)
+  "> 
+                        <span class="rating-display-value">Not Submitted Rating</span>
+                      </div>
                 </div>
                 <div v-if="interviewDetail.interviewer_feedback && interviewDetail.interviewer_feedback.interviewer_remarks" class="feedback-remarks mb-3">
                   <h5>Interviewer Remarks:</h5>
@@ -1052,6 +1096,13 @@
                     <span class="rating-display-value">{{ rating }}/10</span>
                   </div>
                 </div>
+                  <div v-if="
+    Object.values(selectedCandidateForFeedback.interviewer_feedback)
+      .every(value => value === '' || value === null || value === undefined)
+  "> 
+                        <span class="rating-display-value">Not Submitted Rating</span>
+                      </div>
+                
               </div>
               <div v-if="selectedCandidateForFeedback.interviewer_feedback && selectedCandidateForFeedback.interviewer_feedback.interviewer_remarks" class="feedback-remarks">
                 <h4>Interviewer Remarks:</h4>
@@ -1166,9 +1217,16 @@
                         <span class="rating-display-label">{{ key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}:</span>
                         <span class="rating-display-value">{{ rating }}/10</span>
                       </div>
+                   
 
                    
                     </div>
+                             <div v-if="
+    Object.values(interviewDetail.interviewer_feedback)
+      .every(value => value === '' || value === null || value === undefined)
+  "> 
+                        <span class="rating-display-value">Not Submitted Rating</span>
+                      </div>
                         <div v-if="interviewDetail.interviewer_feedback && interviewDetail.interviewer_feedback.interviewer_remarks" class="remarks-detail">
                           <span class="m-0 ">Remarks:</span>
                           <span class="mx-2">{{ interviewDetail.interviewer_feedback.interviewer_remarks }}</span>
@@ -1408,7 +1466,8 @@ export default {
       assignmentData: {
         evaluation_id: null,
         interviewer_id: null,
-        slot_id: ''
+        slot_id: '',
+        isVideoCall: true
       },
       availableSlots: [],
       selectedCandidateForFeedback: null,
@@ -2213,14 +2272,17 @@ const proxyPath = externalFileUrl;
     },
     
     async openAssignModal(candidate) {
+      let videoCall = candidate.is_video_call ==0 ? false : true 
       this.assignmentData = {
         evaluation_id: candidate.id,
         interviewer_id: null,
-        slot_id: ''
+        slot_id: '',
+        isVideoCall: videoCall,
       };
       this.selectedInterviewersforAssign = [];
       this.selectedTimeSlotforBulkAssign = '';
       this.availableSlots = [];
+      this.is_video_call = videoCall;
       
       // Check if candidate has existing interview_details
       if (candidate.interview_details && candidate.interview_details.length > 0) {
@@ -2283,6 +2345,7 @@ const proxyPath = externalFileUrl;
           this.assignMultipleInterviwer = false;
           const firstDetail = candidate.interview_details[0];
           this.assignmentData.interviewer_id = firstDetail.interviewer_id;
+          
           
           // Fetch available slots for the selected interviewer
           if (this.assignmentData.interviewer_id) {
@@ -2390,7 +2453,8 @@ const proxyPath = externalFileUrl;
             {
               interviewer_id: this.assignmentData.interviewer_id,
               interview_date: null,
-              slot_id: this.assignmentData.slot_id
+              slot_id: this.assignmentData.slot_id,
+              is_video_call: this.assignmentData.isVideoCall
             }
           );
         } else {
@@ -2401,7 +2465,8 @@ const proxyPath = externalFileUrl;
               evaluation_id: this.assignmentData.evaluation_id,
               interviewer_id: this.assignmentData.interviewer_id,
               interview_date: null,
-              slot_id: this.assignmentData.slot_id
+              slot_id: this.assignmentData.slot_id,
+              is_video_call: this.assignmentData.isVideoCall
             }
           );
         }
@@ -2505,7 +2570,8 @@ const proxyPath = externalFileUrl;
             evaluation_id: this.assignmentData.evaluation_id,
             interviewer_ids: interviewerIds,
             interview_date: selectedSlot.start_time,
-            slot_ids: slotIds
+            slot_ids: slotIds,
+            is_video_call: this.assignmentData.isVideoCall
           }
         );
 
@@ -2781,7 +2847,7 @@ const proxyPath = externalFileUrl;
       if (!ratings || typeof ratings !== 'object') return {};
       const filtered = {};
       for (const [key, value] of Object.entries(ratings)) {
-        if (key !== 'interviewer_remarks') {
+        if (key !== 'interviewer_remarks' && value !== null && value !== undefined && value !== '') {
           filtered[key] = value;
         }
       }

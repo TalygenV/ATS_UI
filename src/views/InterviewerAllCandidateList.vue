@@ -291,7 +291,7 @@
                   min="1"
                   max="10"
                   class="form-control-ats"
-                  required
+                  
                 />
               </div>
               <div class="col-md-4">
@@ -302,7 +302,7 @@
                   min="1"
                   max="10"
                   class="form-control-ats"
-                  required
+                  
                 />
               </div>
               <div class="col-md-4">
@@ -313,7 +313,7 @@
                   min="1"
                   max="10"
                   class="form-control-ats"
-                  required
+                  
                 />
               </div>
               <div class="col-md-4">
@@ -324,7 +324,7 @@
                   min="1"
                   max="10"
                   class="form-control-ats"
-                  required
+                  
                 />
               </div>
               <div class="col-md-4">
@@ -335,7 +335,7 @@
                   min="1"
                   max="10"
                   class="form-control-ats"
-                  required
+                  
                 />
               </div>
               <div class="col-md-4">
@@ -346,7 +346,7 @@
                   min="1"
                   max="10"
                   class="form-control-ats"
-                  required
+                  
                 />
               </div>
             </div>
@@ -606,6 +606,11 @@ const submitFeedback = async () => {
     alert('Please provide a reason for putting the candidate on hold');
     return;
   }
+
+      if (feedbackData.value.status === 'pending') {
+        alert('Please select a status (Selected, Rejected, or On Hold)');
+        return;
+      }
 
   submitting.value = true;
   showLoader('Submitting Feedback', 'Saving interview evaluation...');

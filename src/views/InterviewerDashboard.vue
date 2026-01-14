@@ -110,6 +110,7 @@
           
  
   <a
+    v-if="assignment.is_video_call != 0"
     :href="assignment.interview_start_url"
     target="_blank"
   >
@@ -117,6 +118,9 @@
       {{ getInterviewButtonText(assignment) }}
     </button>
   </a>
+  <button v-else class="btn-ats-primary btn-ats-sm">
+       On Call Interview
+    </button>
 
               <button @click="viewCandidateDetails(assignment)" class="btn-ats-secondary btn-ats-sm">View Resume</button>
             
@@ -248,12 +252,12 @@
             <div class="mb-4">
               <h3 class="section-title-gradient">Candidate Ratings (1-10 scale)</h3>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label fw-medium small">Technical Skills</label><input v-model.number="feedbackData.ratings.technical_skills" type="number" min="1" max="10" class="form-control-ats" required /></div>
-                <div class="col-md-4"><label class="form-label fw-medium small">Communication</label><input v-model.number="feedbackData.ratings.communication" type="number" min="1" max="10" class="form-control-ats" required /></div>
-                <div class="col-md-4"><label class="form-label fw-medium small">Problem Solving</label><input v-model.number="feedbackData.ratings.problem_solving" type="number" min="1" max="10" class="form-control-ats" required /></div>
-                <div class="col-md-4"><label class="form-label fw-medium small">Cultural Fit</label><input v-model.number="feedbackData.ratings.cultural_fit" type="number" min="1" max="10" class="form-control-ats" required /></div>
-                <div class="col-md-4"><label class="form-label fw-medium small">Experience Relevance</label><input v-model.number="feedbackData.ratings.experience_relevance" type="number" min="1" max="10" class="form-control-ats" required /></div>
-                <div class="col-md-4"><label class="form-label fw-medium small">Overall Assessment</label><input v-model.number="feedbackData.ratings.overall" type="number" min="1" max="10" class="form-control-ats" required /></div>
+                <div class="col-md-4"><label class="form-label fw-medium small">Technical Skills</label><input v-model.number="feedbackData.ratings.technical_skills" type="number" min="1" max="10" class="form-control-ats"  /></div>
+                <div class="col-md-4"><label class="form-label fw-medium small">Communication</label><input v-model.number="feedbackData.ratings.communication" type="number" min="1" max="10" class="form-control-ats"  /></div>
+                <div class="col-md-4"><label class="form-label fw-medium small">Problem Solving</label><input v-model.number="feedbackData.ratings.problem_solving" type="number" min="1" max="10" class="form-control-ats"  /></div>
+                <div class="col-md-4"><label class="form-label fw-medium small">Cultural Fit</label><input v-model.number="feedbackData.ratings.cultural_fit" type="number" min="1" max="10" class="form-control-ats"  /></div>
+                <div class="col-md-4"><label class="form-label fw-medium small">Experience Relevance</label><input v-model.number="feedbackData.ratings.experience_relevance" type="number" min="1" max="10" class="form-control-ats"  /></div>
+                <div class="col-md-4"><label class="form-label fw-medium small">Overall Assessment</label><input v-model.number="feedbackData.ratings.overall" type="number" min="1" max="10" class="form-control-ats"  /></div>
               </div>
             </div>
 
@@ -480,7 +484,7 @@ pastDecissionDoneSlots() {
       //   if (value === null || value < 1 || value > 10) { alert(`Please provide a valid rating (1-10) for ${key.replace('_', ' ')}`); return; }
       // }
       if (this.feedbackData.status === 'on_hold' && !this.feedbackData.hold_reason.trim()) { alert('Please provide a reason for putting the candidate on hold'); return; }
-      this.submitting = true;
+   
     //        let ratingData  = {
           
     //     technical_skills: this.feedbackData.ratings.technical_skills ?? 1 ,
@@ -490,6 +494,13 @@ pastDecissionDoneSlots() {
     //     experience_relevance: this.feedbackData.ratings.experience_relevance ?? 1 ,
     //     overall: this.feedbackData.ratings.overall ?? 1 ,
     // };
+
+    
+      if (this.feedbackData.status === 'pending') {
+        alert('Please select a status (Selected, Rejected, or On Hold)');
+        return;
+      }
+         this.submitting = true;
       this.showLoader('Submitting Feedback', 'Saving interview evaluation...');
       try {
         const response = await axios.post(`${API_BASE_URL}/evaluations/${this.selectedAssignment.id}/interviewer-feedback`, { ratings: { ...this.feedbackData.ratings, interviewer_remarks: this.feedbackData.remarks }, status: this.feedbackData.status, hold_reason: this.feedbackData.status === 'on_hold' ? this.feedbackData.hold_reason : null });
