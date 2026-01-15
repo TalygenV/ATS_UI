@@ -890,7 +890,7 @@
 
     <!-- SECTION 3: Actions -->
     <section class="modal-actions">
-      <button type="button" class="btn-modal-cancel">
+      <button type="button" @click="showAssignModal = false" class="btn-modal-cancel">
         Cancel
       </button>
       <button type="submit" class="btn-modal-primary">
