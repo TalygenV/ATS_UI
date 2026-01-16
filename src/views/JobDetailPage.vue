@@ -2480,6 +2480,9 @@ const proxyPath = externalFileUrl;
           this.showAssignModal = false;
           alert('Interview assigned successfully!');
         }
+        else {
+          alert(response.data.error || 'Failed to assign interviewer. Please try again.');
+        }
       } catch (error) {
         console.error('Error assigning interviewer:', error);
         alert('Failed to assign interviewer. Please try again.');
@@ -2585,6 +2588,9 @@ const proxyPath = externalFileUrl;
           this.selectedInterviewersforAssign = [];
           this.selectedTimeSlotforBulkAssign = '';
           alert(`Successfully assigned ${interviewerIds.length} interviewer(s)!`);
+        }
+        else {
+          alert(response.data.error || 'Failed to assign interviewers. Please try again.');
         }
       } catch (error) {
         console.error('Error assigning interviewers:', error);

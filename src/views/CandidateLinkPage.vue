@@ -229,6 +229,9 @@ export default {
             }
           });
         }
+        else {
+          alert(response.data.error || 'Failed to book slot. Please try again.');
+        }
       } catch (err) {
         console.error('Error booking slot:', err);
         this.error =
