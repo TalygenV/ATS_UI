@@ -38,7 +38,7 @@
         <div class="ats-card h-100">
           <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fs-5 fw-bold mb-0">Today's Scheduled Interviews</h2>
-            <button class="btn-back small">View All</button>
+            <button style="visibility: hidden;" class="btn-back small">View All</button>
           </div>
           <div class="d-flex flex-column gap-3">
             <template v-if="todayInterviews.length === 0">
