@@ -12,6 +12,7 @@ import CandidateLinkPage from '../views/CandidateLinkPage.vue';
 import InterviewBookingSuccess from '../views/InterviewBookingSuccess.vue';
 import InterviewerAllCandidateList from "../views/InterviewerAllCandidateList.vue"
 import ConfigPage from '../views/ConfigPage.vue';
+import AnalyticsDashboard from '../views/AnalyticsDashboard.vue';
 import { useAuth } from '../composables/useAuth';
 
 const routes = [
@@ -105,6 +106,12 @@ const routes = [
     component: ConfigPage,
     meta: { requiresAuth: true, requiresAdmin: true }
   },
+  {
+    path: '/analytics',
+    name: 'AnalyticsDashboard',
+    component: AnalyticsDashboard,
+    meta: { requiresAuth: true, requiresHRAdmin: true }
+  },
   // {
   //   path: '/interviewer-dashboard',
   //   name: 'InterviewerDashboard',
@@ -121,7 +128,7 @@ const router = createRouter({
 
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
-  const { isAuthenticated, isAdmin, init, fetchCurrentUser } = useAuth();
+  const { isAuthenticated, isAdmin, hasWriteAccess, init, fetchCurrentUser } = useAuth();
   
   // Initialize auth state
   await init();
@@ -137,6 +144,13 @@ router.beforeEach(async (to, from, next) => {
     // Check if route requires admin
     if (to.meta.requiresAdmin && !isAdmin.value) {
       // Not admin, redirect to home
+      next({ name: 'JobDescriptions' });
+      return;
+    }
+    
+    // Check if route requires HR or Admin
+    if (to.meta.requiresHRAdmin && !hasWriteAccess.value) {
+      // Not HR or Admin, redirect to home
       next({ name: 'JobDescriptions' });
       return;
     }

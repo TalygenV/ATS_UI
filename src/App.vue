@@ -20,6 +20,7 @@
           <router-link to="/" class="nav-link-ats">Dashboard</router-link>
           <router-link :to="{ name: 'JobDescriptions' }" class="nav-link-ats">Job Descriptions</router-link>
           <router-link v-if="user?.role !== 'Interviewer'" to="/resumes" class="nav-link-ats">All Resumes</router-link>
+          <router-link v-if="hasWriteAccess" :to="{ name: 'AnalyticsDashboard' }" class="nav-link-ats">Analytics</router-link>
           
           <router-link v-if="isAdmin" to="/register" class="nav-link-ats">Create User</router-link>
           <router-link v-if="isAdmin" to="/config" class="nav-link-ats">Settings</router-link>
@@ -47,7 +48,7 @@ export default {
   name: 'App',
   setup() {
     const router = useRouter();
-    const { user, isAuthenticated, isAdmin, hasRole, logout, init } = useAuth();
+    const { user, isAuthenticated, isAdmin, hasWriteAccess, hasRole, logout, init } = useAuth();
     const { isLoading, loaderMessage, loaderSubMessage } = useLoader();
     
     onMounted(async () => {
@@ -63,6 +64,7 @@ export default {
       user,
       isAuthenticated,
       isAdmin,
+      hasWriteAccess,
       hasRole,
       handleLogout,
       isLoading,
