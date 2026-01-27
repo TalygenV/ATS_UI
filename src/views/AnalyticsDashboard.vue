@@ -426,7 +426,7 @@
             </thead>
             <tbody>
               <tr v-for="util in interviewerUtilization" :key="util.interviewer_id">
-                <td>{{ util.interviewer_id.substring(0, 8) }}...</td>
+                <td>{{ util.interviewer_id }}</td>
                 <td>{{ util.total_slots }}</td>
                 <td>{{ util.booked_slots }}</td>
                 <td>
@@ -481,7 +481,7 @@
                 </thead>
                 <tbody>
                   <tr v-for="performer in topPerformers" :key="performer.interviewer_id">
-                    <td>{{ performer.interviewer_id.substring(0, 8) }}...</td>
+                    <td>{{ performer.interviewer_id }}</td>
                     <td><strong>{{ performer.utilization_pct }}%</strong></td>
                     <td>{{ performer.booked_slots }}/{{ performer.total_slots }}</td>
                     <td><span class="badge-ats badge-ats-success">Excellent</span></td>
@@ -505,15 +505,13 @@
                     <th>Interviewer ID</th>
                     <th>Utilization %</th>
                     <th>Available Slots</th>
-                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="lowPerformer in lowPerformers" :key="lowPerformer.interviewer_id">
-                    <td>{{ lowPerformer.interviewer_id.substring(0, 8) }}...</td>
+                    <td>{{ lowPerformer.interviewer_id }}</td>
                     <td><strong class="text-danger">{{ lowPerformer.utilization_pct }}%</strong></td>
                     <td>{{ lowPerformer.total_slots - lowPerformer.booked_slots }} slots available</td>
-                    <td><button class="btn-ats-secondary btn-ats-sm">Review</button></td>
                   </tr>
                 </tbody>
               </table>
@@ -620,16 +618,7 @@
       </div>
     </div>
     
-      <!-- Footer -->
-      <footer class="text-center text-muted py-4 mt-4">
-        <div class="fw-bold mb-2">Analytics Dashboard</div>
-        <p class="small mb-1">Generated on {{ currentDate }} | Data Source: Hiring Portal v4.2</p>
-        <p class="small mb-1">Confidential: For internal use only. © 2026 Talent Acquisition Analytics Team.</p>
-        <p class="small mb-0">
-          <i class="fas fa-sync-alt"></i> Auto-refresh every 5 minutes | 
-          <i class="fas fa-shield-alt"></i> Data encrypted in transit
-        </p>
-      </footer>
+      
     </div>
   </div>
 </template>
@@ -1431,7 +1420,7 @@ const initializeCharts = () => {
       chartInstances.resourceUtilization = new Chart(ctx, {
         type: 'polarArea',
         data: {
-          labels: interviewerUtilization.value.map(util => util.interviewer_id.substring(0, 8) + '...'),
+          labels: interviewerUtilization.value.map(util => util.interviewer_id ),
           datasets: [{
             label: 'Utilization %',
             data: interviewerUtilization.value.map(util => util.utilization_pct),
