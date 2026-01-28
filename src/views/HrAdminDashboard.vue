@@ -170,20 +170,36 @@
           </div>
         </div>
       </div>
+
     </div>
+        <div class="row g-4 mt-4">
+           
+            
+          <div  class="col-12 d-flex justify-content-between align-items-center ats-card mb-3">
+          <h3 class="fs-5 fw-bold mb-3">Decision Pending</h3>
+          <button class="btn-back small" @click="onViewClickHRDeccision">View All</button>
+        </div>
+         <HRDecisionPendingList :pastDecissionPendingSlots="pastDecissionPendingSlots"   @decision-done="descisionDoneTrigger = !descisionDoneTrigger"/>
+        </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import moment from 'moment';
 import { API_BASE_URL } from '../config/api';
 import { useLoader } from '../composables/useLoader';
 import { useAuth } from '../composables/useAuth';
+import { useRouter } from 'vue-router';
+import HRDecisionPendingList from './HRDecisionPendingList.vue';
 
 const { showLoader, hideLoader } = useLoader();
 const { user } = useAuth();
+const router = useRouter();
+
+const  descisionDoneTrigger = ref(false);
 
 const todayInterviews = ref([]);
 const ongoingInterviews = ref([]); 
@@ -191,6 +207,16 @@ const totalInterviews = ref(0);
 const totalJobPositions = ref(0);
 const loading = ref(false);
 const newCandidates = ref([]);
+const showHRDecisionModal = ref(false);
+const selectedCandidateForFeedback = ref(null);
+
+const onViewClickHRDeccision = ()=> {
+     router.push('/all-interview-decision-pending')
+}
+
+watch(descisionDoneTrigger, async () => {
+   await viewAllPending()
+});
 
 function formatTimeFromISO(isoString) {
   if (!isoString) return '';
@@ -337,11 +363,36 @@ const formatExperience = (years) => {
   return `${wholeYears} ${wholeYears === 1 ? 'year' : 'years'} ${months} ${months === 1 ? 'month' : 'months'}`;
 };
 
+
+const pastDecissionPendingSlots = ref([]);
+const viewAllPending = async () => { 
+
+  showLoader('Loading Decision Pending Interviews...');
+  try {
+
+    const response = await axios.get(`${API_BASE_URL}/evaluations/hr/all_hr_pending_feedback?pageNumber=1&pageSize=4`, {
+      
+    });
+
+    if (response?.data?.success && Array.isArray(response.data.data)) {
+      pastDecissionPendingSlots.value = response.data.data;
+    } else {
+      pastDecissionPendingSlots.value = [];
+    }
+  } catch (error) {
+    console.error('Error fetching decision pending interviews:', error);
+    pastDecissionPendingSlots.value = [];
+  } finally {
+    hideLoader();
+  }
+};
+
 onMounted(async () => {
   showLoader('Loading Dashboard...');
   await fetchJobDescriptions();
   await getLatestCandidates();
   await getTodayInterview();
+  await viewAllPending()
   hideLoader();
 });
 

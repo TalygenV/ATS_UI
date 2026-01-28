@@ -100,7 +100,8 @@ const routes = [
     component: InterviewerAllCandidateList,
     meta: { requiresAuth: true }
   },
-  {
+
+{
     path: '/config',
     name: 'Config',
     component: ConfigPage,
@@ -118,6 +119,12 @@ const routes = [
   //   component: () => import('../views/InterviewerDashboard.vue'),
   //   meta: { requiresAuth: true }
   // },
+  {
+    path :'/all-interview-decision-pending',
+    name : 'HRDecisionPending',
+    component: () => import('../views/HRDecisionPendingAllList.vue'),
+     meta: { requiresAuth: true }
+  }
 
 ];
 
