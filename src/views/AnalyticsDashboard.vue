@@ -99,8 +99,24 @@
             <div>
               <h3 class="fs-6 text-muted mb-1">Total Candidates</h3>
               <div class="fs-3 fw-bold text-dark">{{ totalCandidates.toLocaleString() }}</div>
-              <div class="text-success small mt-1">
-                <i class="fas fa-arrow-up"></i> 12% from last period
+              <div 
+                class="small mt-1"
+                :class="{
+                  'text-success': growthStats.total_candidates_growth_pct > 0,
+                  'text-danger': growthStats.total_candidates_growth_pct < 0,
+                  'text-muted': growthStats.total_candidates_growth_pct === 0
+                }"
+              >
+                <i 
+                  class="fas"
+                  :class="{
+                    'fa-arrow-up': growthStats.total_candidates_growth_pct > 0,
+                    'fa-arrow-down': growthStats.total_candidates_growth_pct < 0,
+                    'fa-minus': growthStats.total_candidates_growth_pct === 0
+                  }"
+                ></i>
+
+                {{ growthStats.total_candidates_growth_pct ?? 0}}%
               </div>
             </div>
           </div>
@@ -114,8 +130,24 @@
             <div>
               <h3 class="fs-6 text-muted mb-1">Hired Candidates</h3>
               <div class="fs-3 fw-bold text-dark">{{ hiredCandidates }}</div>
-              <div class="text-muted small mt-1">
-                <i class="fas fa-minus"></i> No hires this period
+              <div 
+                class="small mt-1"
+                :class="{
+                  'text-success': growthStats.hired_candidates_growth_pct > 0,
+                  'text-danger': growthStats.hired_candidates_growth_pct < 0,
+                  'text-muted': growthStats.hired_candidates_growth_pct === 0
+                }"
+              >
+                <i 
+                  class="fas"
+                  :class="{
+                    'fa-arrow-up': growthStats.hired_candidates_growth_pct > 0,
+                    'fa-arrow-down': growthStats.hired_candidates_growth_pct < 0,
+                    'fa-minus': growthStats.hired_candidates_growth_pct === 0
+                  }"
+                ></i>
+
+                {{ growthStats.hired_candidates_growth_pct ?? 0}}%
               </div>
             </div>
           </div>
@@ -129,8 +161,24 @@
             <div>
               <h3 class="fs-6 text-muted mb-1">Avg Match Score</h3>
               <div class="fs-3 fw-bold text-dark">{{ avgMatchScore }}%</div>
-              <div class="text-success small mt-1">
-                <i class="fas fa-arrow-up"></i> 3.2% improvement
+              <div 
+                class="small mt-1"
+                :class="{
+                  'text-success': growthStats.avg_match_score_growth_pct > 0,
+                  'text-danger': growthStats.avg_match_score_growth_pct < 0,
+                  'text-muted': growthStats.avg_match_score_growth_pct === 0
+                }"
+              >
+                <i 
+                  class="fas"
+                  :class="{
+                    'fa-arrow-up': growthStats.avg_match_score_growth_pct > 0,
+                    'fa-arrow-down': growthStats.avg_match_score_growth_pct < 0,
+                    'fa-minus': growthStats.avg_match_score_growth_pct === 0
+                  }"
+                ></i>
+
+                {{ growthStats.avg_match_score_growth_pct ?? 0}}%
               </div>
             </div>
           </div>
@@ -144,8 +192,24 @@
             <div>
               <h3 class="fs-6 text-muted mb-1">Interviews Conducted</h3>
               <div class="fs-3 fw-bold text-dark">{{ totalInterviews }}</div>
-              <div class="text-success small mt-1">
-                <i class="fas fa-arrow-up"></i> 18% from last period
+              <div 
+                class="small mt-1"
+                :class="{
+                  'text-success': growthStats.interviews_conducted_growth_pct > 0,
+                  'text-danger': growthStats.interviews_conducted_growth_pct < 0,
+                  'text-muted': growthStats.interviews_conducted_growth_pct === 0
+                }"
+              >
+                <i 
+                  class="fas"
+                  :class="{
+                    'fa-arrow-up': growthStats.interviews_conducted_growth_pct > 0,
+                    'fa-arrow-down': growthStats.interviews_conducted_growth_pct < 0,
+                    'fa-minus': growthStats.interviews_conducted_growth_pct === 0
+                  }"
+                ></i>
+
+                {{ growthStats.interviews_conducted_growth_pct ?? 0}}%
               </div>
             </div>
           </div>
@@ -651,11 +715,14 @@ const hrFinalReason = ref({});
 const interviewersData = ref([]);
 const interviewerUtilization = ref([]);
 const monthlyResumes = ref([]);
+const growthStats = ref({total_candidates_growth_pct:0 ,hired_candidates_growth_pct:0 ,avg_match_score_growth_pct:0 ,interviews_conducted_growth_pct:0});
+const recruitmentProcessMetricsKpi = ref({resumetoInterviewRate:0 ,averageMatchScore : 0, interviewSlotUtilization : 0, timetoDecision : 0,candidateConversionRate : 0});
 const processMetrics = ref({
   total_parsed_resumes: 0,
   interviews_assigned: 0,
   interviews_not_assigned: 0
 });
+const jobDescIndustryAvg = ref([]);
 
 // Loading and error states
 const loading = ref(true);
@@ -711,37 +778,36 @@ const processMetricsList = computed(() => {
   const conversionRate = totalCandidates.value > 0
     ? ((hiredCandidates.value / totalCandidates.value) * 100).toFixed(2)
     : '0.00';
-  
   return [
     { 
       metric: 'Resume to Interview Rate', 
       value: `${resumeToInterviewRate}%`, 
-      target: '20%', 
-      status: parseFloat(resumeToInterviewRate) >= 20 ? 'selected' : parseFloat(resumeToInterviewRate) >= 15 ? 'pending' : 'rejected' 
+      target: `${recruitmentProcessMetricsKpi.value[0].resumetoInterviewRate}%`,
+      status: parseFloat(resumeToInterviewRate) >= parseFloat(recruitmentProcessMetricsKpi.value[0].resumetoInterviewRate) ? 'selected' : parseFloat(resumeToInterviewRate) >= parseFloat(recruitmentProcessMetricsKpi.value[0].resumetoInterviewRate) ? 'pending' : 'rejected' 
     },
     { 
       metric: 'Average Match Score', 
       value: `${avgMatchScore.value}%`, 
-      target: '65%', 
-      status: parseFloat(avgMatchScore.value) > 65 ? 'selected' : parseFloat(avgMatchScore.value) > 60 ? 'pending' : 'rejected' 
+      target: `${recruitmentProcessMetricsKpi.value[0].averageMatchScore}%`,
+      status: parseFloat(avgMatchScore.value) > parseFloat(recruitmentProcessMetricsKpi.value[0].averageMatchScore) ? 'selected' : parseFloat(avgMatchScore.value) > parseFloat(recruitmentProcessMetricsKpi.value[0].averageMatchScore) ? 'pending' : 'rejected' 
     },
     { 
       metric: 'Interview Slot Utilization', 
       value: `${avgUtilization}%`, 
-      target: '80%', 
-      status: parseFloat(avgUtilization) > 80 ? 'selected' : parseFloat(avgUtilization) > 70 ? 'pending' : 'rejected' 
+      target: `${recruitmentProcessMetricsKpi.value[0].interviewSlotUtilization}%`,
+      status: parseFloat(avgUtilization) > parseFloat(recruitmentProcessMetricsKpi.value[0].interviewSlotUtilization) ? 'selected' : parseFloat(avgUtilization) > parseFloat(recruitmentProcessMetricsKpi.value[0].interviewSlotUtilization) ? 'pending' : 'rejected' 
     },
     { 
       metric: 'Time to Decision (Avg)', 
       value: `${avgDays} days`, 
-      target: '15 days', 
-      status: parseFloat(avgDays) <= 15 ? 'selected' : parseFloat(avgDays) <= 20 ? 'pending' : 'rejected' 
+      target: `${recruitmentProcessMetricsKpi.value[0].timetoDecision} days`,
+      status: parseFloat(avgDays) <= parseFloat(recruitmentProcessMetricsKpi.value[0].timetoDecision) ? 'selected' : parseFloat(avgDays) <= parseFloat(recruitmentProcessMetricsKpi.value[0].timetoDecision) ? 'pending' : 'rejected' 
     },
     { 
       metric: 'Candidate Conversion Rate', 
       value: `${conversionRate}%`, 
-      target: '5%', 
-      status: parseFloat(conversionRate) >= 5 ? 'selected' : parseFloat(conversionRate) >= 3 ? 'pending' : 'rejected' 
+      target: `${recruitmentProcessMetricsKpi.value[0].candidateConversionRate}%`, 
+      status: parseFloat(conversionRate) >= parseFloat(recruitmentProcessMetricsKpi.value[0].candidateConversionRate) ? 'selected' : parseFloat(conversionRate) >= parseFloat(recruitmentProcessMetricsKpi.value[0].candidateConversionRate) ? 'pending' : 'rejected' 
     }
   ];
 });
@@ -1042,10 +1108,8 @@ const getConversionRate = (position) => {
 };
 
 const getIndustryAvg = (title) => {
-  if (title.includes('Executive')) return 30;
-  if (title.includes('Engineer')) return 20;
-  if (title.includes('Analyst')) return 15;
-  return 25;
+  const item = jobDescIndustryAvg.value.find(obj => obj.title === title);
+  return item ? Number(item.industryAvg) : null;  // or default
 };
 
 const getDecisionPerformanceClass = (decision) => {
@@ -1562,7 +1626,9 @@ const fetchAnalyticsData = async () => {
       interviewerUtilization.value = data.slotUtilization || [];
       monthlyResumes.value = data.resumeVolume || [];
       processMetrics.value = data.processMetrics || { total_parsed_resumes: 0, interviews_assigned: 0, interviews_not_assigned: 0 };
-      
+      growthStats.value= data.growthStats || {total_candidates_growth_pct:0 ,hired_candidates_growth_pct:0 ,avg_match_score_growth_pct:0 ,interviews_conducted_growth_pct:0};
+      recruitmentProcessMetricsKpi.value = data.recruitmentProcessMetricsKpi || {resumetoInterviewRate:0 ,averageMatchScore : 0, interviewSlotUtilization : 0, timetoDecision : 0,candidateConversionRate : 0};
+      jobDescIndustryAvg.value = data.jobDescIndustryAvg || []; 
       // Re-initialize charts after data is updated
       // Wait for DOM to update and ensure charts are visible
       await nextTick();

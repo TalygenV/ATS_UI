@@ -30,7 +30,7 @@
           </button>
         </li>
 
-             <li class="nav-item" role="presentation">
+        <li class="nav-item" role="presentation">
           <button
             class="nav-link"
             :class="{ active: activeTab === 'Groq' }"
@@ -39,6 +39,17 @@
             role="tab"
           >
             Groq Credentials
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            :class="{ active: activeTab === 'Kpi' }"
+            @click="activeTab = 'Kpi'"
+            type="button"
+            role="tab"
+          >
+          Recruitment Process Metrics Target
           </button>
         </li>
       </ul>
@@ -371,6 +382,106 @@
   </table>
 </div>
 
+
+<div v-show="activeTab === 'Kpi'" class="ats-card">
+      <h3 class="fs-5 fw-semibold mb-4">Recruitment Process Metrics Target</h3>
+      
+      <div v-if="kpiError" class="alert-ats-danger mb-3">{{ kpiError }}</div>
+      <div v-if="kpiSuccess" class="alert-ats-success mb-3">{{ kpiSuccess }}</div>
+
+      <form @submit.prevent="handlekpiSubmit" class="d-flex flex-column gap-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label for="resumetoInterviewRate" class="fw-semibold text-dark small">
+                Resume to Interview Rate <span class="text-danger">*</span>
+              </label>
+              <input
+                id="resumetoInterviewRate"
+                v-model="kpiForm.resumetoInterviewRate"
+                type="text"
+                required
+                class="form-control-ats"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label for="averageMatchScore" class="fw-semibold text-dark small">
+                Average Match Score <span class="text-danger">*</span>
+              </label>
+              <input
+                id="averageMatchScore"
+                v-model="kpiForm.averageMatchScore"
+                type="text"
+                required
+                class="form-control-ats"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label for="interviewSlotUtilization" class="fw-semibold text-dark small">
+                Interview Slot Utilization<span class="text-danger">*</span>
+              </label>
+              <input
+                id="interviewSlotUtilization"
+                v-model="kpiForm.interviewSlotUtilization"
+                type="text"
+                required
+                class="form-control-ats"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label for="timetoDecision" class="fw-semibold text-dark small">
+                Time to Decision <span class="text-danger">*</span>
+              </label>
+              <input
+                id="timetoDecision"
+                v-model="kpiForm.timetoDecision"
+                type="text"
+                required
+                class="form-control-ats"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex flex-column gap-2">
+              <label for="candidateConversionRate" class="fw-semibold text-dark small">
+                Candidate Conversion Rate <span class="text-danger">*</span>
+              </label>
+              <input
+                id="candidateConversionRate"
+                v-model="kpiForm.candidateConversionRate"
+                type="text"
+                required
+                class="form-control-ats"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" :disabled="kpiLoading" class="btn-ats-primary">
+            <span v-if="kpiLoading">Saving...</span>
+            <span v-else>Save kpi Settings</span>
+          </button>
+          <button type="button" @click="fetchkpiSettings" :disabled="kpiLoading" class="btn-ats-secondary">
+            Reset
+          </button>
+        </div>
+      </form>
+    </div>
+
+
+
+
 <!-- Add Key Modal -->
 <div v-if="showAddKeyModal" class="modal-overlay-ats" >
   <div class="modal-content-ats modal-content-sm" @click.stop>
@@ -440,10 +551,23 @@ const GroqSuccess = ref('');
       smtp_type: '',
       is_secure_smtp: false
     });
+
+
+    const kpiForm = ref({
+      resumetoInterviewRate: '',
+      averageMatchScore: '',
+      interviewSlotUtilization: '',
+      timetoDecision: '',
+      candidateConversionRate: ''
+    });
     
     const smtpLoading = ref(false);
     const smtpError = ref('');
     const smtpSuccess = ref('');
+
+    const kpiLoading = ref(false);
+    const kpiError = ref('');
+    const kpiSuccess = ref('');
     
     // Zoom form state
     const zoomForm = ref({
@@ -577,6 +701,79 @@ const addGroqKey = async () => {
 };
 
 
+const fetchKpiSettings = async () => {
+      kpiLoading.value = true;
+      kpiError.value = '';
+      kpiSuccess.value = '';
+      
+      try {
+        const token = localStorage.getItem('auth_token');
+        const response = await axios.get(`${API_BASE_URL}/config/kpi`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.data.success) {
+          if (response.data.data) {
+            kpiForm.value = {
+              resumetoInterviewRate: response.data.data.resumetoInterviewRate || '',
+              averageMatchScore: response.data.data.averageMatchScore || '',
+              interviewSlotUtilization: response.data.data.interviewSlotUtilization || '',
+              timetoDecision: response.data.data.timetoDecision || '',
+              candidateConversionRate: response.data.data.candidateConversionRate || ''
+            };
+          }
+        } else {
+          kpiError.value = response.data.error || 'Failed to fetch kpi settings';
+        }
+      } catch (err) {
+        kpiError.value = err.response?.data?.error || err.message || 'Failed to fetch kpi settings';
+      } finally {
+        kpiLoading.value = false;
+      }
+    };
+
+
+    const handlekpiSubmit = async () => {
+      kpiLoading.value = true;
+      kpiError.value = '';
+      kpiSuccess.value = '';
+      debugger;
+      try {
+        const token = localStorage.getItem('auth_token');
+        const trimmedForm = {
+          ...kpiForm.value,
+          resumetoInterviewRate: kpiForm.value.resumetoInterviewRate.trim(),
+          averageMatchScore: kpiForm.value.averageMatchScore.trim(),
+          interviewSlotUtilization: kpiForm.value.interviewSlotUtilization.trim(),
+          timetoDecision: kpiForm.value.timetoDecision.trim(),
+          candidateConversionRate: kpiForm.value.candidateConversionRate.trim()
+        };
+        const response = await axios.put(
+          `${API_BASE_URL}/config/kpi`,
+          trimmedForm,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        if (response.data.success) {
+          kpiSuccess.value = 'KPI settings saved successfully!';
+        } else {
+          kpiError.value = response.data.error || 'Failed to save KPI settings';
+        }
+      } catch (err) {
+        kpiError.value = err.response?.data?.error || err.message || 'Failed to save KPI settings';
+      } finally {
+        kpiLoading.value = false;
+      }
+    };
+
+
+
+
     
     const fetchSmtpSettings = async () => {
       smtpLoading.value = true;
@@ -671,7 +868,8 @@ const addGroqKey = async () => {
       // Fetch existing settings
       await fetchSmtpSettings();
       await fetchZoomSettings();
-        await fetchGroqKeys(); // ✅ ADD THIS
+        await fetchGroqKeys(); 
+        await fetchKpiSettings();
     });
     
     const fetchZoomSettings = async () => {
@@ -758,8 +956,14 @@ const addGroqKey = async () => {
       smtpLoading,
       smtpError,
       smtpSuccess,
+      kpiForm,
+      kpiLoading,
+      kpiError,
+      kpiSuccess,
       fetchSmtpSettings,
+      fetchKpiSettings,
       handleSmtpSubmit,
+      handlekpiSubmit,
       zoomForm,
       zoomLoading,
       zoomError,

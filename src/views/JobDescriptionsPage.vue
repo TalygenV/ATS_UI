@@ -153,6 +153,17 @@
               </select>
               <small class="text-muted">When set to "On Hold", candidate links cannot be generated or used</small>
             </div>
+            <div class="mb-4">
+              <label for="industryAvg" class="form-label fw-medium text-dark">Industry Average *</label>
+              <input
+                id="industryAvg"
+                v-model="currentJob.industryAvg"
+                type="text"
+                required
+                placeholder="Industry Average"
+                class="form-control-ats"
+              />
+            </div>
             <div class="d-flex gap-3 justify-content-end mt-4">
               <button type="button" @click="closeModal" class="btn-ats-secondary">Cancel</button>
               <button type="submit" :disabled="saving" class="btn-ats-primary">
@@ -197,7 +208,8 @@ export default {
         description: '',
         requirements: '',
         interviewers: [],
-        status: 'Open'
+        status: 'Open',
+        industryAvg:''
       },
       interviewers: [],
       loadingInterviewers: false
@@ -280,7 +292,8 @@ export default {
         description: job.description,
         requirements: job.requirements || '',
         interviewers: job.interviewers || [],
-        status: job.status || 'Open'
+        status: job.status || 'Open',
+        industryAvg: job.industryAvg || ''
       };
       this.showEditModal = true;
     },
@@ -319,7 +332,8 @@ export default {
         description: '',
         requirements: '',
         interviewers: [],
-        status: 'Open'
+        status: 'Open',
+        industryAvg: ''
       };
     },
     truncateText(text, length) {
