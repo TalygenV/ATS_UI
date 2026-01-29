@@ -110,7 +110,7 @@
           
  
   <a
-    v-if="assignment.is_video_call != 0"
+    v-if="assignment.is_video_call == 1"
     :href="assignment.interview_start_url"
     target="_blank"
   >

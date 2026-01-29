@@ -173,15 +173,12 @@
 
     </div>
         <div class="row g-4 mt-4">
-           
-            
           <div  class="col-12 d-flex justify-content-between align-items-center ats-card mb-3">
           <h3 class="fs-5 fw-bold mb-3">Decision Pending</h3>
           <button class="btn-back small" @click="onViewClickHRDeccision">View All</button>
         </div>
          <HRDecisionPendingList :pastDecissionPendingSlots="pastDecissionPendingSlots"   @decision-done="descisionDoneTrigger = !descisionDoneTrigger"/>
         </div>
-
   </div>
 </template>
 
@@ -229,7 +226,6 @@ function formatDate(isoString) {
 }
  
  function hideJoinButton(assignment){
-  debugger;
          const nowUtc = new Date(); // current UTC
            if(assignment.is_video_call == 0)
        {

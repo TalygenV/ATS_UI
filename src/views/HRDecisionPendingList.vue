@@ -2,9 +2,10 @@
 
 
 <template>
-        <div class="row g-4 mt-4">
-        <div style="flex-wrap: wrap;" class="d-flex flex-row gap-3">
-          <div v-for="assignment in pastDecissionPendingSlots" :key="assignment.id" class="ats-card ats-card-top-warning">
+        <div class="row g-4">
+       
+<div class="col-12 col-md-6 col-xl-3"  v-for="assignment in pastDecissionPendingSlots" :key="assignment.id">
+          <div class="ats-card ats-card-top-warning ">
             <div class="d-flex justify-content-between align-items-start mb-3">
               <div>
                 <h4 class="fs-6 fw-semibold text-dark mb-1">{{ assignment.resume?.name || assignment.candidate_name || 'Unknown Candidate' }}</h4>
@@ -22,9 +23,11 @@
               <button @click="viewCandidateDetails(assignment)" class="btn-ats-secondary btn-ats-sm">View Resume</button>
             </div>
           </div>
+  </div>
+
           <div v-if="pastDecissionPendingSlots.length === 0" style="width: 100%;" class="ats-card text-center py-4 text-muted">No decision pending interviews found.</div>
-        </div>
-           
+       
+         
       </div>
 
 
