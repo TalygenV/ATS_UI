@@ -154,7 +154,7 @@
               <small class="text-muted">When set to "On Hold", candidate links cannot be generated or used</small>
             </div>
             <div class="mb-4">
-              <label for="industryAvg" class="form-label fw-medium text-dark">Industry Average *</label>
+              <label for="industryAvg" class="form-label fw-medium text-dark">Industry Average(No. of Days) *</label>
               <input
                 id="industryAvg"
                 v-model="currentJob.industryAvg"
