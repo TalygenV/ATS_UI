@@ -1655,7 +1655,8 @@ const handleClickOutside = (event) => {
 
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
-  await fetchAnalyticsData();
+  //await fetchAnalyticsData();
+  setQuickFilter('last7days');
   // Wait for DOM to update before initializing charts
   await nextTick();
   setTimeout(() => {
