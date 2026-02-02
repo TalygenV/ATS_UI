@@ -14,52 +14,60 @@
 
       <!-- Job Description Info -->
       <div class="ats-card ats-card-xl">
-        <div class="d-flex gap-2 mb-3 flex-wrap">
+        <!-- <div class="d-flex gap-2 mb-3 flex-wrap">
           <span class="badge-ats badge-ats-success text-uppercase">{{ canditateAcceptCount.key }} {{
             canditateAcceptCount.value }}</span>
           <span class="badge-ats badge-ats-pending text-uppercase">{{ canditatePendingCount.key }} {{
             canditatePendingCount.value }}</span>
           <span class="badge-ats badge-ats-danger text-uppercase">{{ canditateRejectedCount.key }} {{
             canditateRejectedCount.value }}</span>
-        </div>
+        </div> -->
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 pb-3 mb-3 border-bottom">
           <div>
-            <h2 class="page-title-ats mb-0">{{ jobDescription.title }}</h2>
-            <div class="mt-2">
+            <h2 class="page-title-ats mb-0"> {{ walkInJobDetails.drive_name }}</h2>
+            
+            <!-- <div class="mt-2">
               <span :class="['badge-ats', jobDescription.status === 'Open' ? 'badge-ats-success' : 'badge-ats-warning']"
                 style="font-size: 0.875rem;">
                 {{ jobDescription.status || 'Open' }}
               </span>
-            </div>
+            </div> -->
           </div>
           <div v-if="hasWriteAccess" class="d-flex gap-2 flex-wrap">
-            <button v-if="jobDescription.status !== 'On Hold' && !candidateLinkUrl" @click="generateCandidateLink"
-              class="btn-copy-link" :disabled="candidateLinkLoading">
-              <span v-if="candidateLinkLoading">Generating...</span>
-              <span v-else>Generate Candidate Link</span>
-            </button>
-            <button v-if="jobDescription.status !== 'On Hold' && candidateLinkUrl" @click="copyCandidateLink"
-              class="btn-copy-link">
-              Copy Candidate Link
-            </button>
+           
+           
             <button @click="editJob" class="btn-edit">Edit</button>
-            <button @click="deleteJob" class="btn-delete">Delete</button>
+           
           </div>
         </div>
         <div class="">
-
+               <div class="mb-4">
+            <h3 class="section-title-gradient">WalkIn Drive Description</h3>
+            <p class="text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ walkInJobDetails.drive_description }}
+            </p>
+          </div>
+            <div class="mb-4">
+            <h3 class="t">Job Title</h3>
+            <p class="text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ jobDescription.title }}
+            </p>
+          </div>
           <div class="mb-4">
-            <h3 class="section-title-gradient">Job Description</h3>
+            <h3 class="t">Job Description</h3>
             <p class="text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ jobDescription.description }}
             </p>
           </div>
-          <div v-if="jobDescription.requirements" class="mb-4">
+          <!-- <div v-if="jobDescription.requirements" class="mb-4">
             <h3 class="section-title-gradient">Requirements</h3>
             <p class="text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ jobDescription.requirements }}
             </p>
-          </div>
+          </div> -->
           <div class="mb-4">
-            <p class="text-muted small">Created: {{ formatDate(jobDescription.created_at) }}</p>
+            <p class="text-muted small">
+  Start From: {{ formatDateTime(walkInJobDetails.from_date) }}
+</p>
+<p class="text-muted small">
+  End Date: {{ formatDateTime(walkInJobDetails.to_date) }}
+</p>
           </div>
         </div>
       </div>
@@ -170,6 +178,10 @@
                   {{ candidate.candidate_name || 'Unknown' }}
                   <span v-if="candidate.isVersion || candidate.isDuplicate" class="version-badge-new">
                     V{{ candidate.versionNumber || 1 }}
+                  </span>
+
+                    <span v-if="candidate.is_video_call == 3" class="version-badge-new">
+                      Walk-In
                   </span>
                 </h4>
                 <p class="candidate-email-new">{{ candidate.email || 'N/A' }}</p>
@@ -289,11 +301,11 @@
                 <!-- HR/Admin: Assignment buttons -->
 
                 <button
-                  v-if="hasWriteAccess && (!candidate.interview_details || candidate.interview_details.length === 0)"
+                  v-if="hasWriteAccess && walkInDriveOngoing && (!candidate.interview_details || candidate.interview_details.length === 0)"
                   @click="openAssignModal(candidate)" class="btn-action-assign">
                   Assign Interviewer
                 </button>
-                <button v-if="hasWriteAccess && candidate.interview_details && candidate.interview_details.length > 0"
+                <button v-if="hasWriteAccess && walkInDriveOngoing && candidate.interview_details && candidate.interview_details.length > 0"
                   @click="openAssignModal(candidate)" class="btn-action-assign">
                   Reassign
                 </button>
@@ -339,57 +351,87 @@
 
     <!-- Edit Modal -->
     <div v-if="showEditModal" class="modal-overlay-ats">
-      <div class="modal-content-ats" @click.stop>
-        <div class="modal-header-ats" style="    position: sticky;
-    top: 0;
-    background-color: white;">
-          <h2>Edit Job Description</h2>
-          <button @click="closeEditModal" class="close-btn-ats">×</button>
+           <div class="modal-content-ats" @click.stop>
+          <div class="modal-header-ats" style="    position: sticky;
+      top: 0;
+      background-color: white;" >
+            <h2 class="fs-4 fw-semibold">{{ showEditModal ? 'Edit Walk In Drive' : 'Create Walk In Drive' }}</h2>
+            <button @click="closeEditModal" class="close-btn-ats">×</button>
+          </div>
+          <div class="modal-body-ats">
+            <form @submit.prevent="saveJob">
+              <div class="mb-4">
+                <label for="drive_name" class="form-label fw-medium text-dark">Drive Title *</label>
+                <input
+                  id="drive_name"
+                  v-model="editForm.drive_name"
+                  type="text"
+                  required
+                  placeholder="e.g., Senior Software Engineer"
+                  class="form-control-ats"
+                />
+              </div>
+              <div class="mb-4">
+                <label for="drive_description" class="form-label fw-medium text-dark">Drive Description *</label>
+                <textarea
+                  id="drive_description"
+                  v-model="editForm.drive_description"
+                  required
+                  rows="8"
+                  placeholder="Enter the full description..."
+                  class="form-control-ats form-textarea-ats"
+                ></textarea>
+              </div>
+              <div class="mb-4">
+                <label for="from_date" class="form-label fw-medium text-dark">
+                    From Date & Time *
+                </label>
+                <input
+                    id="from_date"
+                    v-model="editForm.from_date"
+                    type="datetime-local"
+                    required
+                    class="form-control-ats"
+                />
+                </div>
+
+                <div class="mb-4">
+                <label for="to_date" class="form-label fw-medium text-dark">
+                    To Date & Time *
+                </label>
+                <input
+                    id="to_date"
+                    v-model="editForm.to_date"
+                    type="datetime-local"
+                    required
+                    class="form-control-ats"
+                    :min="editForm.from_date"
+                />
+                </div>
+              <div class="mb-4">
+                <label for="forJd" class="form-label fw-medium text-dark">Assign Job Description </label>
+                <select
+                   :disabled="editForm.id"
+                  id="forJd"
+                  v-model="editForm.dobDescription_id"
+                  required
+                  class="form-select-ats"
+                >
+                  <option v-for="forJd in forJd" :key="forJd.id" :value="forJd.id">
+                    {{ forJd.title }}
+                  </option>
+                </select>
+              </div>
+              <div class="d-flex gap-3 justify-content-end mt-4">
+                <button type="button" @click="closeEditModal" class="btn-ats-secondary">Cancel</button>
+                <button type="submit" :disabled="saving" class="btn-ats-primary">
+                  <span v-if="saving">Saving...</span>
+                  <span v-else>{{ showEditModal ? 'Update' : 'Create' }}</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div class="modal-body-ats">
-          <form @submit.prevent="saveJob">
-            <div class="mb-4">
-              <label for="title">Job Title *</label>
-              <input id="title" v-model="editForm.title" type="text" required class="form-control-ats" />
-            </div>
-            <div class="mb-4">
-              <label for="description">Job Description *</label>
-              <textarea id="description" v-model="editForm.description" required rows="8"
-                class="form-control-ats form-textarea-ats"></textarea>
-            </div>
-            <div class="mb-4">
-              <label for="requirements">Requirements (Optional)</label>
-              <textarea id="requirements" v-model="editForm.requirements" rows="6"
-                class="form-control-ats form-textarea-ats"></textarea>
-            </div>
-            <div class="mb-4">
-              <label for="interviewers">Assign Interviewers (Optional)</label>
-              <select id="interviewers" v-model="editForm.interviewers" multiple class="form-select-ats"
-                style="min-height: 120px;">
-                <option v-for="interviewer in interviewers" :key="interviewer.id" :value="interviewer.id">
-                  {{ interviewer.full_name || interviewer.email }}
-                </option>
-              </select>
-              <small class="form-hint">Hold Ctrl (or Cmd on Mac) to select multiple interviewers</small>
-            </div>
-            <div class="mb-4">
-              <label for="status">Job Status *</label>
-              <select id="status" v-model="editForm.status" required class="form-select-ats">
-                <option value="Open">Open</option>
-                <option value="On Hold">On Hold</option>
-              </select>
-              <small class="form-hint">When set to "On Hold", candidate links cannot be generated or used</small>
-            </div>
-            <div class="d-flex gap-3 justify-content-end mt-4">
-              <button type="button" @click="closeEditModal" class="btn-ats-secondary">Cancel</button>
-              <button type="submit" :disabled="saving" class="btn-ats-primary">
-                <span v-if="saving">Saving...</span>
-                <span v-else>Update</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
 
     <!-- Resume Detail Modal -->
@@ -1324,7 +1366,8 @@ import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
 import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
-import { formatDate, formatDateTime, formatTime, formatDateRange } from '../utils/datetimeUtils';
+import { formatDate, formatDateTime, formatTime, formatDateRange , toUTCISOString } from '../utils/datetimeUtils';
+import moment from 'moment';
 
 export default {
   name: 'JobDetailPage',
@@ -1335,6 +1378,7 @@ export default {
   },
   data() {
     return {
+         forJd: [],  
       selectedInterviewersforAssign: [],
       selectedTimeSlotforBulkAssign: '',
       assignMultipleInterviwer: false,
@@ -1354,11 +1398,13 @@ export default {
       saving: false,
       walkInJobDetails: null,
       editForm: {
-        title: '',
-        description: '',
-        requirements: '',
-        interviewers: [],
-        status: 'Open'
+        id: null,
+          drive_name: '',
+          drive_description: '',
+          from_date: null,
+          to_date:null,
+          dobDescription_id:null,
+          status: 'active'
       },
       showResumeModal: false,
       resumeDetailEvaluation: null,
@@ -1440,6 +1486,7 @@ export default {
   },
   mounted() {
     this.fetchJobDescription();
+    this.fetchJobDescList();
     this.fetchWalkInInterviewDetails();
     this.fetchCandidates();
     if (this.hasWriteAccess) {
@@ -1448,6 +1495,22 @@ export default {
     }
   },
   methods: {
+     
+ 
+
+          walkInDriveOngoing(candidate){
+       
+               if(candidate.is_video_call == 3){
+               
+                    const currentDate = moment(); 
+                     const driveEndDate = moment(this.walkInJobDetails.to_date); 
+                     const driveStartDate = moment(this.walkInJobDetails.from_date);
+                     return currentDate.isBetween(driveStartDate, driveEndDate, null, '[]');  
+               }
+
+               return false     
+        
+       },
     getInterviewerName(candidate) {
       if (!candidate.interviewer) return null;
       const name = candidate.interviewer.full_name || candidate.interviewer.email;
@@ -1576,7 +1639,7 @@ export default {
         params.append('sort_by', this.sortBy);
 
         const response = await axios.get(
-          `${API_BASE_URL}/evaluations/job/${jobId}?${params.toString()}`
+          `${API_BASE_URL}/evaluations/walkIn/${jobId}?${params.toString()}`
         );
         if (response.data.success) {
           // Parse interviewer_feedback if it's a string
@@ -1690,6 +1753,8 @@ export default {
       try {
         const formData = new FormData();
         formData.append('job_description_id', this.$route.params.id);
+        formData.append('source', 'walk_in');
+        formData.append('walk_in_id', this.walkInJobDetails ? this.walkInJobDetails.walkinDriveId : '');
 
         if (this.selectedFiles.length === 1) {
           formData.append('resume', this.selectedFiles[0]);
@@ -2094,25 +2159,51 @@ export default {
     },
     editJob() {
       this.editForm = {
-        title: this.jobDescription.title,
-        description: this.jobDescription.description,
-        requirements: this.jobDescription.requirements || '',
-        interviewers: this.jobDescription.interviewers || [],
-        status: this.jobDescription.status || 'Open'
+         id: this.walkInJobDetails.walkinDriveId,
+          drive_name: this.walkInJobDetails.drive_name,
+          drive_description: this.walkInJobDetails.drive_description,
+          from_date: this.walkInJobDetails.from_date ? new Date(this.walkInJobDetails.from_date).toISOString().slice(0,16) : null,
+          to_date: this.walkInJobDetails.to_date ? new Date(this.walkInJobDetails.to_date).toISOString().slice(0,16) : null,
+          dobDescription_id: this.walkInJobDetails.dobDescription_id ,
+          status: this.walkInJobDetails.status || 'active'
       };
 
       this.showEditModal = true;
     },
+
+       async fetchJobDescList() {
+        this.loadingInterviewers = true;
+        try {
+          const response = await axios.get(`${API_BASE_URL}/walkIn/jobDescList`);
+          if (response.data.success) {
+            this.forJd = response.data.data;
+          }
+        } catch (error) {
+          console.error('Error fetching interviewers:', error);
+        } finally {
+          this.loadingInterviewers = false;
+        }
+      },
     async saveJob() {
       this.saving = true;
       try {
-        const response = await axios.put(
-          `${API_BASE_URL}/job-descriptions/${this.$route.params.id}`,
-          this.editForm
-        );
+        // const response = await axios.put(
+        //   `${API_BASE_URL}/job-descriptions/${this.$route.params.id}`,
+        //   this.editForm
+        // );
+         const payload = {
+            ...this.editForm,
+      from_date: toUTCISOString(this.editForm.from_date),
+      to_date: toUTCISOString(this.editForm.to_date),
+    };
+           const response = await axios.put(
+              `${API_BASE_URL}/walkIn/${this.editForm.id}`,
+              payload
+            );
         if (response.data.success) {
           await this.fetchJobDescription();
           await this.fetchAssignInterviewers()
+          await this.fetchWalkInInterviewDetails()
           this.closeEditModal();
         }
       } catch (error) {
@@ -2138,11 +2229,13 @@ export default {
     closeEditModal() {
       this.showEditModal = false;
       this.editForm = {
-        title: '',
-        description: '',
-        requirements: '',
-        interviewers: [],
-        status: 'Open'
+        id: null,
+          drive_name: '',
+          drive_description: '',
+          from_date: null,
+          to_date: null,
+          dobDescription_id: null,
+          status: 'active'
       };
     },
     getStatusClass(status) {

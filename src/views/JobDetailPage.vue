@@ -171,6 +171,9 @@
                   <span v-if="candidate.isVersion || candidate.isDuplicate" class="version-badge-new">
                     V{{ candidate.versionNumber || 1 }}
                   </span>
+                    <span v-if="candidate.is_video_call == 3" class="version-badge-new">
+                      Walk-In
+                  </span>
                 </h4>
                 <p class="candidate-email-new">{{ candidate.email || 'N/A' }}</p>
               </div>
@@ -289,11 +292,11 @@
                 <!-- HR/Admin: Assignment buttons -->
 
                 <button
-                  v-if="hasWriteAccess && (!candidate.interview_details || candidate.interview_details.length === 0)"
+                  v-if="hasWriteAccess && !walkInDriveOngoing(candidate) && (!candidate.interview_details || candidate.interview_details.length === 0)"
                   @click="openAssignModal(candidate)" class="btn-action-assign">
                   Assign Interviewer
                 </button>
-                <button v-if="hasWriteAccess && candidate.interview_details && candidate.interview_details.length > 0"
+                <button v-if="hasWriteAccess && !walkInDriveOngoing(candidate) && candidate.interview_details && candidate.interview_details.length > 0"
                   @click="openAssignModal(candidate)" class="btn-action-assign">
                   Reassign
                 </button>
@@ -1329,6 +1332,8 @@ import { useAuth } from '../composables/useAuth';
 import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
 import { formatDate, formatDateTime, formatTime, formatDateRange } from '../utils/datetimeUtils';
+import moment from 'moment';
+
 
 export default {
   name: 'JobDetailPage',
@@ -1339,6 +1344,7 @@ export default {
   },
   data() {
     return {
+      walkInJobDetails : null,
       selectedInterviewersforAssign: [],
       selectedTimeSlotforBulkAssign: '',
       assignMultipleInterviwer: false,
@@ -1443,6 +1449,7 @@ export default {
   },
   mounted() {
     this.fetchJobDescription();
+    this.fetchWalkInInterviewDetails()
     this.fetchCandidates();
     if (this.hasWriteAccess) {
       this.fetchInterviewers();
@@ -1450,6 +1457,34 @@ export default {
     }
   },
   methods: {
+       
+       walkInDriveOngoing(candidate){
+       
+               if(candidate.is_video_call == 3){
+                   
+                    const currentDate = moment(); 
+                     const driveEndDate = moment(this.walkInJobDetails.to_date); 
+                     const driveStartDate = moment(this.walkInJobDetails.from_date);
+                     return currentDate.isBetween(driveStartDate, driveEndDate, null, '[]');  
+               }
+
+               return false     
+        
+       },
+
+        async fetchWalkInInterviewDetails() {
+    
+        try {
+             let response = await axios.get(`${API_BASE_URL}/walkIn/single/${this.$route.params.id}`);
+             if (response.data.success && response.data.data.length > 0) {
+               this.walkInJobDetails = response.data.data[0];
+             }
+        } catch (error) {
+            
+        }
+      // This method can be used to fetch additional walk-in interview details if needed
+    },
+
     getInterviewerName(candidate) {
       if (!candidate.interviewer) return null;
       const name = candidate.interviewer.full_name || candidate.interviewer.email;

@@ -25,7 +25,8 @@
           <div class="ats-card h-100 d-flex flex-column">
             <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom">
               <div class="flex-grow-1">
-                <h3 class="fs-5 fw-semibold text-dark mb-0">{{ job.title }}</h3>
+                <!-- <h3 class="fs-5 fw-semibold text-dark mb-0">{{ job.title }}</h3> -->
+                 <h3 class="fs-5 fw-semibold text-dark mb-0">{{ job.drive_name }}</h3>
                 <div class="mt-2">
                   <span 
                     :class="['badge-ats', job.status === 'Open' ? 'badge-ats-success' : 'badge-ats-warning']"
@@ -41,11 +42,14 @@
               </div>
             </div>
             <div class="flex-grow-1">
-              <p class="text-secondary mb-3">{{ truncateText(job.description, 200) }}</p>
-              <div v-if="job.requirements" class="pt-3 border-top mb-3">
+              <!-- <p class="text-secondary mb-3">{{ truncateText(job.description, 200) }}</p> -->
+                  <p class="text-secondary mb-3">{{ truncateText(job.drive_description, 200) }}</p>
+              <!-- <div v-if="job.requirements" class="pt-3 border-top mb-3">
                 <strong class="text-dark d-block mb-2">Requirements:</strong>
                 <p class="text-secondary small mb-0">{{ truncateText(job.requirements, 150) }}</p>
-              </div>
+              </div> -->
+                  <h3 class="fs-5 mb-3"><span style="font-weight:600" class="text-dark">Job Title :</span> <span class="text-secondary">{{ job.title }}</span></h3>
+                 <p class="text-secondary mb-3"><span style="font-weight:600" class="text-dark">Description :</span> {{ truncateText(job.description, 200) }}</p>
               <div v-if="job.interviewers && job.interviewers.length > 0" class="pt-3 border-top mb-3">
                 <strong class="text-dark d-block mb-2">Assigned Interviewers:</strong>
                 <span class="badge-ats badge-ats-primary">{{ job.interviewers.length }} interviewer(s)</span>
@@ -74,8 +78,15 @@
                 </div>
               </div> -->
             </div>
+                                <p class="text-muted small">
+  Start From: {{ formatDateTime(job.from_date) }}
+</p>
+<p class="text-muted small">
+  End Date: {{ formatDateTime(job.to_date) }}
+</p>
             <div class="d-flex justify-content-between align-items-center pt-3 mt-3 border-top">
               <span class="text-muted small invisible">{{ formatDate(job.created_at) }}</span>
+      
               <button @click="viewJobDetail(job.dobDescription_id)" class="btn-ats-secondary btn-ats-sm">View Details</button>
             </div>
           </div>
@@ -144,6 +155,7 @@
               <div class="mb-4">
                 <label for="forJd" class="form-label fw-medium text-dark">Assign Job Description </label>
                 <select
+                   :disabled="currentDrive.id"
                   id="forJd"
                   v-model="currentDrive.dobDescription_id"
                   required
@@ -173,7 +185,7 @@
   import { useAuth } from '../composables/useAuth';
   import { useLoader } from '../composables/useLoader';
   import { API_BASE_URL } from '../config/api';
-  import { formatDate } from '../utils/datetimeUtils';
+  import { formatDate , toUTCISOString , formatDateTime } from '../utils/datetimeUtils';
   
   export default {
     name: 'walkininterview',
@@ -212,7 +224,7 @@
       }
     },
     methods: {
-
+      formatDateTime,
       
       async fetchWalkinDrive() {
         this.loading = true;
@@ -237,10 +249,16 @@
         const action = this.showEditModal ? 'Updating' : 'Creating';
         this.showLoader(`${action} Walk In Drive`, 'Saving Drive details...');
         try {
+                   const payload = {
+            ...this.currentDrive,
+      from_date: toUTCISOString(this.currentDrive.from_date),
+      to_date: toUTCISOString(this.currentDrive.to_date),
+    };
+
           if (this.showEditModal) {
             const response = await axios.put(
               `${API_BASE_URL}/walkIn/${this.currentDrive.id}`,
-              this.currentDrive
+              payload
             );
             if (response.data.success) {
               await this.fetchWalkinDrive();
@@ -249,7 +267,7 @@
           } else {
             const response = await axios.post(
               `${API_BASE_URL}/walkIn`,
-              this.currentDrive
+              payload
             );
             if (response.data.success) {
               await this.fetchWalkinDrive();
