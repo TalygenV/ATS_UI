@@ -124,6 +124,12 @@ const routes = [
     name : 'HRDecisionPending',
     component: () => import('../views/HRDecisionPendingAllList.vue'),
      meta: { requiresAuth: true }
+  },
+  {
+    path:'/walkin',
+    name:'walkininterview',
+    component: () => import('../views/walkininterview.vue'),
+     meta: { requiresAuth: true }
   }
 
 ];

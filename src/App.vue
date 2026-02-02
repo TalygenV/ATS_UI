@@ -20,6 +20,7 @@
           <router-link to="/" class="nav-link-ats">Dashboard</router-link>
           <router-link :to="{ name: 'JobDescriptions' }" class="nav-link-ats">Job Descriptions</router-link>
           <router-link v-if="user?.role !== 'Interviewer'" to="/resumes" class="nav-link-ats">All Resumes</router-link>
+          <router-link v-if="hasWriteAccess" to="/walkin" class="nav-link-ats">Walk In Interview</router-link>
           <router-link v-if="hasWriteAccess" :to="{ name: 'AnalyticsDashboard' }" class="nav-link-ats">Analytics</router-link>
           
           <router-link v-if="isAdmin" to="/register" class="nav-link-ats">Create User</router-link>
