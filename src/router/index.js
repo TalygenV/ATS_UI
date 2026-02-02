@@ -130,6 +130,12 @@ const routes = [
     name:'walkininterview',
     component: () => import('../views/walkininterview.vue'),
      meta: { requiresAuth: true }
+  },
+    {
+    path:'/walkin/:id',
+    name:'WalkInInterviewDetailsPage',
+    component: () => import('../views/WalkInInterviewDetailsPage.vue'),
+     meta: { requiresAuth: true }
   }
 
 ];

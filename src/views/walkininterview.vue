@@ -37,7 +37,7 @@
               </div>
               <div v-if="hasWriteAccess" class="d-flex gap-2">
                 <button @click="editJob(job)" class="btn-icon" title="Edit">✏️</button>
-                <button @click="deleteJob(job.id)" class="btn-icon" title="Delete">🗑️</button>
+                <button @click="deleteJob(job.walkinDriveId)" class="btn-icon" title="Delete">🗑️</button>
               </div>
             </div>
             <div class="flex-grow-1">
@@ -50,7 +50,7 @@
                 <strong class="text-dark d-block mb-2">Assigned Interviewers:</strong>
                 <span class="badge-ats badge-ats-primary">{{ job.interviewers.length }} interviewer(s)</span>
               </div>
-              <div class="pt-3 border-top mb-3">
+              <!-- <div class="pt-3 border-top mb-3">
                 <strong class="text-dark d-block mb-2">Parsed Resumes:</strong>
                 <span class="badge bg-success text-white me-1">{{ (job.accepted || 0) + (job.pending || 0) + (job.rejected || 0) }} resume(s)</span>
                 <div class="mt-2">
@@ -59,8 +59,8 @@
                   <span class="badge-ats badge-ats-pending ms-1">pending {{job.pending || 0}}</span>
                   <span class="badge-ats badge-ats-danger ms-1">rejected {{job.rejected || 0}}</span>
                 </div>
-              </div>
-              <div v-if="hasWriteAccess" class="pt-3 border-top">
+              </div> -->
+              <!-- <div v-if="hasWriteAccess" class="pt-3 border-top">
                 <strong class="text-dark d-block mb-2">Application Status:</strong>
                 <div class="d-flex flex-wrap gap-1">
                   <span class="badge-ats badge-ats-pending">Pending {{job.totalPending || 0}}</span>
@@ -72,11 +72,11 @@
                   <span class="badge-ats badge-ats-danger">Rejected {{job.finalRejected || 0}}</span>
              
                 </div>
-              </div>
+              </div> -->
             </div>
             <div class="d-flex justify-content-between align-items-center pt-3 mt-3 border-top">
-              <span class="text-muted small">{{ formatDate(job.created_at) }}</span>
-              <button @click="viewJobDetail(job.id)" class="btn-ats-secondary btn-ats-sm">View Details</button>
+              <span class="text-muted small invisible">{{ formatDate(job.created_at) }}</span>
+              <button @click="viewJobDetail(job.dobDescription_id)" class="btn-ats-secondary btn-ats-sm">View Details</button>
             </div>
           </div>
         </div>
@@ -138,14 +138,14 @@
                     type="datetime-local"
                     required
                     class="form-control-ats"
-                    :min="currentDrive.to_date"
+                    :min="currentDrive.from_date"
                 />
                 </div>
               <div class="mb-4">
                 <label for="forJd" class="form-label fw-medium text-dark">Assign Job Description </label>
                 <select
                   id="forJd"
-                  v-model="currentDrive.forJd"
+                  v-model="currentDrive.dobDescription_id"
                   required
                   class="form-select-ats"
                 >
@@ -212,6 +212,8 @@
       }
     },
     methods: {
+
+      
       async fetchWalkinDrive() {
         this.loading = true;
         this.error = null;
@@ -277,11 +279,11 @@
       },
       editJob(job) {
         this.currentDrive = {
-          id: job.id,
+          id: job.walkinDriveId,
           drive_name: job.drive_name,
           drive_description: job.drive_description,
-          from_date: job.from_date ,
-          to_date: job.to_date ,
+          from_date: job.from_date ? new Date(job.from_date).toISOString().slice(0,16) : null,
+          to_date: job.to_date ? new Date(job.to_date).toISOString().slice(0,16) : null,
           dobDescription_id: job.dobDescription_id ,
           status: job.status || 'active'
         };
@@ -301,8 +303,8 @@
           alert('Failed to delete job description. Please try again.');
         }
       },
-      viewJobDetail(jobId) {
-        this.$router.push({ name: 'JobDetail', params: { id: jobId } });
+      viewJobDetail(dobDescription_id) {
+        this.$router.push({ name: 'WalkInInterviewDetailsPage', params: { id: dobDescription_id } });
       },
       filterJobs() {
         if (!this.searchQuery.trim()) {
@@ -322,9 +324,9 @@
           drive_name: '',
           drive_description: '',
           from_date: null,
-          to_date_date: null,
+          to_date: null,
           dobDescription_id: null,
-          dobDescription_id: 'active'
+          status: 'active'
         };
       },
 
