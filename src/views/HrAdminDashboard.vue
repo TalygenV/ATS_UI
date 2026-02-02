@@ -68,9 +68,10 @@
     </button>
   </a>
 
-  <button v-if="interview.is_video_call == 0" class="btn-ats-primary btn-ats-sm">
-       On Call Interview
+  <button  class="btn-ats-primary btn-ats-sm">
+       {{interviewText[interview.is_video_call]}}
     </button>
+    
                   </div>
                   <div class="interview-time-badge-inline">
                     <span class="time">{{ interview.time }}</span>
@@ -119,8 +120,8 @@
     </button>
   </a>
 
-    <button v-if="interview.is_video_call == 0" class="btn-ats-primary btn-ats-sm">
-       On Call Interview
+    <button class="btn-ats-primary btn-ats-sm">
+       {{interviewText[interview.is_video_call]}}
     </button>
                   </div>
                   <div class="interview-time-badge-inline in-progress">
@@ -196,6 +197,13 @@ const { showLoader, hideLoader } = useLoader();
 const { user } = useAuth();
 const router = useRouter();
 
+const  interviewText ={
+          0 : 'on Call Interview',
+          2 :  'Face to Face Interview',
+          1 : 'Video Call Interview',
+          3 :  ' Walk-in Interview'
+      }
+
 const  descisionDoneTrigger = ref(false);
 
 const todayInterviews = ref([]);
@@ -227,7 +235,7 @@ function formatDate(isoString) {
  
  function hideJoinButton(assignment){
          const nowUtc = new Date(); // current UTC
-           if(assignment.is_video_call == 0)
+           if(assignment.is_video_call != 1)
        {
           return true
        }

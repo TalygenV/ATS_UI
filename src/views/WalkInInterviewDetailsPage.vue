@@ -798,19 +798,22 @@
                 </option>
               </select>
             </div>
-            <!-- <div class="form-group">
-              <label>Available Slots *</label>
-              <select v-model="assignmentData.slot_id" required class="form-select-clean">
-                <option value="">Select Time Slot</option>
-                <option v-for="slot in availableSlots" :key="slot.id" :value="slot.id">
-                  {{ formatDateTime(slot.start_time) }} - {{ formatTime(slot.end_time) }}
-                  ({{ slot.interviewer?.full_name || slot.interviewer?.email || 'Interviewer' }})
-                </option>
-              </select>
-              <p v-if="availableSlots.length === 0 && assignmentData.interviewer_id" class="hint-text">
-                No available slots found for the selected interviewer. Ask interviewer to add availability.
-              </p>
-            </div> -->
+         <div class="form-group">
+              <div class="mb-4">
+                <label for="from_date" class="form-label fw-medium text-dark">
+                    From Date & Time *
+                </label>
+                <input
+                    id="from_date"
+                    v-model="assignmentData.from_date"
+                    type="datetime-local"
+                    required
+                    class="form-control-ats"
+                    :min="mindateforassignment"
+                    :max="maxdateforassignment"
+                />
+                </div>
+            </div>
             <div class="modal-actions">
               <button type="button" @click="showAssignModal = false" class="btn-modal-cancel">Cancel</button>
               <button type="submit" class="btn-modal-primary">Assign</button>
@@ -843,19 +846,24 @@
             <!-- SECTION 2: Available Slots -->
 
 
-            <!-- <div class="form-group">
-              <label>Available Slots *</label>
-              <select v-model="selectedTimeSlotforBulkAssign" required class="form-select-clean">
-                <option value="">Select Time Slot</option>
-                <option v-for="(slot, index) in availableSlots" :key="index" :value="JSON.stringify(slot.slot_ids)">
-                  {{ formatDateTime(slot.start_time) }} - {{ formatTime(slot.end_time) }}
-                  ({{ slot.interviewer_ids?.length || 0 }} interviewer(s))
-                </option>
-              </select>
-              <p v-if="availableSlots.length === 0" class="hint-text">
-                No available slots found for the selected interviewer. Ask interviewer to add availability.
-              </p>
-            </div> -->
+             <div class="form-group">
+               <div class="form-group">
+              <div class="mb-4">
+                <label for="from_date" class="form-label fw-medium text-dark">
+                    From Date & Time *
+                </label>
+                <input
+                    id="from_date"
+                    v-model="assignmentData.from_date"
+                    type="datetime-local"
+                    required
+                    class="form-control-ats"
+                    :min="mindateforassignment"
+                    :max="maxdateforassignment"
+                />
+                </div>
+            </div>
+            </div> 
             <!-- SECTION 3: Actions -->
             <section class="modal-actions">
               <button type="button" @click="showAssignModal = false" class="btn-modal-cancel">
@@ -1366,7 +1374,7 @@ import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
 import { useLoader } from '../composables/useLoader';
 import { API_BASE_URL } from '../config/api';
-import { formatDate, formatDateTime, formatTime, formatDateRange , toUTCISOString } from '../utils/datetimeUtils';
+import { formatDate, formatDateTime, formatTime, formatDateRange , toUTCISOString , toLocalDateTime } from '../utils/datetimeUtils';
 import moment from 'moment';
 
 export default {
@@ -1421,7 +1429,7 @@ export default {
         evaluation_id: null,
         interviewer_id: null,
         slot_id: '',
-        isVideoCall: 1
+        isVideoCall: 3
       },
       availableSlots: [],
       selectedCandidateForFeedback: null,
@@ -1462,6 +1470,29 @@ export default {
     successCount() {
       return this.uploadResults.filter(r => r.success).length;
     },
+  mindateforassignment() {
+   
+  if (!this.walkInJobDetails?.from_date) return null;
+
+  const now = new Date();
+  const walkInStart = new Date(this.walkInJobDetails.from_date);
+
+  const effectiveMin =
+    now > walkInStart ? now : walkInStart;
+
+  return new Date(
+    effectiveMin.getTime() - effectiveMin.getTimezoneOffset() * 60000
+  )
+    .toISOString()
+    .slice(0, 16);
+},
+
+  maxdateforassignment() {
+  if (!this.walkInJobDetails?.to_date) return null;
+
+  return this.toLocalDateTime(this.walkInJobDetails.to_date);
+}
+,
     errorCount() {
       return this.uploadResults.filter(r => !r.success).length;
     },
@@ -1494,8 +1525,28 @@ export default {
       this.fetchAssignInterviewers()
     }
   },
+  watch: {
+  'assignmentData.from_date'(val) {
+    if (!val) return;
+
+    const selected = new Date(val);
+    const min = new Date(this.mindateforassignment);
+    const max = new Date(this.maxdateforassignment);
+
+    if (
+      isNaN(selected.getTime()) ||
+      selected < min ||
+      selected > max
+    ) {
+      this.assignmentData.from_date = null;
+      alert('Selected date is out of allowed range.');
+    }
+  }
+},
+
+
   methods: {
-     
+        toLocalDateTime,
  
 
           walkInDriveOngoing(candidate){
@@ -2276,12 +2327,12 @@ export default {
         evaluation_id: candidate.id,
         interviewer_id: null,
         slot_id: '',
-        isVideoCall: videoCall,
+        isVideoCall: candidate.is_video_call,
       };
       this.selectedInterviewersforAssign = [];
       this.selectedTimeSlotforBulkAssign = '';
       this.availableSlots = [];
-      this.is_video_call = videoCall;
+      this.is_video_call = candidate.is_video_call;
 
    
      
@@ -2299,65 +2350,45 @@ export default {
 
 
     async assignInterviewer() {
-      if (!this.assignmentData.interviewer_id || !this.assignmentData.slot_id) {
-        alert('Please fill in all required fields');
+      if (!this.assignmentData.interviewer_id || !this.assignmentData.from_date) {
+        alert('Please select an interviewer and date & time');
         return;
       }
       this.loading = true;
       this.showLoader('Assigning to interviewer...');
-      debugger;
       try {
-        let response;
-        if (this.assignmentData.evaluation_id && this.candidates.find(c => c.id === this.assignmentData.evaluation_id)?.interviewer_id) {
-          // Reassign
-          response = await axios.put(
-            `${API_BASE_URL}/interviews/assign/${this.assignmentData.evaluation_id}`,
-            {
-              interviewer_id: this.assignmentData.interviewer_id,
-              interview_date: null,
-              slot_id: this.assignmentData.slot_id,
-              is_video_call: this.assignmentData.isVideoCall
-            }
-          );
-        } else {
-          // New assignment
-          response = await axios.post(
-            `${API_BASE_URL}/interviews/assign`,
-            {
-              evaluation_id: this.assignmentData.evaluation_id,
-              interviewer_id: this.assignmentData.interviewer_id,
-              interview_date: null,
-              slot_id: this.assignmentData.slot_id,
-              is_video_call: this.assignmentData.isVideoCall
-            }
-          );
-        }
+        // Walk-in: backend generates slot for interviewer at start_time, then assigns
+        const response = await axios.post(
+          `${API_BASE_URL}/walkIn/assignWalkInInterView`,
+          {
+            evaluation_id: this.assignmentData.evaluation_id,
+            interviewer_ids: [this.assignmentData.interviewer_id],
+            start_time: this.assignmentData.from_date,
+            is_video_call: this.assignmentData.isVideoCall
+          }
+        );
 
         if (response.data.success) {
           await this.fetchCandidates();
-          // Refresh timeline if resume detail modal is open
           if (this.showResumeModal && this.resumeDetailEvaluation) {
             await this.fetchTimeline(this.resumeDetailEvaluation.id);
           }
           this.showAssignModal = false;
           alert('Interview assigned successfully!');
-        }
-        else {
+        } else {
           alert(response.data.error || 'Failed to assign interviewer. Please try again.');
         }
       } catch (error) {
         console.error('Error assigning interviewer:', error);
-        alert('Failed to assign interviewer. Please try again.');
+        alert(error.response?.data?.error || 'Failed to assign interviewer. Please try again.');
       } finally {
-
         this.loading = false;
         this.hideLoader();
-
       }
     },
     async assignInterviewerGroup() {
-      if (!this.selectedTimeSlotforBulkAssign || !this.selectedInterviewersforAssign.length) {
-        alert('Please select interviewers and a time slot');
+      if (!this.selectedInterviewersforAssign.length || !this.assignmentData.from_date) {
+        alert('Please select interviewers and a date & time');
         return;
       }
 
@@ -2365,93 +2396,27 @@ export default {
       this.showLoader('Assigning to interviewers...');
 
       try {
-        // Parse the selected slot_ids from the dropdown value
-        let selectedSlotIds;
-        try {
-          selectedSlotIds = JSON.parse(this.selectedTimeSlotforBulkAssign);
-        } catch (e) {
-          console.error('Error parsing selected slot:', e);
-          alert('Invalid time slot selection. Please try again.');
-          return;
-        }
-
-        if (!Array.isArray(selectedSlotIds) || selectedSlotIds.length === 0) {
-          alert('Invalid slot selection. Please select a valid time slot.');
-          return;
-        }
-
-        // Find the selected slot from available slots by comparing slot_ids arrays
-        const selectedSlot = this.availableSlots.find(item => {
-          const itemSlotIds = Array.isArray(item.slot_ids)
-            ? item.slot_ids
-            : (typeof item.slot_ids === 'string' ? JSON.parse(item.slot_ids) : []);
-
-          if (!Array.isArray(itemSlotIds) || itemSlotIds.length !== selectedSlotIds.length) {
-            return false;
-          }
-
-          // Compare arrays - sort and compare to handle different orders
-          const sortedSelected = [...selectedSlotIds].sort().join(',');
-          const sortedItem = [...itemSlotIds].sort().join(',');
-          return sortedSelected === sortedItem;
-        });
-
-        if (!selectedSlot) {
-          console.error('Selected slot not found.');
-          console.error('Selected slot_ids:', selectedSlotIds);
-          console.error('Available slots:', this.availableSlots.map(s => ({
-            start_time: s.start_time,
-            slot_ids: s.slot_ids,
-            interviewer_ids: s.interviewer_ids
-          })));
-          alert('Selected time slot not found. Please try selecting again.');
-          return;
-        }
-
-        // Ensure slot_ids and interviewer_ids are arrays
-        const slotIds = Array.isArray(selectedSlot.slot_ids)
-          ? selectedSlot.slot_ids
-          : (typeof selectedSlot.slot_ids === 'string' ? JSON.parse(selectedSlot.slot_ids) : []);
-
-        const interviewerIds = Array.isArray(selectedSlot.interviewer_ids)
-          ? selectedSlot.interviewer_ids
-          : (typeof selectedSlot.interviewer_ids === 'string' ? JSON.parse(selectedSlot.interviewer_ids) : []);
-
-        if (!Array.isArray(slotIds) || slotIds.length === 0) {
-          alert('Invalid slot data. Please try again.');
-          return;
-        }
-
-        if (!Array.isArray(interviewerIds) || interviewerIds.length === 0) {
-          alert('Invalid interviewer data. Please try again.');
-          return;
-        }
-
-        // Use interviewer_ids from the selected slot (they should match the selected interviewers)
-        // The slot already contains the correct interviewer_ids for that time slot
+        // Walk-in: backend generates slots for all selected interviewers at start_time, then assigns
         const response = await axios.post(
-          `${API_BASE_URL}/interviews/assign/bulk`,
+          `${API_BASE_URL}/walkIn/assignWalkInInterView`,
           {
             evaluation_id: this.assignmentData.evaluation_id,
-            interviewer_ids: interviewerIds,
-            interview_date: selectedSlot.start_time,
-            slot_ids: slotIds,
+            interviewer_ids: this.selectedInterviewersforAssign,
+            start_time: this.assignmentData.from_date,
             is_video_call: this.assignmentData.isVideoCall
           }
         );
 
         if (response.data.success) {
+          const count = this.selectedInterviewersforAssign.length;
           await this.fetchCandidates();
-          // Refresh timeline if resume detail modal is open
           if (this.showResumeModal && this.resumeDetailEvaluation) {
             await this.fetchTimeline(this.resumeDetailEvaluation.id);
           }
           this.showAssignModal = false;
           this.selectedInterviewersforAssign = [];
-          this.selectedTimeSlotforBulkAssign = '';
-          alert(`Successfully assigned ${interviewerIds.length} interviewer(s)!`);
-        }
-        else {
+          alert(`Successfully assigned ${count} interviewer(s)!`);
+        } else {
           alert(response.data.error || 'Failed to assign interviewers. Please try again.');
         }
       } catch (error) {

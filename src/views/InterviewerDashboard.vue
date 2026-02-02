@@ -119,7 +119,7 @@
     </button>
   </a>
   <button v-else class="btn-ats-primary btn-ats-sm">
-       On Call Interview
+       {{interviewText[assignment.is_video_call]}}
     </button>
 
               <button @click="viewCandidateDetails(assignment)" class="btn-ats-secondary btn-ats-sm">View Resume</button>
@@ -328,6 +328,12 @@ export default {
         status: 'pending',
         hold_reason: '',
         remarks: ''
+      },
+      interviewText : {
+          0 : 'on Call Interview',
+          2 :  'Face to Face Interview',
+          1 : 'Video Call Interview',
+          3 :  ' Walk-in Interview'
       }
     };
   },
