@@ -1449,7 +1449,7 @@ export default {
   },
   mounted() {
     this.fetchJobDescription();
-    this.fetchWalkInInterviewDetails()
+    // this.fetchWalkInInterviewDetails()
     this.fetchCandidates();
     if (this.hasWriteAccess) {
       this.fetchInterviewers();
@@ -1463,8 +1463,8 @@ export default {
                if(candidate.is_video_call == 3){
                    
                     const currentDate = moment(); 
-                     const driveEndDate = moment(this.walkInJobDetails.to_date); 
-                     const driveStartDate = moment(this.walkInJobDetails.from_date);
+                     const driveEndDate = moment(candidate?.walkin_to_date || null); 
+                     const driveStartDate = moment(candidate?.walkin_from_date || null);
                      return currentDate.isBetween(driveStartDate, driveEndDate, null, '[]');  
                }
 
@@ -1472,18 +1472,18 @@ export default {
         
        },
 
-        async fetchWalkInInterviewDetails() {
+    //     async fetchWalkInInterviewDetails() {
     
-        try {
-             let response = await axios.get(`${API_BASE_URL}/walkIn/single/${this.$route.params.id}`);
-             if (response.data.success && response.data.data.length > 0) {
-               this.walkInJobDetails = response.data.data[0];
-             }
-        } catch (error) {
+    //     try {
+    //          let response = await axios.get(`${API_BASE_URL}/walkIn/single/${this.$route.params.id}`);
+    //          if (response.data.success && response.data.data.length > 0) {
+    //            this.walkInJobDetails = response.data.data[0];
+    //          }
+    //     } catch (error) {
             
-        }
-      // This method can be used to fetch additional walk-in interview details if needed
-    },
+    //     }
+    //   // This method can be used to fetch additional walk-in interview details if needed
+    // },
 
     getInterviewerName(candidate) {
       if (!candidate.interviewer) return null;

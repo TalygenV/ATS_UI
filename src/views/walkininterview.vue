@@ -32,13 +32,15 @@
                     :class="['badge-ats', job.status === 'Open' ? 'badge-ats-success' : 'badge-ats-warning']"
                     style="font-size: 0.75rem;"
                   >
-                    {{ job.status || 'Open' }}
+                    <!-- {{ job.status || 'Open' }} -->
+                    {{ getDrviveStatus(job) }}
                   </span>
                 </div>
               </div>
               <div v-if="hasWriteAccess" class="d-flex gap-2">
-                <button @click="editJob(job)" class="btn-icon" title="Edit">✏️</button>
-                <button @click="deleteJob(job.walkinDriveId)" class="btn-icon" title="Delete">🗑️</button>
+                <button :disabled="isDriveEnded(job)" @click="editJob(job)" class="btn-icon" title="Edit">✏️</button>
+               
+                <button :disabled="isDriveEnded(job)"  @click="deleteJob(job.walkinDriveId)" class="btn-icon" title="Delete">🗑️</button>
               </div>
             </div>
             <div class="flex-grow-1">
@@ -87,7 +89,7 @@
             <div class="d-flex justify-content-between align-items-center pt-3 mt-3 border-top">
               <span class="text-muted small invisible">{{ formatDate(job.created_at) }}</span>
       
-              <button @click="viewJobDetail(job.dobDescription_id)" class="btn-ats-secondary btn-ats-sm">View Details</button>
+              <button @click="viewJobDetail(job.dobDescription_id , job.walkinDriveId)" class="btn-ats-secondary btn-ats-sm">View Details</button>
             </div>
           </div>
         </div>
@@ -186,6 +188,7 @@
   import { useLoader } from '../composables/useLoader';
   import { API_BASE_URL } from '../config/api';
   import { formatDate , toUTCISOString , formatDateTime } from '../utils/datetimeUtils';
+import moment from 'moment';
   
   export default {
     name: 'walkininterview',
@@ -224,6 +227,48 @@
       }
     },
     methods: {
+      formatForDatetimeLocal(value) {
+    if (!value) return null;
+
+    const d = new Date(value);
+
+    // local time, not UTC
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  },
+            getDrviveStatus(currentDrive) {
+            if(this.isUpcomingDrive(currentDrive)) {
+                return 'Upcoming';
+            } else if(this.isOngoingDrive(currentDrive)) {
+                return 'Ongoing';
+            } else if(this.isDriveEnded(currentDrive)) {
+                return 'Ended';
+            }
+            return 'Unknown';
+
+    },
+        isUpcomingDrive(currentDrive) {
+            let now = moment()
+            let driveStart = moment(currentDrive.from_date);
+            return now.isBefore(driveStart);
+         },
+         isOngoingDrive(currentDrive) {
+            let now = moment()
+            let driveStart = moment(currentDrive.from_date);
+            let driveEnd = moment(currentDrive.to_date);
+            return now.isBetween(driveStart, driveEnd);
+         },
+
+         isDriveEnded(currentDrive) {
+            let now = moment()
+            let driveEnd = moment(currentDrive.to_date);
+            return now.isAfter(driveEnd);
+         },
       formatDateTime,
       
       async fetchWalkinDrive() {
@@ -300,8 +345,8 @@
           id: job.walkinDriveId,
           drive_name: job.drive_name,
           drive_description: job.drive_description,
-          from_date: job.from_date ? new Date(job.from_date).toISOString().slice(0,16) : null,
-          to_date: job.to_date ? new Date(job.to_date).toISOString().slice(0,16) : null,
+          from_date: job.from_date ? this.formatForDatetimeLocal(job.from_date) : null,
+          to_date: job.to_date ? this.formatForDatetimeLocal(job.to_date) : null,
           dobDescription_id: job.dobDescription_id ,
           status: job.status || 'active'
         };
@@ -321,8 +366,8 @@
           alert('Failed to delete job description. Please try again.');
         }
       },
-      viewJobDetail(dobDescription_id) {
-        this.$router.push({ name: 'WalkInInterviewDetailsPage', params: { id: dobDescription_id } });
+      viewJobDetail(dobDescription_id, walkinDriveId) {
+        this.$router.push({ name: 'WalkInInterviewDetailsPage', params: { id: dobDescription_id, walkinId: walkinDriveId } });
       },
       filterJobs() {
         if (!this.searchQuery.trim()) {
@@ -355,7 +400,8 @@
         return text.substring(0, length) + '...';
       },
       formatDate
-    }
+    },
+  
   };
   </script>
   

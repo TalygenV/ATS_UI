@@ -24,19 +24,19 @@
         </div> -->
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 pb-3 mb-3 border-bottom">
           <div>
-            <h2 class="page-title-ats mb-0"> {{ walkInJobDetails.drive_name }}</h2>
+            <h2 class="page-title-ats mb-0"> {{ walkInJobDetails?.drive_name }}</h2>
             
-            <!-- <div class="mt-2">
-              <span :class="['badge-ats', jobDescription.status === 'Open' ? 'badge-ats-success' : 'badge-ats-warning']"
+            <div class="mt-2">
+              <span :class="['badge-ats', getDrviveStatus(walkInJobDetails) === 'Ongoing' ? 'badge-ats-success' : 'badge-ats-warning']"
                 style="font-size: 0.875rem;">
-                {{ jobDescription.status || 'Open' }}
+                {{getDrviveStatus(walkInJobDetails) }}
               </span>
-            </div> -->
+            </div>
           </div>
           <div v-if="hasWriteAccess" class="d-flex gap-2 flex-wrap">
            
            
-            <button @click="editJob" class="btn-edit">Edit</button>
+            <button :disabled="isDriveEnded(walkInJobDetails)" @click="editJob" class="btn-icon" title="Edit">✏️</button>
            
           </div>
         </div>
@@ -73,7 +73,7 @@
       </div>
 
       <!-- Upload Resumes Section -->
-      <div v-if="hasWriteAccess" class="ats-card ats-card-xl">
+      <div v-if="hasWriteAccess && canUploadResumes" class="ats-card ats-card-xl">
         <h3 class="fs-5 fw-bold text-dark mb-4">Upload Resumes</h3>
         <div class="upload-area-ats" :class="{ 'drag-over': isDragOver }" @drop="handleDrop"
           @dragover.prevent="isDragOver = true" @dragleave="isDragOver = false" @click="triggerFileInput">
@@ -1491,7 +1491,13 @@ export default {
   if (!this.walkInJobDetails?.to_date) return null;
 
   return this.toLocalDateTime(this.walkInJobDetails.to_date);
-}
+},
+
+  canUploadResumes(){
+       let now  = moment();
+       let walkInEnd = moment(this.walkInJobDetails.to_date);
+        return now.isBefore(walkInEnd);
+  }
 ,
     errorCount() {
       return this.uploadResults.filter(r => !r.success).length;
@@ -1546,8 +1552,37 @@ export default {
 
 
   methods: {
+      toUTCISOString,
         toLocalDateTime,
- 
+           getDrviveStatus(currentDrive) {
+            if(this.isUpcomingDrive(currentDrive)) {
+                return 'Upcoming';
+            } else if(this.isOngoingDrive(currentDrive)) {
+                return 'Ongoing';
+            } else if(this.isDriveEnded(currentDrive)) {
+                return 'Ended';
+            }
+            return 'Unknown';
+
+    },
+        isUpcomingDrive(currentDrive) {
+            let now = moment()
+            let driveStart = moment(currentDrive.from_date);
+            return now.isBefore(driveStart);
+         },
+         isOngoingDrive(currentDrive) {
+            let now = moment()
+            let driveStart = moment(currentDrive.from_date);
+            let driveEnd = moment(currentDrive.to_date);
+            return now.isBetween(driveStart, driveEnd);
+         },
+
+         isDriveEnded(currentDrive) {
+            let now = moment()
+            let driveEnd = moment(currentDrive.to_date);
+            return now.isAfter(driveEnd);
+         },
+           
 
           walkInDriveOngoing(candidate){
        
@@ -1570,7 +1605,7 @@ export default {
     async fetchWalkInInterviewDetails() {
     
         try {
-             let response = await axios.get(`${API_BASE_URL}/walkIn/single/${this.$route.params.id}`);
+             let response = await axios.get(`${API_BASE_URL}/walkIn/single/${this.$route.params.id}/${this.$route.params.walkinId}`);
              if (response.data.success && response.data.data.length > 0) {
                this.walkInJobDetails = response.data.data[0];
              }
@@ -1690,7 +1725,7 @@ export default {
         params.append('sort_by', this.sortBy);
 
         const response = await axios.get(
-          `${API_BASE_URL}/evaluations/walkIn/${jobId}?${params.toString()}`
+          `${API_BASE_URL}/evaluations/walkIn/${jobId}/${this.$route.params.walkinId}?${params.toString()}`
         );
         if (response.data.success) {
           // Parse interviewer_feedback if it's a string
@@ -2208,16 +2243,35 @@ export default {
       if (months === 0) return `${wholeYears} ${wholeYears === 1 ? 'year' : 'years'}`;
       return `${wholeYears} ${wholeYears === 1 ? 'year' : 'years'} ${months} ${months === 1 ? 'month' : 'months'}`;
     },
+
+      formatForDatetimeLocal(value) {
+    if (!value) return null;
+
+    const d = new Date(value);
+
+    // local time, not UTC
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  },
     editJob() {
+
+    
       this.editForm = {
          id: this.walkInJobDetails.walkinDriveId,
           drive_name: this.walkInJobDetails.drive_name,
           drive_description: this.walkInJobDetails.drive_description,
-          from_date: this.walkInJobDetails.from_date ? new Date(this.walkInJobDetails.from_date).toISOString().slice(0,16) : null,
-          to_date: this.walkInJobDetails.to_date ? new Date(this.walkInJobDetails.to_date).toISOString().slice(0,16) : null,
+          from_date: this.walkInJobDetails.from_date ? this.formatForDatetimeLocal(this.walkInJobDetails.from_date) : null,
+          to_date: this.walkInJobDetails.to_date ? this.formatForDatetimeLocal(this.walkInJobDetails.to_date) : null,
           dobDescription_id: this.walkInJobDetails.dobDescription_id ,
           status: this.walkInJobDetails.status || 'active'
       };
+
+    
 
       this.showEditModal = true;
     },

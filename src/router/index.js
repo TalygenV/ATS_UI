@@ -132,7 +132,7 @@ const routes = [
      meta: { requiresAuth: true }
   },
     {
-    path:'/walkin/:id',
+    path:'/JobDetails/:id/walkin/:walkinId',
     name:'WalkInInterviewDetailsPage',
     component: () => import('../views/WalkInInterviewDetailsPage.vue'),
      meta: { requiresAuth: true }
