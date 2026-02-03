@@ -385,14 +385,14 @@
           
           <div class="col-12 col-md-4">
             <div class="text-center p-3 bg-light rounded">
-              <div class="fs-2 fw-bold text-success mb-2">{{ processMetrics.interviews_assigned }}</div>
+              <div class="fs-2 fw-bold text-success mb-2">{{ totalInterviews }}</div>
               <div class="text-muted">Interviews Assigned</div>
             </div>
           </div>
           
           <div class="col-12 col-md-4">
             <div class="text-center p-3 bg-light rounded">
-              <div class="fs-2 fw-bold text-warning mb-2">{{ processMetrics.interviews_not_assigned }}</div>
+              <div class="fs-2 fw-bold text-warning mb-2">{{ interviewerStatus.interviews_not_assigned }}</div>
               <div class="text-muted">Interviews Not Assigned</div>
             </div>
           </div>
@@ -706,9 +706,13 @@ const hrFinalStatus = ref({
 });
 const interviewerStatus = ref({
   pending: 0,
-  selected: 0,
+  approved: 0,
   rejected: 0,
-  on_hold: 0
+  selected: 0,
+  on_hold: 0,
+  total_parsed_resumes: 0,
+  interviews_assigned: 0,
+  interviews_not_assigned: 0
 });
 const timeToDecision = ref([]);
 const hrFinalReason = ref({});
@@ -1232,26 +1236,34 @@ const initializeCharts = () => {
       });
     }
 
-    // Chart 2: Status Distribution
+    // Chart 2: Application Status Distribution (all interviewer/resume metrics)
     if (statusChart.value && activeTab.value === 'overview') {
+      const s = interviewerStatus.value;
+      const labels = ['Decision Pending', 'Approved', 'Rejected', 'Selected', 'On Hold', 'Interviews Not Assigned'];
+      const data = [
+        s.pending ?? 0,
+        s.approved ?? 0,
+        s.rejected ?? 0,
+        s.selected ?? 0,
+        s.on_hold ?? 0,
+        s.interviews_not_assigned ?? 0
+      ];
+      const colors = [
+        'rgba(245, 158, 11, 0.8)',
+        'rgba(16, 185, 129, 0.8)',
+        'rgba(239, 68, 68, 0.8)',
+        'rgba(34, 197, 94, 0.8)',
+        'rgba(59, 130, 246, 0.8)',
+        'rgba(236, 72, 153, 0.8)'
+      ];
       const ctx = statusChart.value.getContext('2d');
       chartInstances.status = new Chart(ctx, {
         type: statusChartType.value,
         data: {
-          labels: ['Pending', 'Rejected', 'Selected', 'On Hold'],
+          labels,
           datasets: [{
-            data: [
-              interviewerStatus.value.pending,
-              interviewerStatus.value.rejected,
-              interviewerStatus.value.selected,
-              interviewerStatus.value.on_hold
-            ],
-            backgroundColor: [
-              'rgba(245, 158, 11, 0.8)',
-              'rgba(239, 68, 68, 0.8)',
-              'rgba(16, 185, 129, 0.8)',
-              'rgba(59, 130, 246, 0.8)'
-            ],
+            data,
+            backgroundColor: colors,
             borderColor: 'rgba(255, 255, 255, 0.8)',
             borderWidth: 2,
             borderRadius: 6,
@@ -1435,48 +1447,117 @@ const initializeCharts = () => {
     }
 
     // Chart 7: Utilization Chart
-    if (utilizationChart.value && activeTab.value === 'interviewers') {
-      const ctx = utilizationChart.value.getContext('2d');
-      chartInstances.utilization = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-          datasets: [{
-            label: 'Interviewers',
-            data: interviewerUtilization.value.map(util => ({
-              x: util.total_slots,
-              y: util.utilization_pct
-            })),
-            backgroundColor: interviewerUtilization.value.map(util => 
-              util.utilization_pct > 90 ? 'rgba(16, 185, 129, 0.8)' :
-              util.utilization_pct > 70 ? 'rgba(59, 130, 246, 0.8)' :
-              util.utilization_pct > 50 ? 'rgba(245, 158, 11, 0.8)' :
-              'rgba(239, 68, 68, 0.8)'
-            ),
-            borderColor: interviewerUtilization.value.map(util => 
-              util.utilization_pct > 90 ? 'rgba(16, 185, 129, 1)' :
-              util.utilization_pct > 70 ? 'rgba(59, 130, 246, 1)' :
-              util.utilization_pct > 50 ? 'rgba(245, 158, 11, 1)' :
-              'rgba(239, 68, 68, 1)'
-            ),
-            borderWidth: 1
-          }]
+    // if (utilizationChart.value && activeTab.value === 'interviewers') {
+    //   const ctx = utilizationChart.value.getContext('2d');
+    //   chartInstances.utilization = new Chart(ctx, {
+    //     type: 'scatter',
+    //     data: {
+    //       datasets: [{
+    //         label: 'Interviewers',
+    //         data: interviewerUtilization.value.map(util => ({
+    //           x: util.total_slots,
+    //           y: util.utilization_pct
+    //         })),
+    //         backgroundColor: interviewerUtilization.value.map(util => 
+    //           util.utilization_pct > 90 ? 'rgba(16, 185, 129, 0.8)' :
+    //           util.utilization_pct > 70 ? 'rgba(59, 130, 246, 0.8)' :
+    //           util.utilization_pct > 50 ? 'rgba(245, 158, 11, 0.8)' :
+    //           'rgba(239, 68, 68, 0.8)'
+    //         ),
+    //         borderColor: interviewerUtilization.value.map(util => 
+    //           util.utilization_pct > 90 ? 'rgba(16, 185, 129, 1)' :
+    //           util.utilization_pct > 70 ? 'rgba(59, 130, 246, 1)' :
+    //           util.utilization_pct > 50 ? 'rgba(245, 158, 11, 1)' :
+    //           'rgba(239, 68, 68, 1)'
+    //         ),
+    //         borderWidth: 1
+    //       }]
+    //     },
+    //     options: {
+    //       responsive: true,
+    //       maintainAspectRatio: false,
+    //       scales: {
+    //         x: {
+    //           title: { display: true, text: 'Total Slots', font: { weight: 'bold' } },
+    //           grid: { color: 'rgba(226, 232, 240, 0.8)' }
+    //         },
+    //         y: {
+    //           title: { display: true, text: 'Utilization %', font: { weight: 'bold' } },
+    //           grid: { color: 'rgba(226, 232, 240, 0.8)' }
+    //         }
+    //       }
+    //     }
+    //   });
+    // }
+const chartData = interviewerUtilization.value.map(util => ({
+  x: util.total_slots,
+  y: util.utilization_pct,
+  raw: util 
+}));
+if (utilizationChart.value && activeTab.value === 'interviewers') {
+  const ctx = utilizationChart.value.getContext('2d');
+
+  chartInstances.utilization = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Interviewers',
+          data: chartData,
+
+          backgroundColor: chartData.map(d =>
+            d.raw.utilization_pct > 90 ? 'rgba(16,185,129,0.8)' :
+            d.raw.utilization_pct > 70 ? 'rgba(59,130,246,0.8)' :
+            d.raw.utilization_pct > 50 ? 'rgba(245,158,11,0.8)' :
+            'rgba(239,68,68,0.8)'
+          ),
+
+          borderWidth: 1
+        }
+      ]
+    },
+
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Total Slots',
+            font: { weight: 'bold' }
+          }
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: {
-              title: { display: true, text: 'Total Slots', font: { weight: 'bold' } },
-              grid: { color: 'rgba(226, 232, 240, 0.8)' }
-            },
-            y: {
-              title: { display: true, text: 'Utilization %', font: { weight: 'bold' } },
-              grid: { color: 'rgba(226, 232, 240, 0.8)' }
+        y: {
+          title: {
+            display: true,
+            text: 'Utilization %',
+            font: { weight: 'bold' }
+          }
+        }
+      },
+
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const util = context.raw.raw; // ✅ NOW EXISTS
+
+              return [
+                `Interviewer: ${util.interviewer_id.substring(0, 8)}...`,
+                `Total Slots: ${util.total_slots}`,
+                `Booked Slots: ${util.booked_slots}`,
+                `Utilization: ${util.utilization_pct}%`
+              ];
             }
           }
         }
-      });
+      }
     }
+  });
+}
+
 
     // Chart 8: Resource Utilization
     if (resourceUtilizationChart.value && activeTab.value === 'utilization') {
@@ -1622,7 +1703,7 @@ const fetchAnalyticsData = async () => {
       timeToDecision.value = data.timeToHire || [];
       hrFinalReason.value = data.rejectionReasons || {};
       interviewersData.value = data.interviewers || [];
-      interviewerStatus.value = data.interviewerStatus || { pending: 0, selected: 0, rejected: 0, on_hold: 0 };
+      interviewerStatus.value = data.interviewerStatus || { pending: 0, approved: 0, rejected: 0, selected: 0, on_hold: 0, total_parsed_resumes: 0, interviews_assigned: 0, interviews_not_assigned: 0 };
       interviewerUtilization.value = data.slotUtilization || [];
       monthlyResumes.value = data.resumeVolume || [];
       processMetrics.value = data.processMetrics || { total_parsed_resumes: 0, interviews_assigned: 0, interviews_not_assigned: 0 };

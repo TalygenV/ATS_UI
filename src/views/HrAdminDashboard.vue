@@ -68,7 +68,7 @@
     </button>
   </a>
 
-  <button  class="btn-ats-primary btn-ats-sm">
+  <button v-if="interview.is_video_call !=1"  class="btn-ats-primary btn-ats-sm">
        {{interviewText[interview.is_video_call]}}
     </button>
     
@@ -120,7 +120,7 @@
     </button>
   </a>
 
-    <button class="btn-ats-primary btn-ats-sm">
+    <button v-if="interview.is_video_call !=1" class="btn-ats-primary btn-ats-sm">
        {{interviewText[interview.is_video_call]}}
     </button>
                   </div>
