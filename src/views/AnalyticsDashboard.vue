@@ -1040,7 +1040,7 @@ const exportReport = async () => {
     csvContent += `Total Parsed Resumes,${data.processMetrics.total_parsed_resumes}\n`;
     csvContent += `Interviews Assigned,${data.processMetrics.interviews_assigned}\n`;
     csvContent += `Interviews Not Assigned,${data.processMetrics.interviews_not_assigned}\n`;
-    
+    csvContent += `Total Hired,${data.processMetrics.total_hired}\n`;
     // Create blob and download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
