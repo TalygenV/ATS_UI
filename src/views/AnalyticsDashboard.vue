@@ -595,6 +595,7 @@
             <div class="mb-3">
               <h3 class="fs-5 fw-bold mb-1">Resume to Interview Pipeline</h3>
               <p class="text-muted small mb-0">Conversion through recruitment funnel</p>
+              
             </div>
             <div class="chart-container-ats">
               <canvas ref="pipelineChart"></canvas>
@@ -604,9 +605,23 @@
         
         <div class="col-12 col-xl-6">
           <div class="ats-card">
+            
             <div class="mb-3">
+               <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
               <h3 class="fs-5 fw-bold mb-1">Rejection Analysis</h3>
               <p class="text-muted small mb-0">Primary reasons for candidate rejection</p>
+                </div>
+               <div class="d-flex gap-2">
+                <button class="btn-icon" :class="{ 'text-primary': rejectChartType === 'bar' }" @click="setRejectChartType('bar')" title="Bar Chart">
+                  <i class="fas fa-chart-bar"></i>
+                </button>
+                <button class="btn-icon" :class="{ 'text-primary': rejectChartType === 'doughnut' }" @click="setRejectChartType('doughnut')" title="Doughnut Chart">
+                  <i class="fas fa-chart-pie"></i>
+                </button>
+
+              </div>
+            </div>
             </div>
             <div class="chart-container-ats">
               <canvas ref="rejectionChart"></canvas>
@@ -729,6 +744,18 @@ const processMetrics = ref({
   interviews_not_assigned: 0,
   total_hired : 0,
 });
+
+const rejectedMetricsResult = ref({
+  total_interviewer_rejected: 0,
+  total_parse_rejected: 0,
+  total_hr_rejected: 0,
+  position_on_hold : 0,
+rejected_by_hr : 0,
+rejected_by_interviewer : 0,
+rejected_by_resume_parsing : 0,
+technical_rejected : 0
+});
+
 const jobDescIndustryAvg = ref([]);
 
 // Loading and error states
@@ -841,6 +868,7 @@ const dateTo = ref(null);
 const showDatePicker = ref(false);
 const positionsChartType = ref('bar');
 const statusChartType = ref('doughnut');
+const rejectChartType = ref('doughnut');
 const resumesChartType = ref('bar');
 
 const tabs = [
@@ -884,6 +912,14 @@ const setChartType = (chartName, type) => {
   if (chartName === 'status') statusChartType.value = type;
   if (chartName === 'resumes') resumesChartType.value = type;
   
+  nextTick(() => {
+    initializeCharts();
+  });
+};
+
+
+const setRejectChartType = (type) => {
+  rejectChartType.value = type;
   nextTick(() => {
     initializeCharts();
   });
@@ -1643,25 +1679,60 @@ if (utilizationChart.value && activeTab.value === 'interviewers') {
     // Chart 10: Rejection Chart
     if (rejectionChart.value && activeTab.value === 'process') {
       const ctx = rejectionChart.value.getContext('2d');
-      chartInstances.rejection = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: ['Interviewer Rejected'],
-          datasets: [{
-            data: [20],
-            backgroundColor: ['rgba(239, 68, 68, 0.8)'],
-            borderColor: ['rgba(239, 68, 68, 1)'],
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'right' }
-          }
-        }
-      });
+       chartInstances.rejection = new Chart(ctx, {
+    type: rejectChartType.value,
+    data: {
+      labels: [
+        // 'Interviewer Rejected',
+        // 'Resume Parsing Rejected',
+        // 'HR Rejected',
+          'Position On Hold',
+          'HR Rejected',
+          'Interviewerer Rejected',
+          'Parse Rejected',
+          'Technical Rejected'
+        
+      ],
+      datasets: [{
+        data: [
+          // rejectedMetricsResult.value.total_interviewer_rejected,
+          // rejectedMetricsResult.value.total_parse_rejected,
+          // rejectedMetricsResult.value.total_hr_rejected,
+            rejectedMetricsResult.value.position_on_hold,
+            rejectedMetricsResult.value.rejected_by_hr,
+            rejectedMetricsResult.value.rejected_by_interviewer,
+            rejectedMetricsResult.value.rejected_by_resume_parsing,
+            rejectedMetricsResult.value.technical_rejected
+        ],
+    backgroundColor: [
+  'rgba(59, 130, 246, 0.85)',   // Blue
+  'rgba(245, 158, 11, 0.85)',   // Amber
+  'rgba(107, 114, 128, 0.85)',   // Gray
+  'rgba(239, 68, 68, 0.85)',   // Red
+  'rgba(16, 185, 129, 0.85)'   //
+],
+borderColor: [
+  'rgba(59, 130, 246, 1)',
+  'rgba(245, 158, 11, 1)',
+  'rgba(107, 114, 128, 1)',
+  'rgba(239, 68, 68, 1)',
+  'rgba(16, 185, 129, 1)'
+]
+,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+      display: rejectChartType.value === 'doughnut', // Show legend only for doughnut
+      position: 'right',  
+    }
+      }
+      
+    }})
     }
   });
 };
@@ -1714,6 +1785,16 @@ const fetchAnalyticsData = async () => {
       interviewerUtilization.value = data.slotUtilization || [];
       monthlyResumes.value = data.resumeVolume || [];
       processMetrics.value = data.processMetrics || { total_parsed_resumes: 0, interviews_assigned: 0, interviews_not_assigned: 0  , total_hired: 0};
+      rejectedMetricsResult.value = data.rejectionMoreDetailsResult || {
+         total_interviewer_rejected: 0, 
+         total_parse_rejected: 0, 
+         total_hr_rejected: 0 ,  
+          position_on_hold : 0,
+          rejected_by_hr : 0,
+          rejected_by_interviewer : 0,
+         rejected_by_resume_parsing : 0,
+        technical_rejected : 0
+        };
       growthStats.value= data.growthStats || {total_candidates_growth_pct:0 ,hired_candidates_growth_pct:0 ,avg_match_score_growth_pct:0 ,interviews_conducted_growth_pct:0};
       recruitmentProcessMetricsKpi.value = data.recruitmentProcessMetricsKpi || {resumetoInterviewRate:0 ,averageMatchScore : 0, interviewSlotUtilization : 0, timetoDecision : 0,candidateConversionRate : 0};
       jobDescIndustryAvg.value = data.jobDescIndustryAvg || []; 
