@@ -222,8 +222,9 @@
           <div class="ats-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <div>
-                <h3 class="fs-5 fw-bold mb-1">Position Performance</h3>
-                <p class="text-muted small mb-0">Candidates vs Average Match Score</p>
+                <!-- Position Performance -->
+                <h3 class="fs-5 fw-bold mb-1">Candidates vs Average Match Score</h3>
+                <!-- <p class="text-muted small mb-0">Candidates vs Average Match Score</p> -->
               </div>
               <div class="d-flex gap-2">
                 <button class="btn-icon" :class="{ 'text-primary': positionsChartType === 'bar' }" @click="setChartType('positions', 'bar')" title="Bar Chart">
@@ -450,8 +451,9 @@
         <div class="col-12 col-xl-6">
           <div class="ats-card">
             <div class="mb-3">
-              <h3 class="fs-5 fw-bold mb-1">Interviewer Performance</h3>
-              <p class="text-muted small mb-0">Interviews taken by interviewer</p>
+              <!-- Interviewer Performance -->
+              <h3 class="fs-5 fw-bold mb-1">Interviews taken by interviewer</h3>
+              <!-- <p class="text-muted small mb-0">Interviews taken by interviewer</p> -->
             </div>
             <div class="chart-container-ats">
               <canvas ref="interviewersPerformanceChart"></canvas>
@@ -724,7 +726,8 @@ const recruitmentProcessMetricsKpi = ref({resumetoInterviewRate:0 ,averageMatchS
 const processMetrics = ref({
   total_parsed_resumes: 0,
   interviews_assigned: 0,
-  interviews_not_assigned: 0
+  interviews_not_assigned: 0,
+  total_hired : 0,
 });
 const jobDescIndustryAvg = ref([]);
 
@@ -1595,23 +1598,27 @@ if (utilizationChart.value && activeTab.value === 'interviewers') {
       chartInstances.pipeline = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Resumes Parsed', 'Interviews Assigned', 'Interviews Not Assigned'],
+          labels: ['Resumes Parsed', 'Interviews Assigned', 'Interviews Not Assigned' , 'Hired'],
           datasets: [{
             label: 'Count',
             data: [
               processMetrics.value.total_parsed_resumes,
               processMetrics.value.interviews_assigned,
-              processMetrics.value.interviews_not_assigned
+              processMetrics.value.interviews_not_assigned,
+              processMetrics.value.total_hired
+
             ],
             backgroundColor: [
               'rgba(30, 64, 175, 0.8)',
               'rgba(16, 185, 129, 0.8)',
-              'rgba(239, 68, 68, 0.8)'
+              'rgba(239, 68, 68, 0.8)',
+               'rgba(16, 68, 68, 0.8)'
             ],
             borderColor: [
               'rgba(30, 64, 175, 1)',
               'rgba(16, 185, 129, 1)',
-              'rgba(239, 68, 68, 1)'
+              'rgba(239, 68, 68, 1)',
+              'rgba(16, 68, 68, 1)',
             ],
             borderWidth: 1,
             borderRadius: 6
@@ -1706,7 +1713,7 @@ const fetchAnalyticsData = async () => {
       interviewerStatus.value = data.interviewerStatus || { pending: 0, approved: 0, rejected: 0, selected: 0, on_hold: 0, total_parsed_resumes: 0, interviews_assigned: 0, interviews_not_assigned: 0 };
       interviewerUtilization.value = data.slotUtilization || [];
       monthlyResumes.value = data.resumeVolume || [];
-      processMetrics.value = data.processMetrics || { total_parsed_resumes: 0, interviews_assigned: 0, interviews_not_assigned: 0 };
+      processMetrics.value = data.processMetrics || { total_parsed_resumes: 0, interviews_assigned: 0, interviews_not_assigned: 0  , total_hired: 0};
       growthStats.value= data.growthStats || {total_candidates_growth_pct:0 ,hired_candidates_growth_pct:0 ,avg_match_score_growth_pct:0 ,interviews_conducted_growth_pct:0};
       recruitmentProcessMetricsKpi.value = data.recruitmentProcessMetricsKpi || {resumetoInterviewRate:0 ,averageMatchScore : 0, interviewSlotUtilization : 0, timetoDecision : 0,candidateConversionRate : 0};
       jobDescIndustryAvg.value = data.jobDescIndustryAvg || []; 
