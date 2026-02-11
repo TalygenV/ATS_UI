@@ -344,6 +344,17 @@ export default {
     const externalFileUrl = apiResponse.data.file_path;
     const fileName = apiResponse.data.file_name || 'download.pdf';
 
+      // replace when blob type start working 
+         const anchor = document.createElement('a');
+anchor.href = externalFileUrl;
+anchor.download = fileName;
+anchor.target = '_blank';
+document.body.appendChild(anchor);
+anchor.click();
+document.body.removeChild(anchor);
+return
+ // replace when blob type start working 
+
     // Validate that we have a valid file path
     if (!externalFileUrl) {
         console.error("No file path returned from API:", apiResponse.data);
